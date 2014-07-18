@@ -24,7 +24,7 @@ if(DEFINED HDF5_INCLUDE_DIR)
 endif()
 
 #Grab all the header files in the src directory including concol.h
-INCLUDE_DIRECTORIES("./APS/")
+INCLUDE_DIRECTORIES("./lib/")
 
 #ASIO files
 if(NOT DEFINED ASIO_INCLUDE_DIR)
@@ -40,13 +40,13 @@ ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11")
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
 
 SET ( DLL_SRC 
-	./APS/libaps.cpp
-	./APS/Channel.cpp
-	./APS/APS2.cpp
-	./APS/LLBank.cpp
-	./APS/APSEthernet.cpp
-	./APS/MACAddr.cpp
-	./APS/APSEthernetPacket.cpp
+	./lib/libaps.cpp
+	./lib/Channel.cpp
+	./lib/APS2.cpp
+	./lib/LLBank.cpp
+	./lib/APSEthernet.cpp
+	./lib/MACAddr.cpp
+	./lib/APSEthernetPacket.cpp
 )
 
 
@@ -55,43 +55,34 @@ SET_SOURCE_FILES_PROPERTIES( ${DLL_SRC} PROPERTIES LANGUAGE CXX )
 ADD_LIBRARY( aps2 SHARED ${DLL_SRC} )
 
 ADD_EXECUTABLE(test
-	./test/main.cpp
+	./C++/main.cpp
 )
 
 ADD_EXECUTABLE(waveforms
-	./test/waveforms.cpp
+	./C++/waveforms.cpp
 )
 
 ADD_EXECUTABLE(flash
-	./test/flash.cpp
+	./C++/flash.cpp
 )
 
 ADD_EXECUTABLE(reset
-	./test/reset.cpp
+	./C++/reset.cpp
 )
 
 ADD_EXECUTABLE(program
-	./test/program.cpp
+	./C++/program.cpp
 )
 
 #ADD_EXECUTABLE(echo
-#	./test/echo.cpp
-#	./APS/APSEthernet.cpp 
-#	./APS/DummyAPS.cpp
-#	./APS/APS2.cpp
+#	./C++/echo.cpp
+#	./lib/APSEthernet.cpp 
+#	./lib/DummyAPS.cpp
+#	./lib/APS2.cpp
 #)
 
 
 #set_target_properties(echo PROPERTIES COMPILE_DEFINITIONS "DEBUGAPS")
-
-#ADD_EXECUTABLE(echo32
-#	./test/echo.cpp
-#	./APS/EthernetControl.cpp 
-#	./APS/DummyAPS.cpp
-#)
-
-#set_target_properties(echo32 PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
-#set_target_properties(echo32 PROPERTIES COMPILE_DEFINITIONS "DEBUGAPS")
 
 TARGET_LINK_LIBRARIES(test aps2)
 TARGET_LINK_LIBRARIES(flash aps2)
