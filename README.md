@@ -1,11 +1,11 @@
-C/C++ Driver for the BBN APSv1
+C/C++ Driver for the BBN APSv2
 ===============================
 
 This repository provides the C++ (with a C calling API) driver for controlling the second generation [BBN Arbitrary Pulse Sequencer](http://quantum.bbn.com/tools/aps).  In addition to the C driver we provide thin wrappers for Matlab and Julia.  
 
 Documentation
 -------------
-Further documtation can be found ???.
+Further documentation can be found ???.
 
 License
 -------------
