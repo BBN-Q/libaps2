@@ -11,6 +11,9 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   specs
+   installation
+   sequencer
 
 
 Indices and tables
