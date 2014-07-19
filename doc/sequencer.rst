@@ -276,3 +276,69 @@ Bit(s)  Description
 
 The *repeat count* gives the number of times a section of code should be
 repeated, i.e. to execute a sequence N times, one uses a repeat count of N-1.
+
+Example Sequences
+-----------------
+
+Ramsey
+^^^^^^
+
+To give a concrete example of construction of a standard QIP experiment in the
+APS2 format, consider a Ramsey experiment consisting of two $\pi/2$-pulses
+separated by a variable delay. If the waveform memory has a null-pulse at
+offset 0x00 and a 16-sample $\pi/2$-pulse at offset 0x01, then the Ramsey
+sequence might in abstract format would look like::
+	SYNC
+	WAIT
+	WAVEFORM 0x01 4
+	WAVEFORM T/A 0x00 10
+	WAVEFORM 0x01 4
+	SYNC
+	WAIT
+	WAVEFORM 0x01 4
+	WAVEFORM T/A 0x00 20
+	WAVEFORM 0x01 4
+	SYNC
+	WAIT
+	WAVEFORM 0x01 4
+	WAVEFORM T/A 0x00 30
+	WAVEFORM 0x01 4
+	    ⋮
+	GOTO 0x00
+
+The {SYNC, WAIT} sequences demarcate separate Ramsey delay
+experiments, where the SYNC command ensures that there is no residual
+data in any execution engine before continuing, and the WAIT command
+indicates to wait for a trigger. The GOTO command at the end of the
+sequence is crucial to ensure that the instruction decoder doesn't "fall
+off" into garbage data at the end of instruction memory.
+
+CPMG
+^^^^
+
+The Carr-Purcell-Meiboom-Gill pulse sequence uses a repeated delay-π-delay
+sequence to refocus spins in a fluctuating environment. For this sequence one
+could use a waveform library with three entries: a null pulse at offset 0x00,
+a 16-sample π/2-pulse at offset 0x01, and a 16-sample π-pulse at
+offset 0x05. Note that offsets are also written in terms of quad-samples, so
+the memory address range of the first π/2 pulse is [0x01,0x04]. Then a CPMG
+sequence with 10 delay-π-delay blocks might be programmed as::
+	SYNC
+	WAIT
+	WAVEFORM 0x01 4
+	LOAD_REPEAT 9
+	WAVEFORM T/A 0x00 25
+	WAVEFORM 0x05 4
+	WAVEFORM T/A 0x00 25
+	REPEAT
+	WAVEFORM 0x01 4
+	GOTO 0x00
+
+Note that we load a repeat count of 9 in order to loop the block 10 times.
+
+Active Qubit Reset
+^^^^^^^^^^^^^^^^^^
+
+TODO
+
+
