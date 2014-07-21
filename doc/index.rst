@@ -17,6 +17,8 @@ Contents:
    specs
    installation
    sequencer
+   formats
+   api-reference
 
 
 Indices and tables

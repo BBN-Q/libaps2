@@ -48,8 +48,8 @@ language, called Quantum Gate Language (QGL), as part of the PyQLab suite
 (http://github.com/BBN-Q/PyQLab) [#f1]_.  We encourage end-users to explore using
 QGL for creating pulse sequences. You may also find the sequence file export
 code to be a useful template when developing your own libraries. A detailed
-instruction format specification can be found later in this manual, in
-Ref.:ref:`instruction-spec`.
+instruction format specification can be found in the :ref:`instruction-spec`
+section.
 
 .. rubric:: Footnotes
 

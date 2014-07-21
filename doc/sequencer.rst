@@ -151,6 +151,8 @@ microseconds. Therefore, the PREFETCH instruction allows one to schedule this
 costly operation during "dead time" in an experiment, e.g. immediately prior
 to instructions that wait for a trigger.
 
+.. _instruction-spec:
+
 Concrete Instructions
 ---------------------
 
