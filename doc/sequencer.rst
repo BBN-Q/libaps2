@@ -269,22 +269,34 @@ Bit(s)  Description
 
 Jumps to *address*.
 
-RETURN and REPEAT
-^^^^^^^^^^^^^^^^^
-
-These instructions ignore all payload data.
-
 LOAD_REPEAT
 ^^^^^^^^^^^
+
+======  ============
+Bit(s)  Description
+======  ============
+15-0    repeat count
+======  ============
+
+The *repeat count* gives the number of times a section of code should be
+repeated, i.e. to execute a sequence *N* times, one uses a repeat count of *N-1*.
+
+PREFETCH
+^^^^^^^^
 
 ======  ===========
 Bit(s)  Description
 ======  ===========
-15-0    address
+23-0    address
 ======  ===========
 
-The *repeat count* gives the number of times a section of code should be
-repeated, i.e. to execute a sequence N times, one uses a repeat count of N-1.
+Refills the waveform cache starting at *address*. Sequencer execution halts 
+until the cache is filled.
+
+RETURN, SYNC, and REPEAT
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+These instructions ignore all payload data.
 
 Example Sequences
 -----------------
