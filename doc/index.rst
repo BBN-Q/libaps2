@@ -3,8 +3,11 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to APS2's documentation!
-================================
+Raytheon BBN Technologies Arbitrary Pulse Sequencer 2
+=====================================================
+
+This document serves as the user manual and programming guide for the
+Arbitrary Pulse Sequencer, version 2 (APS2).
 
 Contents:
 
