@@ -114,9 +114,9 @@ REPEAT---Decrements the repeat counter. If the resulting value is greater than
 zero, jumps to the given instruction address by updating the instruction
 counter.
 
-CMP---Compares the value of the comparison register to the mask $N$ with any
-of these operators: =, ≠, >, <. So, (CMP ≠ 0) would be true if the comparison
-register contains any value other than zero.
+CMP---Compares the value of the comparison register to the mask *N* with any
+of these operators: :math:`=, \neq, >, <`. So, (CMP :math:`\neq` 0) would be 
+true if the comparison register contains any value other than zero.
 
 GOTO---Jumps to the given address by updating the instruction counter.
 
