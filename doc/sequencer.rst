@@ -313,7 +313,9 @@ sequence might in abstract format would look like::
 	WAVEFORM 0x01 4
 	WAVEFORM T/A 0x00 30
 	WAVEFORM 0x01 4
-	    ⋮
+	    .
+	    .
+	    .
 	GOTO 0x00
 
 The {SYNC, WAIT} sequences demarcate separate Ramsey delay
