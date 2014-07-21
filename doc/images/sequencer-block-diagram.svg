@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.4, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="414px" height="380.5px" viewBox="0 0 414 380.5" enable-background="new 0 0 414 380.5" xml:space="preserve">
+<g>
+	<rect x="17.562" y="78.372" fill="#00A14B" width="383.25" height="48"/>
+	<text transform="matrix(1 0 0 1 123.3301 108.5352)" fill="#FFFFFF" font-family="'MyriadPro-Regular'" font-size="21">instruction decoder</text>
+</g>
+<g>
+	<rect x="33.426" y="151.579" fill="#21409A" width="56.25" height="125.25"/>
+	<text transform="matrix(-4.371139e-08 -1 1 -4.371139e-08 55.1128 258.3223)"><tspan x="0" y="0" fill="#FFFFFF" font-family="'MyriadPro-Regular'" font-size="21">waveform</tspan><tspan x="13.618" y="25.2" fill="#FFFFFF" font-family="'MyriadPro-Regular'" font-size="21">engine</tspan></text>
+</g>
+<g>
+	<rect x="118.062" y="151.579" fill="#7F3F98" width="56.25" height="125.25"/>
+	<text transform="matrix(-4.371139e-08 -1 1 -4.371139e-08 139.75 245.0723)"><tspan x="0" y="0" fill="#FFFFFF" font-family="'MyriadPro-Regular'" font-size="21">marker</tspan><tspan x="0.368" y="25.2" fill="#FFFFFF" font-family="'MyriadPro-Regular'" font-size="21">engine</tspan></text>
+</g>
+<g>
+	<rect x="187.062" y="151.579" fill="#7F3F98" width="56.25" height="125.25"/>
+	<text transform="matrix(-4.371139e-08 -1 1 -4.371139e-08 208.749 245.0723)"><tspan x="0" y="0" fill="#FFFFFF" font-family="'MyriadPro-Regular'" font-size="21">marker</tspan><tspan x="0.368" y="25.2" fill="#FFFFFF" font-family="'MyriadPro-Regular'" font-size="21">engine</tspan></text>
+</g>
+<g>
+	<rect x="256.062" y="151.579" fill="#7F3F98" width="56.25" height="125.25"/>
+	<text transform="matrix(-4.371139e-08 -1 1 -4.371139e-08 277.749 245.0723)"><tspan x="0" y="0" fill="#FFFFFF" font-family="'MyriadPro-Regular'" font-size="21">marker</tspan><tspan x="0.368" y="25.2" fill="#FFFFFF" font-family="'MyriadPro-Regular'" font-size="21">engine</tspan></text>
+</g>
+<g>
+	<rect x="325.062" y="151.579" fill="#7F3F98" width="56.25" height="125.25"/>
+	<text transform="matrix(-4.371139e-08 -1 1 -4.371139e-08 346.749 245.0723)"><tspan x="0" y="0" fill="#FFFFFF" font-family="'MyriadPro-Regular'" font-size="21">marker</tspan><tspan x="0.368" y="25.2" fill="#FFFFFF" font-family="'MyriadPro-Regular'" font-size="21">engine</tspan></text>
+</g>
+<g>
+	<rect x="17.562" y="7.122" fill="#E9545E" width="383.25" height="48"/>
+	<text transform="matrix(1 0 0 1 134.04 37.2852)" fill="#FFFFFF" font-family="'MyriadPro-Regular'" font-size="21">instruction cache</text>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#000000" stroke-width="4" stroke-miterlimit="10" x1="209.188" y1="55.122" x2="209.188" y2="71.13"/>
+		<g>
+			<path d="M209.188,78.372c-1.265-3.408-3.422-7.636-5.707-10.257l5.707,2.064l5.706-2.064
+				C212.608,70.736,210.451,74.964,209.188,78.372z"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#000000" stroke-width="4" stroke-miterlimit="10" x1="61.551" y1="126.372" x2="61.551" y2="142.38"/>
+		<g>
+			<path d="M61.551,149.622c-1.265-3.408-3.422-7.636-5.707-10.257l5.707,2.064l5.706-2.064
+				C64.972,141.986,62.814,146.214,61.551,149.622z"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		
+			<line fill="none" stroke="#000000" stroke-width="4" stroke-miterlimit="10" x1="146.188" y1="126.372" x2="146.188" y2="142.38"/>
+		<g>
+			<path d="M146.188,149.622c-1.265-3.408-3.422-7.636-5.707-10.257l5.707,2.064l5.706-2.064
+				C149.608,141.986,147.451,146.214,146.188,149.622z"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		
+			<line fill="none" stroke="#000000" stroke-width="4" stroke-miterlimit="10" x1="215.188" y1="126.372" x2="215.188" y2="142.38"/>
+		<g>
+			<path d="M215.188,149.622c-1.265-3.408-3.422-7.636-5.707-10.257l5.707,2.064l5.706-2.064
+				C218.608,141.986,216.451,146.214,215.188,149.622z"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		
+			<line fill="none" stroke="#000000" stroke-width="4" stroke-miterlimit="10" x1="284.188" y1="126.372" x2="284.188" y2="142.38"/>
+		<g>
+			<path d="M284.188,149.622c-1.265-3.408-3.422-7.636-5.707-10.257l5.707,2.064l5.706-2.064
+				C287.608,141.986,285.451,146.214,284.188,149.622z"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		
+			<line fill="none" stroke="#000000" stroke-width="4" stroke-miterlimit="10" x1="353.188" y1="126.372" x2="353.188" y2="142.38"/>
+		<g>
+			<path d="M353.188,149.622c-1.265-3.408-3.422-7.636-5.707-10.257l5.707,2.064l5.706-2.064
+				C356.608,141.986,354.451,146.214,353.188,149.622z"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		
+			<line fill="none" stroke="#000000" stroke-width="4" stroke-miterlimit="10" x1="146.188" y1="276.829" x2="154.283" y2="293.56"/>
+		<g>
+			<path d="M157.438,300.079c-2.623-2.517-6.406-5.383-9.604-6.747l6.036-0.628l4.237-4.343
+				C157.191,291.716,157.09,296.461,157.438,300.079z"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		
+			<line fill="none" stroke="#000000" stroke-width="4" stroke-miterlimit="10" x1="215.188" y1="276.829" x2="215.188" y2="292.837"/>
+		<g>
+			<path d="M215.188,300.079c-1.265-3.408-3.422-7.636-5.707-10.257l5.707,2.064l5.706-2.064
+				C218.608,292.443,216.451,296.671,215.188,300.079z"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		
+			<line fill="none" stroke="#000000" stroke-width="4" stroke-miterlimit="10" x1="284.188" y1="276.829" x2="284.188" y2="292.837"/>
+		<g>
+			<path d="M284.188,300.079c-1.265-3.408-3.422-7.636-5.707-10.257l5.707,2.064l5.706-2.064
+				C287.608,292.443,285.451,296.671,284.188,300.079z"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#000000" stroke-width="4" stroke-miterlimit="10" x1="353.188" y1="276.829" x2="348.684" y2="293.1"/>
+		<g>
+			<path d="M346.751,300.079c-0.31-3.622-1.261-8.272-2.764-11.407l4.949,3.512l6.05-0.467
+				C352.085,293.633,348.878,297.132,346.751,300.079z"/>
+		</g>
+	</g>
+</g>
+<text transform="matrix(1 0 0 1 178.0107 318.9746)" font-family="'MyriadPro-Regular'" font-size="21">marker outputs</text>
+<g>
+	<g>
+		<line fill="none" stroke="#000000" stroke-width="4" stroke-miterlimit="10" x1="61.551" y1="276.829" x2="61.551" y2="292.837"/>
+		<g>
+			<path d="M61.551,300.079c-1.265-3.408-3.422-7.636-5.707-10.257l5.707,2.064l5.706-2.064
+				C64.972,292.443,62.814,296.671,61.551,300.079z"/>
+		</g>
+	</g>
+</g>
+<rect x="7.438" y="300.079" fill="#F26522" width="110.625" height="49.646"/>
+<text transform="matrix(1 0 0 1 18.1787 318.9746)"><tspan x="0" y="0" fill="#FFFFFF" font-family="'MyriadPro-Regular'" font-size="21">waveform</tspan><tspan x="18.564" y="25.2" fill="#FFFFFF" font-family="'MyriadPro-Regular'" font-size="21">cache</tspan></text>
+<text transform="matrix(1 0 0 1 130.437 372.9746)" font-family="'MyriadPro-Regular'" font-size="21">waveform output</text>
+<g>
+	<g>
+		<path fill="none" stroke="#000000" stroke-width="4" stroke-miterlimit="10" d="M96.688,349.726
+			c0,15.125,10.858,18.049,21.258,18.614"/>
+		<g>
+			<path d="M125.188,368.476c-3.44,1.173-7.725,3.217-10.405,5.432l2.216-5.65l-1.912-5.759
+				C117.646,364.853,121.814,367.122,125.188,368.476z"/>
+		</g>
+	</g>
+</g>
+</svg>

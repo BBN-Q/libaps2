@@ -36,19 +36,27 @@ to allow for fully arbitrary control flow structures.
 Sequencer Design
 ----------------
 
+.. figure:: images/sequencer-block-diagram.*
+	:figwidth: 60%
+
+	**Sequencer block diagram** The APS has a single instruction decoder that
+	dispatches instructions to multiple waveform and marker engines.
+
 To achieve arbitrary control flow in an AWG, we adopt modern CPU design
 practice and separate the functions of control flow from instruction
 execution. An instruction decoder and scheduler broadcasts waveform and marker
-instructions to independent waveform and marker engines, while using control-
-flow instructions to which instruction to read next. This asynchronous design
+instructions to independent waveform and marker engines, while using control-flow
+instructions to decide which instruction to read next. This asynchronous design
 allows for efficient representation of common AWG sequences. However, it also
 requires reintroducing some sense of synchronization across the indepent
-waveform and marker engines. This is achieved in two ways: SYNC instructions,
-and final instruction flags. The SYNC instruction ensures that all execution
-engines have finished any queued instructions before allowing sequencer
-execution to continue. The final instruction flag allows sequence waveform and
-marker instructions to be written to their respective execution engines
-simultaneously. \todo{Block diagram.}
+waveform and marker engines. This is achieved in two ways: SYNC instructions
+and write flags. The SYNC instruction ensures that all execution engines have 
+finished any queued instructions before allowing sequencer execution to 
+continue. The write flag allows a sequence of waveform and marker instructions
+to be written to their respective execution engines simultaneously. A waveform
+or marker instruction with its write flag low will be queued for its corresponding
+execution engine, but instruction delivery is delayed until the decoder receives
+an instruction with the write flag high.
 
 APS2 Instruction Set
 ====================
@@ -235,7 +243,8 @@ transition word is to achieve single- sample resolution on a low-to-high or
 high-to-low transition of the marker output. The WAIT_FOR_TRIG and
 WAIT_FOR_SYNC op codes function identically to the WAVEFORM op codes.
 
-\subsubsection*{CMP}
+CMP
+^^^
 
 ======  ===========
 Bit(s)  Description
@@ -245,7 +254,7 @@ Bit(s)  Description
 ======  ===========
 
 The CMP operation compares the current value of the 8-bit comparison register
-to *mask* using the operator given by the \emph{cmp code}. The result of this
+to *mask* using the operator given by the *cmp code*. The result of this
 comparison effects conditional execution of following GOTO, CALL, and RETURN
 instructions.
 
@@ -284,10 +293,11 @@ Ramsey
 ^^^^^^
 
 To give a concrete example of construction of a standard QIP experiment in the
-APS2 format, consider a Ramsey experiment consisting of two $\pi/2$-pulses
+APS2 format, consider a Ramsey experiment consisting of two π/2-pulses
 separated by a variable delay. If the waveform memory has a null-pulse at
-offset 0x00 and a 16-sample $\pi/2$-pulse at offset 0x01, then the Ramsey
+offset 0x00 and a 16-sample π/2-pulse at offset 0x01, then the Ramsey
 sequence might in abstract format would look like::
+
 	SYNC
 	WAIT
 	WAVEFORM 0x01 4
@@ -323,6 +333,7 @@ a 16-sample π/2-pulse at offset 0x01, and a 16-sample π-pulse at
 offset 0x05. Note that offsets are also written in terms of quad-samples, so
 the memory address range of the first π/2 pulse is [0x01,0x04]. Then a CPMG
 sequence with 10 delay-π-delay blocks might be programmed as::
+
 	SYNC
 	WAIT
 	WAVEFORM 0x01 4

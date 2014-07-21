@@ -16,8 +16,27 @@ extremely low-noise analog performance, resulting in a noise spectral density
 that is orders of magnitude lower than competing products, as shown in
 Fig NNN.
 
+.. figure:: images/aps-ii-tek-noise-comparison.*
+	:figwidth: 60%
+
+	**Comparison of AWG output noise** Output noise power versus frequency for
+	the Tektronix AWG5014, Innovative Integration X6-1000M, and BBN APS. The
+	APS's linear power supplies and low-noise output amplifier lead to signficant
+	improvements in the noise performance. The II X6 is significantly better
+	than the Tek5014, but suffers from resonances in the noise spectrum because
+	it is in a host PC environment.
+
 Detailed Specifications
 -----------------------
+
+.. figure:: images/APS2-front.jpg
+	:scale: 50%
+	:figwidth: 60%
+
+	**BBN APS2 front panel** The front panel of the APS has two analog outputs,
+	4 marker outputs, a trigger input, two SATA ports, a 1 GigE port, and a
+	10 MHz reference input. The LEDs display the run state of the sequencer and
+	status of the ethernet communications link, respectively.
 
 ========================  ==============================================================
 Analog channels           two 14-bit 1.2 GS/s outputs per module

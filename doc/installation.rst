@@ -35,8 +35,8 @@ add the path of the unzipped driver to your MATLAB path.
 
 Once the APS2 has been powered on, the user must assign static IP addresses to
 each module. By default, the APS2 modules will have addresses on the
-192.168.5.X subnet. The *enumerate()* method in libaps2 may be used to
-find APS2 modules on your current subnet. Another method, *set\_ip\_addr()*
+192.168.5.X subnet. The ``enumerate()`` method in libaps2 may be used to
+find APS2 modules on your current subnet. Another method, ``set_ip_addr()``
 may be used to program new IP addresses. Since the APS2 modules will respond
 to any valid packet on its port, we recommend placing the APS2 system on a
 private network, or behind a firewall.
