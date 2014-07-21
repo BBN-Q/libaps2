@@ -258,8 +258,8 @@ to *mask* using the operator given by the *cmp code*. The result of this
 comparison effects conditional execution of following GOTO, CALL, and RETURN
 instructions.
 
-GOTO and CALL
-^^^^^^^^^^^^^
+GOTO, CALL, and REPEAT
+^^^^^^^^^^^^^^^^^^^^^^
 
 ======  ===========
 Bit(s)  Description
@@ -267,7 +267,8 @@ Bit(s)  Description
 25-0    address
 ======  ===========
 
-Jumps to *address*.
+Jumps to *address*. For GOTO and CALL, the jump may be conditional if proceeded
+by a CMP instruction. For REPEAT, the jump is conditioned on the repeat counter.
 
 LOAD_REPEAT
 ^^^^^^^^^^^
@@ -293,7 +294,7 @@ Bit(s)  Description
 Refills the waveform cache starting at *address*. Sequencer execution halts 
 until the cache is filled.
 
-RETURN, SYNC, and REPEAT
+RETURN and SYNC
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 These instructions ignore all payload data.
