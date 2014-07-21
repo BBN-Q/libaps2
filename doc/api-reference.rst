@@ -12,79 +12,78 @@ High-level methods
 
 `void get_deviceSerials(const char **)`
 
-`int connect_APS(const char *)`
+`int connect_APS(const char * deviceIP)`
 
-`int disconnect_APS(const char *)`
+`int disconnect_APS(const char * deviceIP)`
 
-`int reset(const char *, int)`
+`int reset(const char * deviceIP, int resetMode)`
 
-`int initAPS(const char *, int)`
+`int initAPS(const char * deviceIP, int force)`
 
-`int get_bitfile_version(const char *)`
+`int get_bitfile_version(const char * deviceIP)`
 
-`double get_uptime(const char *)`
+`double get_uptime(const char * deviceIP)`
 
-`uint64_t get_mac_addr(const char *)`
+`uint64_t get_mac_addr(const char * deviceIP)`
 
-`int set_mac_addr(const char *, uint64_t)`
+`int set_mac_addr(const char * deviceIP, uint64_t mac_addr)`
 
-`const char * get_ip_addr(const char *)`
+`int set_ip_addr(const char * deviceIP, const char * ip_addr)`
 
-`int set_ip_addr(const char *, const char *)`
+`int set_sampleRate(const char * deviceIP, int rate)`
 
-`int set_sampleRate(const char *, int)`
+`int get_sampleRate(const char * deviceIP)`
 
-`int get_sampleRate(const char *)`
+`int set_channel_offset(const char * deviceIP, int channel, float offset)`
 
-`int set_channel_offset(const char *, int, float)`
+`float get_channel_offset(const char * deviceIP, int channel)`
 
-`float get_channel_offset(const char *, int)`
+`int set_channel_scale(const char * deviceIP, int channel, float scale)`
 
-`int set_channel_scale(const char *, int, float)`
+`float get_channel_scale(const char * deviceIP, int channel)`
 
-`float get_channel_scale(const char *, int)`
+`int set_channel_enabled(const char * deviceIP, int channel, int enabled)`
 
-`int set_channel_enabled(const char *, int, int)`
+`int get_channel_enabled(const char * deviceIP, int channel)`
 
-`int get_channel_enabled(const char *, int)`
+`int set_trigger_source(const char * deviceIP, int triggerSource)`
 
-`int set_trigger_source(const char *, int)`
+`int get_trigger_source(const char * deviceIP)`
 
-`int get_trigger_source(const char *)`
+`int set_trigger_interval(const char * deviceIP, double interval)`
 
-`int set_trigger_interval(const char *, double)`
+`double get_trigger_interval(const char * deviceIP)`
 
-`double get_trigger_interval(const char *)`
+`int set_waveform_float(const char * deviceIP, int channel, float* data, int numPts)`
 
-`int set_waveform_float(const char *, int, float*, int)`
+`int set_waveform_int(const char * deviceIP, int channel, int16_t* data, int numPts)`
 
-`int set_waveform_int(const char *, int, int16_t*, int)`
+`int set_markers(const char * deviceIP, int channel, uint8_t* data, int numPts)`
 
-`int set_markers(const char *, int, uint8_t*, int)`
+`int write_sequence(const char * deviceIP, uint32_t* data, uint32_t numWords)`
 
-`int write_sequence(const char *, uint32_t*, uint32_t)`
+TODO: update this method to take uint64_t's
 
-`int load_sequence_file(const char *, const char*)`
+`int load_sequence_file(const char * deviceIP, const char* seqFile)`
 
-`int set_run_mode(const char *, int)`
+`int set_run_mode(const char * deviceIP, int mode)`
 
-`int run(const char *)`
+`int run(const char * deviceIP)`
 
-`int stop(const char *)`
+`int stop(const char * deviceIP)`
 
-`int get_running(const char *)`
+`int get_running(const char * deviceIP)`
 
 
 Low-level methods
 -----------------
 
-`int set_log(const char *)`
-`int set_logging_level(int)`
+`int set_logging_level(int level)`
 
-`int write_memory(const char *, uint32_t, uint32_t*, uint32_t)`
+`int write_memory(const char * deviceIP, uint32_t addr, uint32_t* data, uint32_t numWords)`
 
-`int read_memory(const char *, uint32_t, uint32_t*, uint32_t)`
+`int read_memory(const char * deviceIP, uint32_t addr, uint32_t* data, uint32_t numWords)`
 
-`int read_register(const char *, uint32_t)`
+`int read_register(const char * deviceIP, uint32_t addr)`
 
-`int program_FPGA(const char *, const char *)`
+`int program_FPGA(const char * deviceIP, const char * bitFile)`
