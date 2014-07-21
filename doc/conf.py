@@ -47,7 +47,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'APS2'
-copyright = u'2014, Blake Johnson, Colm Ryan, and Brian Donovan'
+copyright = u'2014, Raytheon BBN Technologies'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
