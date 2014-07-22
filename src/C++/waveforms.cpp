@@ -46,9 +46,11 @@ vector<uint64_t> read_seq_file(string fileName) {
     throw runtime_error("Unable to open file.");
   }
   vector<uint64_t> data;
+  uint64_t instruction;
   string line;
   while (FID >> line) {
-    data.push_back(std::stoul(line.substr(0, 16), NULL, 16));
+    stringstream(line) >> std::hex >> instruction;
+    data.push_back(instruction);
   }
   FID.close();
   return data;
@@ -216,7 +218,7 @@ int main (int argc, char* argv[])
   
   cout << concol::RED << "Writing sequence data" << concol::RESET << endl;
 
-  vector<uint64_t> seq = read_seq_file("../../examples/simpleSeq.dat");
+  vector<uint64_t> seq = read_seq_file("../examples/simpleSeq.dat");
   write_sequence(deviceSerial.c_str(), seq.data(), seq.size());
 
   read_memory(deviceSerial.c_str(), CACHE_STATUS_ADDR, &testInt, 1);
@@ -231,9 +233,10 @@ int main (int argc, char* argv[])
   uint32_t testInt2 = 0;
   for (size_t ct = 0; ct < seq.size(); ct++)
   {
+    // put together the 64-bit word from two 32-bit pieces
     read_memory(deviceSerial.c_str(), offset + 4 * (2*ct), &testInt, 1);
     read_memory(deviceSerial.c_str(), offset + 4 * (2*ct + 1), &testInt2, 1);
-    if ( ((static_cast<uint64_t>(testInt) << 32) | testInt2) != seq[ct] ) {
+    if ( ((static_cast<uint64_t>(testInt2) << 32) | testInt) != seq[ct] ) {
       cout << concol::RED << "Failed read test at offset " << ct << concol::RESET << endl;
     }
     else{
@@ -262,7 +265,7 @@ int main (int argc, char* argv[])
   stop(deviceSerial.c_str());
 
   cout << concol::RED << "Loading Ramsey sequence" << concol::RESET << endl;
-  load_sequence_file(deviceSerial.c_str(), "../../examples/ramsey.h5");
+  load_sequence_file(deviceSerial.c_str(), "../examples/ramsey.h5");
 
   // read back instruction data
   offset = 0x20000000u;
