@@ -285,18 +285,7 @@ int APS2::load_sequence_file(const string & seqFile){
 			if (chanct % 2 == 0) {
 				// load instruction data
 				vector<uint64_t> instructions = h5array2vector<uint64_t>(&H5SeqFile, chanStr + "/instructions", H5::PredType::NATIVE_UINT64);
-				// pack into uint32_t vector
-				vector<uint32_t> packed_instructions;
-				for (size_t ct = 0; ct < instructions.size(); ct++) {
-					packed_instructions.push_back(static_cast<uint32_t>(instructions[ct] & 0xffffffff));
-					packed_instructions.push_back(static_cast<uint32_t>(instructions[ct] >> 32));
-				}
-				// pad to a multiple of 256 (hack around some message processor bug)
-				size_t padwords = (256 - (packed_instructions.size() % 256)) % 256;
-				for (size_t ct = 0; ct < padwords; ct++) {
-					packed_instructions.push_back(0);
-				}
-				write_sequence(packed_instructions);
+				write_sequence(instructions);
 			}
 		}
 		//Close the file
@@ -1316,13 +1305,25 @@ int APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
 	return 0;
 }
 
-int APS2::write_sequence(const vector<uint32_t> & data) {
+int APS2::write_sequence(const vector<uint64_t> & data) {
 	FILE_LOG(logDEBUG2) << "Loading sequence of length " << data.size();
+
+	// pack into uint32_t vector
+	vector<uint32_t> packed_instructions;
+	for (size_t ct = 0; ct < data.size(); ct++) {
+		packed_instructions.push_back(static_cast<uint32_t>(data[ct] & 0xffffffff));
+		packed_instructions.push_back(static_cast<uint32_t>(data[ct] >> 32));
+	}
+	// pad to a multiple of 256 (hack around some message processor bug)
+	size_t padwords = (256 - (packed_instructions.size() % 256)) % 256;
+	for (size_t ct = 0; ct < padwords; ct++) {
+		packed_instructions.push_back(0);
+	}
 
 	// disable cache
 	write_memory(CACHE_CONTROL_ADDR, 0);
 
-	write_memory(MEMORY_ADDR+SEQ_OFFSET, data);
+	write_memory(MEMORY_ADDR+SEQ_OFFSET, packed_instructions);
 
 	// enable cache
 	write_memory(CACHE_CONTROL_ADDR, 1);

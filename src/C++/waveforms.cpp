@@ -40,16 +40,15 @@ int get_device_id() {
   return device_id;
 }
 
-vector<uint32_t> read_seq_file(string fileName) {
+vector<uint64_t> read_seq_file(string fileName) {
   std::ifstream FID (fileName, std::ios::in);
   if (!FID.is_open()){
     throw runtime_error("Unable to open file.");
   }
-  vector<uint32_t> data;
+  vector<uint64_t> data;
   string line;
   while (FID >> line) {
-    data.push_back(std::stoul(line.substr(8, 8), NULL, 16));
-    data.push_back(std::stoul(line.substr(0, 8), NULL, 16));
+    data.push_back(std::stoul(line.substr(0, 16), NULL, 16));
   }
   FID.close();
   return data;
@@ -217,7 +216,7 @@ int main (int argc, char* argv[])
   
   cout << concol::RED << "Writing sequence data" << concol::RESET << endl;
 
-  vector<uint32_t> seq = read_seq_file("../../examples/simpleSeq.dat");
+  vector<uint64_t> seq = read_seq_file("../../examples/simpleSeq.dat");
   write_sequence(deviceSerial.c_str(), seq.data(), seq.size());
 
   read_memory(deviceSerial.c_str(), CACHE_STATUS_ADDR, &testInt, 1);
@@ -229,10 +228,12 @@ int main (int argc, char* argv[])
   // offset = 0xC6000400u;
   offset = 0xC2000000u;
   numRight = 0;
+  uint32_t testInt2 = 0;
   for (size_t ct = 0; ct < seq.size(); ct++)
   {
-    read_memory(deviceSerial.c_str(), offset + 4*ct, &testInt, 1);
-    if ( testInt != seq[ct] ) {
+    read_memory(deviceSerial.c_str(), offset + 4 * (2*ct), &testInt, 1);
+    read_memory(deviceSerial.c_str(), offset + 4 * (2*ct + 1), &testInt2, 1);
+    if ( ((static_cast<uint64_t>(testInt) << 32) | testInt2) != seq[ct] ) {
       cout << concol::RED << "Failed read test at offset " << ct << concol::RESET << endl;
     }
     else{

@@ -61,7 +61,7 @@ EXPORT int set_waveform_float(const char *, int, float*, int);
 EXPORT int set_waveform_int(const char *, int, int16_t*, int);
 EXPORT int set_markers(const char *, int, uint8_t*, int);
 
-EXPORT int write_sequence(const char *, uint32_t*, uint32_t);
+EXPORT int write_sequence(const char *, uint64_t*, uint32_t);
 
 EXPORT int set_run_mode(const char *, int);
 

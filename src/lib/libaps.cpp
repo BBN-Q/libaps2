@@ -150,8 +150,8 @@ int set_markers(const char * deviceSerial, int channelNum, uint8_t* data, int nu
 	return APSs[string(deviceSerial)].set_markers(channelNum, vector<uint8_t>(data, data+numPts));
 }
 
-int write_sequence(const char * deviceSerial, uint32_t* data, uint32_t numWords) {
-	vector<uint32_t> dataVec(data, data+numWords);
+int write_sequence(const char * deviceSerial, uint64_t* data, uint32_t numWords) {
+	vector<uint64_t> dataVec(data, data+numWords);
 	return APSs[string(deviceSerial)].write_sequence(dataVec);
 }
 
