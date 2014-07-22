@@ -138,9 +138,7 @@ High-level methods
 	**FOR FUTURE USE ONLY** Will add marker data in `data` to the currently
 	loaded waveform on `channel`.
 
-`int write_sequence(const char * deviceIP, uint32_t* data, uint32_t numWords)`
-
-	**TODO: update this method to take uint64_t's**
+`int write_sequence(const char * deviceIP, uint64_t* data, uint32_t numWords)`
 
 	Writes instruction sequence in `data` of length `numWords`.
 
