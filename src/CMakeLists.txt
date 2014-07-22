@@ -63,26 +63,16 @@ ADD_EXECUTABLE(waveforms
 )
 
 ADD_EXECUTABLE(flash
-	./C++/flash.cpp
+	./util/flash.cpp
 )
 
 ADD_EXECUTABLE(reset
-	./C++/reset.cpp
+	./util/reset.cpp
 )
 
 ADD_EXECUTABLE(program
-	./C++/program.cpp
+	./util/program.cpp
 )
-
-#ADD_EXECUTABLE(echo
-#	./C++/echo.cpp
-#	./lib/APSEthernet.cpp 
-#	./lib/DummyAPS.cpp
-#	./lib/APS2.cpp
-#)
-
-
-#set_target_properties(echo PROPERTIES COMPILE_DEFINITIONS "DEBUGAPS")
 
 TARGET_LINK_LIBRARIES(test aps2)
 TARGET_LINK_LIBRARIES(flash aps2)
