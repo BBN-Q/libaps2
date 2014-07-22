@@ -17,6 +17,7 @@ Contents:
    specs
    installation
    sequencer
+   instruction-set
    formats
    api-reference
 

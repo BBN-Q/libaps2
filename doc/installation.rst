@@ -23,6 +23,8 @@ corresponding front panel inputs before powering on the system. Multiple
 devices can be synchronized by supplying an external trigger that is phase
 locked to this same reference.
 
+.. _software-installation:
+
 Software
 --------
 

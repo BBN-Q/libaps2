@@ -14,7 +14,9 @@ sophisticated waveform scenarios.
 The digital and analog circuits have been carefully engineered to provide
 extremely low-noise analog performance, resulting in a noise spectral density
 that is orders of magnitude lower than competing products, as shown in
-Fig NNN.
+:ref:`Noise Comparison <noise-figure>`.
+
+.. _noise-figure:
 
 .. figure:: images/aps-ii-tek-noise-comparison.*
 	:figwidth: 60%
@@ -51,3 +53,15 @@ Min instruction duration  8 samples
 Max instruction duration  1M samples
 Max loop repeats          65,536
 ========================  ==============================================================
+
+Communications Interface
+------------------------
+
+The APS2 communicates with a host PC via the UDP protocol over 1GigE. The
+current APS2 firmware requires a fixed IPv4 address. Instructions for setting
+the APS2 IP address are contained in the :ref:`software-installation` section.
+Use of the UDP protocol allows for a large-througput link from the host PC to
+the APS2; however, it does not natively support error checking of the sent
+data. The libaps2 driver adds some error-checking and packet resending to UDP,
+but it is recommended not place too many network hops between the host PC and
+the APS2.
