@@ -307,4 +307,27 @@ Note that we load a repeat count of 9 in order to loop the block 10 times.
 Active Qubit Reset
 ^^^^^^^^^^^^^^^^^^
 
-TODO
+	GOTO 0x06 # jump over 'Reset' method definition
+	# start of 'Reset' method
+	WAIT # wait for qubit measurement data to arrive
+	CMP = 0 # if the qubit is in the ground state, return
+	RETURN
+	# otherwise, do a pi pulse
+	WAVEFORM 0x05 4
+	GOTO 0x01 # go back to the beginning of 'Reset'
+	# end of 'Reset' method
+	SYNC
+	CALL 0x01 # call 'Reset'
+	# qubit is reset, do something...
+	    .
+	    .
+	    .
+	GOTO 0x00
+
+In this example, we define a 'Reset' method for flipping the qubit state if it
+is not currently in the ground state. The method is defined in instructions
+1-5 of the instruction table. We preceed the method definition with a GOTO
+command to unconditionally jump over the method definition. The structure of
+the 'Reset' method is a while loop: it only exits when the comparison register
+is equal to zero. We assume that this register's value is updated to the
+current qubit state on every input trigger.
