@@ -38,7 +38,7 @@ EXPORT int disconnect_APS(const char *);
 
 EXPORT int reset(const char *, int);
 EXPORT int initAPS(const char *, int);
-EXPORT int get_bitfile_version(const char *);
+EXPORT int get_firmware_version(const char *);
 
 EXPORT double get_uptime(const char *);
 

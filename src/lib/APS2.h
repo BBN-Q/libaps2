@@ -31,7 +31,7 @@ public:
 	int store_image(const string & bitFile, const int & position = 0);
 	int select_image(const int &);
 	int program_FPGA(const string &);
-	int get_bitfile_version();
+	int get_firmware_version();
 
 	int setup_VCXO() const;
 	int setup_PLL() const;

@@ -120,8 +120,8 @@ int initAPS(const char * deviceSerial, int forceReload){
 
 }
 
-int get_bitfile_version(const char * deviceSerial) {
-	return APSs[string(deviceSerial)].get_bitfile_version();
+int get_firmware_version(const char * deviceSerial) {
+	return APSs[string(deviceSerial)].get_firmware_version();
 }
 
 double get_uptime(const char * deviceSerial){

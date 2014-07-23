@@ -48,7 +48,7 @@ High-level methods
 	to determine if this procedure has already been run and return immediately. To
 	force the driver to run the initialization procedure, call with `force` = 1.
 
-`int get_bitfile_version(const char * deviceIP)`
+`int get_firmware_version(const char * deviceIP)`
 
 	Returns the version number of the currently loaded firmware. The major version
 	number is contained in bits 15-8, while the minor version number is in bits

@@ -73,7 +73,7 @@ int APS2::init(const bool & forceReload, const int & bitFileNum){
 
 	if (forceReload || !read_PLL_status()) {
 		FILE_LOG(logINFO) << "Resetting instrument";
-		FILE_LOG(logINFO) << "Found force: " << forceReload << " bitFile version: " << myhex << get_bitfile_version() << " PLL status: " << read_PLL_status();
+		FILE_LOG(logINFO) << "Found force: " << forceReload << " bitFile version: " << myhex << get_firmware_version() << " PLL status: " << read_PLL_status();
 
 		// send hard reset to APS2
 		// reset(RECONFIG_EPROM);
@@ -214,12 +214,12 @@ int APS2::program_FPGA(const string & bitFile) {
 	return APSEthernet::TIMEOUT;
 }
 
-int APS2::get_bitfile_version() {
+int APS2::get_firmware_version() {
 	// Reads version information from status registers
 	APSStatusBank_t statusRegs = read_status_registers();
 	uint32_t version = statusRegs.userFirmwareVersion;
 
-	FILE_LOG(logDEBUG) << "Bitfile version for FPGA is " << myhex << version;
+	FILE_LOG(logDEBUG) << "Firmware version on FPGA is " << myhex << version;
 	
 	return version;
 }
@@ -251,15 +251,6 @@ int APS2::clear_channel_data() {
 	for (auto & ch : channels_) {
 		ch.clear_data();
 	}
-	// clear waveform length registers
-	//TODO: fix me!
-	// socket_.write_register(FPGA_ADDR_CHA_WF_LENGTH, 0);
-	// socket_.write_register(FPGA_ADDR_CHB_WF_LENGTH, 0);
-	
-	// // clear LL length registers
-	// socket_.write_register(FPGA_ADDR_CHA_LL_LENGTH, 0);
-	// socket_.write_register(FPGA_ADDR_CHB_LL_LENGTH, 0);
-	
 	return 0;
 }
 

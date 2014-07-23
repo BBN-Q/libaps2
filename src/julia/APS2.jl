@@ -24,3 +24,5 @@ write_memory(aps::APS2, addr, data::Vector{Uint32}) =
 
 set_channel_offset(aps::APS2, chan, offset) =
 	ccall((:set_channel_offset, "libaps2"), Cint, (Ptr{Cchar}, Cint, Float32), aps.serial, chan, offset)
+
+get_firmware_version(aps::APS2) = ccall((:get_firmware_version, "libaps2"), Cint, (Ptr{Cchar},), aps.serial)
