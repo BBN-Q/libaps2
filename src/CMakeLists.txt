@@ -1,13 +1,12 @@
 # build using
 # mkdir build
 # cd build
-# cmake -G "MSYS Makefiles" -DHDF5_INCLUDE_DIR:string=/path/to/hdf5 -DASIO_INCLUDE_DIR:string=/path/to/asio ../src/  # -For Windows
+# cmake -G "MSYS Makefiles" -DHDF5_INCLUDE_DIR:string=/path/to/hdf5 -DASIO_INCLUDE_DIR:string=/path/to/asio ../ -DCMAKE_BUILD_TYPE=Release/Debug  # -For Windows
 # 
 # make
 
 PROJECT( libaps2 )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
-SET ( CMAKE_BUILD_TYPE Debug )
 
 #Look for hdf5 directly passed; otherwise look for system one
 if(NOT DEFINED HDF5_INCLUDE_DIR)
