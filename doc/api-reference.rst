@@ -1,18 +1,29 @@
 API Reference
 =============
 
-BBN provides a C-API DLL for communicating with the APS2, as well as MATLAB and Julia wrappers for the driver. Below is the API documentation for the C DLL. We follow language conventions for index arguments, so channel arguments in the C-API are zero-indexed, while in MATLAB and Julia they are one-indexed. Most of the C-API methods require a device serial (an IP address) as the first argument. In MATLAB and Julia, the serial is stored in a device object, and so is dropped from all methods except for `connect()`.
+BBN provides a C-API DLL for communicating with the APS2, as well as MATLAB
+and Julia wrappers for the driver. Below is the API documentation for the C
+DLL. We follow language conventions for index arguments, so channel arguments
+in the C-API are zero-indexed, while in MATLAB and Julia they are one-indexed.
+Most of the C-API methods require a device serial (an IP address) as the first
+argument. In MATLAB and Julia, the serial is stored in a device object, and so
+is dropped from all methods except for `connect()`.
 
 High-level methods
 ------------------
 
+`int init()`
+
+	Initializes the libaps2 driver. You must call this method after loading
+	the libaps2 DLL into memory before the other methods will work.
+
 `int enumerate_devices()`
 
-	Called automatically when the libaps2 driver is loaded into memory, this
-	method sends out a broadcast packet to find all APS2's on the local subnet.
-	You may want to manually call this method if an APS2 has been (dis)connected
-	from the network. Follow this up with a call to `get_deviceSerials()` to get a
-	list of APS2 IP addresses. Returns an APS_STATUS value.
+	Called automatically by `init()`, this method sends out a broadcast packet
+	to find all APS2's on the local subnet. You may want to manually call this
+	method if an APS2 has been (dis)connected from the network. Follow this up
+	with a call to `get_deviceSerials()` to get a list of APS2 IP addresses.
+	Returns an APS_STATUS value.
 
 `int get_numDevices()`
 
@@ -64,7 +75,9 @@ High-level methods
 
 `int set_ip_addr(const char * deviceIP, const char * ip_addr)`
 
-	Sets the IP address of the APS2 currently at `deviceIP` to `ip_addr`.
+	Sets the IP address of the APS2 currently at `deviceIP` to `ip_addr`. The
+	IP address does not actually update until `reset()` is called, or the
+	device is power cycled.
 
 `int set_sampleRate(const char * deviceIP, int rate)`
 
