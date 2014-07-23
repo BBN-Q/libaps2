@@ -19,8 +19,8 @@ function read_memory(aps::APS2, addr, numWords)
 	buf
 end
 
-function write_memory(aps::APS2, addr, data::Vector{Uint32})
+write_memory(aps::APS2, addr, data::Vector{Uint32}) =
 	ccall((:write_memory, "libaps2"), Cint, (Ptr{Cchar}, Uint32, Ptr{Uint32}, Uint32), aps.serial, addr, data, length(data))
-end
 
-
+set_channel_offset(aps::APS2, chan, offset) =
+	ccall((:set_channel_offset, "libaps2"), Cint, (Ptr{Cchar}, Cint, Float32), aps.serial, chan, offset)

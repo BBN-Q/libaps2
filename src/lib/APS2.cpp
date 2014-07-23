@@ -823,7 +823,6 @@ int APS2::setup_PLL() {
 }
 
 
-
 int APS2::set_PLL_freq(const int & freq) {
 	/* APS2::set_PLL_freq
 	 * fpga = FPGA1, FPGA2, or ALL_FPGAS
@@ -1233,31 +1232,22 @@ int APS2::set_offset_register(const int & dac, const float & offset) {
 	 * Write the zero register for the associated channel
 	 * offset - offset in normalized full range (-1, 1)
 	 */
-	 /*
-
-	uint32_t zeroRegisterAddr;
-	uint16_t scaledOffset;
-
-	switch (dac) {
-		case 0:
-		case 2:
-			zeroRegisterAddr = FPGA_ADDR_CHA_ZERO;
-			break;
-		case 1:
-			// fall through
-		case 3:
-			zeroRegisterAddr = FPGA_ADDR_CHB_ZERO;
-			break;
-		default:
-			return -2;
-	}
-
-	scaledOffset = uint16_t(offset * MAX_WF_AMP);
+	int16_t scaledOffset = offset * MAX_WF_AMP;
 	FILE_LOG(logINFO) << "Setting DAC " << dac << "  zero register to " << scaledOffset;
 
-	//TODO: fix me!
-	// socket_.write_register(zeroRegisterAddr, scaledOffset);
-	*/
+	//Read current value
+	uint32_t val = read_memory(ZERO_OUT_ADDR, 1)[0];
+
+	//Overwrite the correct bits
+	if (dac == 0) {
+		//Top bits
+		val = (static_cast<uint32_t>(scaledOffset) << 16) | (val & 0xffff);
+	} else {
+		//Bottom bits
+		val = (val & 0xffff0000) | (scaledOffset & 0xffff);
+	}
+
+	write_memory(ZERO_OUT_ADDR, val);
 	return 0;
 }
 
