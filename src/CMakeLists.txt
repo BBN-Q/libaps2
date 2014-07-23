@@ -1,7 +1,7 @@
 # build using
 # mkdir build
 # cd build
-# cmake -G "MSYS Makefiles" -DHDF5_INCLUDE_DIR:string=/path/to/hdf5 -DASIO_INCLUDE_DIR:string=/path/to/asio ../ -DCMAKE_BUILD_TYPE=Release/Debug  # -For Windows
+# cmake -G "MSYS Makefiles" -DHDF5_INCLUDE_DIR:string=/path/to/hdf5 -DASIO_INCLUDE_DIR:string=/path/to/asio ../src -DCMAKE_BUILD_TYPE=Release/Debug  # -For Windows
 # 
 # make
 
