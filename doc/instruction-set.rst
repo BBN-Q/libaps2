@@ -307,6 +307,9 @@ Note that we load a repeat count of 9 in order to loop the block 10 times.
 Active Qubit Reset
 ^^^^^^^^^^^^^^^^^^
 
+Here we dynamically steer the sequence in response to a qubit measurment in
+order to actively drive the qubit to the ground state::
+
 	GOTO 0x06 # jump over 'Reset' method definition
 	# start of 'Reset' method
 	WAIT # wait for qubit measurement data to arrive
