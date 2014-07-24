@@ -5,7 +5,7 @@ This repository provides the C++ (with a C calling API) driver for controlling t
 
 Documentation
 -------------
-Read the [online manual](http://libaps2.readthedocs.org/en/latest/).
+Read the [online manual](http://libaps2.readthedocs.org/).
 
 License
 -------------
