@@ -83,7 +83,7 @@ int get_numDevices(){
 void get_deviceSerials(const char ** deviceSerialsOut){
 	//Assumes sufficient memory has been allocated
 	size_t ct = 0;
-	for (auto serial : deviceSerials){
+	for (auto & serial : deviceSerials){
 		deviceSerialsOut[ct] = serial.c_str();
 		ct++;
 	}
