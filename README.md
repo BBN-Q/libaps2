@@ -13,21 +13,47 @@ This code is licensed under the Apache v2 license.  See the LICENSE file for mor
 
 Building
 ------------
-For those wishing to develop or build the driver from source. Prebuilt binaries are available the releases.
+For those wishing to develop or build the driver from source for use on Linux or OS X. Prebuilt binaries for Windows are available the releases.
 
-### Dependencies:
+### Dependencies
 
-* cmake: Cmake build tool version 2.8 or higher (http://www.cmake.org/)
-* gcc: g++ 4.8.1 or higher. For Windows currently building using gcc supplied with mingw-builds project (x64-4.8.1-posix-seh-rev5).  Posix thread support is important as we use C++11 std::thread. 
-* hdf5 : currently built against 1.8.12
-* [asio](http://think-async.com/) : We use the standalone asio package. 
+* C++ compiler: Threaded support is important as we use C++11 std::thread. See below for OS specific compilers tested.
+* [cmake](http://www.cmake.org/): Cmake build tool version 2.8 or higher (http://www.cmake.org/)
+* [hdf5](http://www.hdfgroup.org/HDF5/): Currently built against 1.8.13
+* [asio](http://think-async.com/): We use the standalone (as opposed to Boost) asio package. 
 
-### Building on Windows using MSYS2 and mingw-builds:
+### Windows 
+Using gcc on Windows is a rapidly moving target.  Our setup has changed every couple of months but the latest and most painless way has been using [MSYS2](http://sourceforge.net/projects/msys2/) and the [MinGW-w64](http://mingw-w64.sourceforge.net/) gcc compiler stack. 
 
-```
-mkdir build
-cd build
-cmake -DHDF5_INCLUDE_DIR:STRING=/path/to/hdf5/include -DASIO_INCLUDE_DIR:STRING=/path/to/asio -G "MSYS Makefiles" ../src/
-make
-```
+1. [Download](http://msys2.github.io/) the MSYS2 installer and follow the instructions to install and update in place. 
+2. Use pacman package manager to install some additional tools and libraries:
 
+  ```bash
+  pacman -S make
+  pacman -S mingw64/mingw-w64-x86_64-cmake
+  pacman -S mingw64/mingw-w64-x86_64-gcc
+  pacman -S mingw64/mingw-w64-x86_64-hdf5
+  ```
+3. Finally build in the libaps2 folder
+
+  ```
+  mkdir build
+  cd build
+  cmake -DASIO_INCLUDE_DIR:STRING=/path/to/asio/include -G "MSYS Makefiles" ../src/
+  make
+  ```
+
+
+### Linux
+Use your distributions package manager to install the dependencies and it should work out of the box.
+
+Tested on:
+* Linux Mint 17
+
+### OS X
+1. Install the command-line developer tools. 
+2. Use [Homebrew](http://brew.sh/) to install hdf5 and cmake. 
+3. Then a standard cmake and make should build. 
+
+Tested on:
+* OS X 10.9 Mavericks
