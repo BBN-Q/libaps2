@@ -113,7 +113,6 @@ vector<int16_t> Channel::prep_waveform() const{
 }
 
 int Channel::clear_data() {
-	LLBank_.clear();
 	waveform_.clear();
 	return 0;
 }
@@ -171,21 +170,6 @@ int Channel::read_state_from_hdf5(H5::H5File & H5StateFile, const string & rootS
 	trigDelay_ = h5element2element<int>("trigDelay",&tmpGroup, H5::PredType::NATIVE_INT);
 
 	//Load the linklist data
-	//First figure our how many banks there are from the attribute
-	tmpGroup = H5StateFile.openGroup(rootStr + "/linkListData");
-	uint16_t numBanks;
-	numBanks = h5element2element<uint16_t>("numBanks",&tmpGroup, H5::PredType::NATIVE_UINT16);
-  tmpGroup.close();
-
-	std::ostringstream tmpStream;
-	//Now loop over the number of banks found and add the bank
-	for (uint16_t bankct=0; bankct<numBanks; bankct++){
-		LLBank bank;
-		tmpStream.str(rootStr);
-		tmpStream << "/linkListData/bank" << bankct+1;
-		FILE_LOG(logDEBUG) << "Reading State Bank: " << bankct+1 << " from hdf5";
-		bank.read_state_from_hdf5( H5StateFile, tmpStream.str());
-//		banks_.push_back(bank);
-	}
+	//TODO
 	return 0;
 }

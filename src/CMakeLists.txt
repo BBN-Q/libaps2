@@ -42,7 +42,6 @@ SET ( DLL_SRC
 	./lib/libaps.cpp
 	./lib/Channel.cpp
 	./lib/APS2.cpp
-	./lib/LLBank.cpp
 	./lib/APSEthernet.cpp
 	./lib/MACAddr.cpp
 	./lib/APSEthernetPacket.cpp

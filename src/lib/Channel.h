@@ -10,7 +10,6 @@
 #define CHANNEL_H_
 
 #include "headings.h"
-#include "LLBank.h"
 
 class Channel {
 public:
@@ -45,7 +44,6 @@ private:
 	bool enabled_;
 	vector<float> waveform_;
 	vector<uint8_t> markers_;
-	vector<uint32_t> LLBank_;
 	int trigDelay_;
 };
 
