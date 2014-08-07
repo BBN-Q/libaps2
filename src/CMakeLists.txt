@@ -1,9 +1,12 @@
-# build using
+# Build instructions (from project root folder):
+#
 # mkdir build
 # cd build
-# cmake -G "MSYS Makefiles" -DHDF5_INCLUDE_DIR:string=/path/to/hdf5 -DASIO_INCLUDE_DIR:string=/path/to/asio ../src -DCMAKE_BUILD_TYPE=Release/Debug  # -For Windows
+# cmake -G "MSYS Makefiles" -DHDF5_INCLUDE_DIR:string=/path/to/hdf5 -DCMAKE_BUILD_TYPE=Release/Debug ../src
 # 
 # make
+#
+# On Mac/Linux you can skip the '-G "MSYS Makefiles" option'
 
 PROJECT( libaps2 )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
@@ -25,12 +28,8 @@ endif()
 #Grab all the header files in the src directory including concol.h
 INCLUDE_DIRECTORIES("./lib/")
 
-#ASIO files
-if(NOT DEFINED ASIO_INCLUDE_DIR)
-	message("ASIO include directory not defined.")
-	return()
-endif()
-INCLUDE_DIRECTORIES( ${ASIO_INCLUDE_DIR} )
+#ASIO
+INCLUDE_DIRECTORIES( "../asio/asio/include" )
 ADD_DEFINITIONS(-DASIO_STANDALONE)
 
 #Add flags for gcc and C++11

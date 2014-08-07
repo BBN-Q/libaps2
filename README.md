@@ -13,14 +13,13 @@ This code is licensed under the Apache v2 license.  See the LICENSE file for mor
 
 Building
 ------------
-For those wishing to develop or build the driver from source for use on Linux or OS X. Prebuilt binaries for Windows are available the releases.
+For those wishing to develop or build the driver from source for use on Linux or OS X. Prebuilt binaries for Windows are available on the releases tab.
 
 ### Dependencies
 
 * C++ compiler: Threaded support is important as we use C++11 std::thread. See below for OS specific compilers tested.
 * [cmake](http://www.cmake.org/): Cmake build tool version 2.8 or higher (http://www.cmake.org/)
 * [hdf5](http://www.hdfgroup.org/HDF5/): Currently built against 1.8.13
-* [asio](http://think-async.com/): We use the standalone (as opposed to Boost) asio package. 
 
 ### Windows 
 Using gcc on Windows is a rapidly moving target.  Our setup has changed every couple of months but the latest and most painless way has been using [MSYS2](http://sourceforge.net/projects/msys2/) and the [MinGW-w64](http://mingw-w64.sourceforge.net/) gcc compiler stack. 
@@ -39,7 +38,7 @@ Using gcc on Windows is a rapidly moving target.  Our setup has changed every co
   ```
   mkdir build
   cd build
-  cmake -DASIO_INCLUDE_DIR:STRING=/path/to/asio/include -G "MSYS Makefiles" ../src/
+  cmake -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=Debug ../src/
   make
   ```
 
