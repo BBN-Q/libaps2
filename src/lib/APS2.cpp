@@ -2,7 +2,7 @@
 
 APS2::APS2() :  isOpen{false}, channels_(2), samplingRate_{-1} {};
 
-APS2::APS2(string deviceSerial) :  isOpen{false}, deviceSerial_{deviceSerial}, samplingRate_{-1} {
+APS2::APS2(string deviceSerial, APSEthernet * ethernetRM) :  isOpen{false}, deviceSerial_{deviceSerial}, ethernetRM_{ethernetRM}, samplingRate_{-1} {
 	channels_.reserve(2);
 	for(size_t ct=0; ct<2; ct++) channels_.push_back(Channel(ct));
 };
@@ -11,7 +11,7 @@ APS2::~APS2() = default;
 
 APSEthernet::EthernetError APS2::connect(){
 	if (!isOpen) {
-		APSEthernet::EthernetError success = APSEthernet::get_instance().connect(deviceSerial_);
+		APSEthernet::EthernetError success = ethernetRM_->connect(deviceSerial_);
 
 		if (success == APSEthernet::SUCCESS) {
 			FILE_LOG(logINFO) << "Opened connection to device: " << deviceSerial_;
@@ -25,7 +25,7 @@ APSEthernet::EthernetError APS2::connect(){
 
 APSEthernet::EthernetError APS2::disconnect(){
 	if (isOpen){
-		APSEthernet::EthernetError success = APSEthernet::get_instance().disconnect(deviceSerial_);
+		APSEthernet::EthernetError success = ethernetRM_->disconnect(deviceSerial_);
 		if (success == APSEthernet::SUCCESS) {
 			FILE_LOG(logINFO) << "Closed connection to device: " << deviceSerial_;
 			isOpen = false;
@@ -168,7 +168,7 @@ int APS2::store_image(const string & bitFile, const int & position) { /* see hea
 	auto packets = pack_data(addr, packedData, APS_COMMANDS::FPGACONFIG_ACK);
 
 	// send in groups of 20
-	APSEthernet::get_instance().send(deviceSerial_, packets, 20);
+	ethernetRM_->send(deviceSerial_, packets, 20);
 	return 0;
 }
 
@@ -183,7 +183,7 @@ int APS2::select_image(const int & bitFileNum) {
 	packet.header.command.cnt = 0;
 	packet.header.addr = addr;
 
-	return APSEthernet::get_instance().send(deviceSerial_, packet, false);
+	return ethernetRM_->send(deviceSerial_, packet, false);
 }
 
 int APS2::program_FPGA(const string & bitFile) {
@@ -443,7 +443,7 @@ int APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
 	vector<APSEthernetPacket> dataPackets = pack_data(addr, data);
 
 	//Send the packets out 
-	APSEthernet::get_instance().send(deviceSerial_, dataPackets, 20);
+	ethernetRM_->send(deviceSerial_, dataPackets, 20);
 
 	return 0;
 }
@@ -457,7 +457,7 @@ vector<uint32_t> APS2::read_memory(const uint32_t & addr, const uint32_t & numWo
 	readReq.header.command.cmd =  static_cast<uint32_t>(APS_COMMANDS::USERIO_ACK);
 	readReq.header.command.cnt = numWords;
 	readReq.header.addr = addr;
-	APSEthernet::get_instance().send(deviceSerial_, readReq, false);
+	ethernetRM_->send(deviceSerial_, readReq, false);
 
 	//Retrieve the data packet(s)
 	auto readData = read_packets(1);
@@ -558,7 +558,7 @@ int APS2::write_flash(const uint32_t & addr, vector<uint32_t> & data) {
 
 	FILE_LOG(logDEBUG) << "Writing " << packets.size() << " packets of data to flash address " << myhex << addr;
 	try {
-		APSEthernet::get_instance().send(deviceSerial_, packets);
+		ethernetRM_->send(deviceSerial_, packets);
 		// APSEthernetPacket p = read_packets(packets.size())[0];
 		// return p.header.command.mode_stat;
 		return 0;
@@ -674,7 +674,7 @@ int APS2::write_command(const APSCommand_t & command, const uint32_t & addr, con
 	*/
 	//TODO: figure out move constructor
 	APSEthernetPacket packet(command, addr);
-	APSEthernet::get_instance().send(deviceSerial_, packet, checkResponse);
+	ethernetRM_->send(deviceSerial_, packet, checkResponse);
 	return 0;
 }
 
@@ -716,7 +716,7 @@ vector<APSEthernetPacket> APS2::pack_data(const uint32_t & addr, const vector<ui
 
 
 vector<APSEthernetPacket> APS2::read_packets(const size_t & numPackets) {
-	return APSEthernet::get_instance().receive(deviceSerial_, numPackets);
+	return ethernetRM_->receive(deviceSerial_, numPackets);
 }
 
 vector<APSEthernetPacket> APS2::query(const APSCommand_t & command, const uint32_t & addr /* see header for default value = 0 */) {
@@ -727,7 +727,7 @@ vector<APSEthernetPacket> APS2::query(const APSCommand_t & command, const uint32
 
 vector<APSEthernetPacket> APS2::query(const APSEthernetPacket & pkt) {
 	//write-read ping-pong
-	APSEthernet::get_instance().send(deviceSerial_, pkt, false);
+	ethernetRM_->send(deviceSerial_, pkt, false);
 	return read_packets(1);
 }
 
@@ -1163,7 +1163,7 @@ int APS2::run_chip_config(const uint32_t & addr /* default = 0 */) {
 	packet.header.command.cmd =  static_cast<uint32_t>(APS_COMMANDS::RUNCHIPCONFIG);
 	packet.header.command.cnt = 0;
 	packet.header.addr = addr;
-	APSEthernet::get_instance().send(deviceSerial_, packet, false);
+	ethernetRM_->send(deviceSerial_, packet, false);
 
 	//Retrieve the data packet(s)
 	auto response = read_packets(1)[0];

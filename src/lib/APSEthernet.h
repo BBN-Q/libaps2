@@ -28,13 +28,9 @@ public:
 		INVALID_SPI_TARGET
 	};
 
-	//APSEthernet is a singleton instance for the driver
-	static APSEthernet& get_instance(){
-		static APSEthernet instance;
-		return instance;
-	}
 	APSEthernet& operator=(APSEthernet &rhs)  { return rhs; };
 
+	APSEthernet();
 	~APSEthernet();
 	EthernetError init();
 	set<string> enumerate();
@@ -45,7 +41,6 @@ public:
 	vector<APSEthernetPacket> receive(string serial, size_t numPackets = 1, size_t timeoutMS = 10000);
 
 private:
-	APSEthernet();
 	APSEthernet(APSEthernet const &) = delete;
 
 	MACAddr srcMAC_;

@@ -37,7 +37,7 @@ void APSEthernet::setup_receive(){
 void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::endpoint & sender){
     //If we have the endpoint address then add it to the queue
     string senderIP = sender.address().to_string();
-    if(msgQueues_.find(senderIP) == msgQueues_.end()){
+    if (msgQueues_.find(senderIP) == msgQueues_.end()) {
         //If it isn't in our list of APSs then perhaps we are seeing an enumerate status response
         //If so add the device info to the set
         if (packetData.size() == 84) {
@@ -49,7 +49,7 @@ void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::end
             FILE_LOG(logDEBUG1) << "Added device with IP " << senderIP << " and MAC addresss " << devInfo_[senderIP].macAddr.to_string();
         } 
     }
-    else{
+    else {
         //Turn the byte array into an APSEthernetPacket
         APSEthernetPacket packet = APSEthernetPacket(packetData);
         //Grab a lock and push the packet into the message queue

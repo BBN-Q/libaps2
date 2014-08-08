@@ -5,13 +5,14 @@
 
 #include "headings.h"
 #include "libaps.h"
-#include "APS2.h"
 #include <sstream>
+#include "APS2.h"
+#include "APSEthernet.h"
 #include "asio.hpp"
 
+APSEthernet ethernetRM; //resource manager for the asio thernet interface
 map<string, APS2> APSs; //map to hold on to the APS instances
 set<string> deviceSerials; // set of APSs that responded to an enumerate broadcast
-
 
 // stub class to close the logger file handle when the driver goes out of scope
 class CleanUp {
@@ -36,7 +37,7 @@ int init() {
 	Output2FILE::Stream() = pFile;
 
 	//Setup the network interface
-	APSEthernet::get_instance().init();
+	ethernetRM.init();
 
 	//Enumerate the serial numbers and MAC addresses of the devices attached
 	enumerate_devices();
@@ -46,7 +47,7 @@ int init() {
 
 int init_nolog() {
 	//Setup the network interface
-	APSEthernet::get_instance().init();
+	ethernetRM.init();
 
 	//Enumerate the serial numbers and MAC addresses of the devices attached
 	enumerate_devices();
@@ -61,7 +62,7 @@ int enumerate_devices(){
 	*/
 
 	set<string> oldSerials = deviceSerials;
-	deviceSerials = APSEthernet::get_instance().enumerate();
+	deviceSerials = ethernetRM.enumerate();
 
 	//See if any devices have been removed
 	set<string> diffSerials;
@@ -71,7 +72,7 @@ int enumerate_devices(){
 	//Or if any devices have been added
 	diffSerials.clear();
 	set_difference(deviceSerials.begin(), deviceSerials.end(), oldSerials.begin(), oldSerials.end(), std::inserter(diffSerials, diffSerials.begin()));
-	for (auto serial : diffSerials) APSs[serial] = APS2(serial);
+	for (auto serial : diffSerials) APSs[serial] = APS2(serial, &ethernetRM);
 
 	return APS_OK;
 }

@@ -19,7 +19,7 @@ public:
 
 	//Constructors
 	APS2();
-	APS2(string);
+	APS2(string, APSEthernet *);
 	~APS2();
 
 	APSEthernet::EthernetError connect();
@@ -118,6 +118,7 @@ private:
 
 	string deviceSerial_;
 	vector<Channel> channels_;
+	APSEthernet * ethernetRM_;
 	int samplingRate_;
 	MACAddr macAddr_;
 
