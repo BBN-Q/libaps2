@@ -1,13 +1,7 @@
 #include "APSEthernet.h"
 
-APSEthernet::APSEthernet() : socket_(ios_) {
-    //Setup the socket to the APS_PROTO port and enable broadcasting for enumerating
-    std::error_code ec;
-    socket_.open(udp::v4(), ec);
-    if (ec) {FILE_LOG(logERROR) << "Failed to open socket.";}
-    socket_.bind(udp::endpoint(udp::v4(), APS_PROTO), ec);
-    if (ec) {FILE_LOG(logERROR) << "Failed to bind to socket.";}
-
+APSEthernet::APSEthernet() : socket_(ios_, udp::endpoint(udp::v4(), APS_PROTO)) {
+    //enable broadcasting for enumerating
     socket_.set_option(asio::socket_base::broadcast(true));
 
     //io_service will return immediately so post receive task before .run()
@@ -19,7 +13,6 @@ APSEthernet::APSEthernet() : socket_(ios_) {
 };
 
 APSEthernet::~APSEthernet() {
-    //Stop the receive thread
     ios_.stop();
     receiveThread_.join();
 }
