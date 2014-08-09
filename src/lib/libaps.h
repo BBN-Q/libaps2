@@ -28,6 +28,7 @@ enum APSErrorCode {
 
 EXPORT int init();
 EXPORT int init_nolog();
+EXPORT int cleanup();
 
 EXPORT int enumerate_devices();
 EXPORT int get_numDevices();

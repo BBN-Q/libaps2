@@ -8,11 +8,11 @@ APSEthernet::APSEthernet() : socket_(ios_, udp::endpoint(udp::v4(), APS_PROTO)) 
     setup_receive();
 
     //Setup the asio service to run on a background thread
-    receiveThread_ = std::thread([&](){ ios_.run(); });
-
+    receiveThread_ = std::thread([this](){ ios_.run(); });
 };
 
 APSEthernet::~APSEthernet() {
+    FILE_LOG(logINFO) << "Cleaning up ethernet resource manager";
     ios_.stop();
     receiveThread_.join();
 }

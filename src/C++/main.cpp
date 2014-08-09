@@ -76,6 +76,7 @@ int main (int argc, char* argv[])
   disconnect_APS(deviceSerial.c_str());
   delete[] serialBuffer;
   cout << concol::RED << "Finished!" << concol::RESET << endl;
+  cleanup();
   return 0;
 
   //Do a soft reset
@@ -237,5 +238,6 @@ int main (int argc, char* argv[])
 
   // cout << "disconnect_by_ID(0) returned " << rc << endl;
 */
+  cleanup();
   return 0;
 }

@@ -10,7 +10,7 @@
 #include "APSEthernet.h"
 #include "asio.hpp"
 
-APSEthernet ethernetRM; //resource manager for the asio thernet interface
+APSEthernet *ethernetRM; //resource manager for the asio thernet interface
 map<string, APS2> APSs; //map to hold on to the APS instances
 set<string> deviceSerials; // set of APSs that responded to an enumerate broadcast
 
@@ -37,7 +37,11 @@ int init() {
 	Output2FILE::Stream() = pFile;
 
 	//Setup the network interface
-	ethernetRM.init();
+	if (ethernetRM == NULL) {
+		ethernetRM = new APSEthernet();
+	} else {
+		ethernetRM->init();
+	}
 
 	//Enumerate the serial numbers and MAC addresses of the devices attached
 	enumerate_devices();
@@ -47,10 +51,20 @@ int init() {
 
 int init_nolog() {
 	//Setup the network interface
-	ethernetRM.init();
+	if (ethernetRM == NULL) {
+		ethernetRM = new APSEthernet();
+	} else {
+		ethernetRM->init();
+	}
 
 	//Enumerate the serial numbers and MAC addresses of the devices attached
 	enumerate_devices();
+
+	return APS_OK;
+}
+
+int cleanup() {
+	delete ethernetRM;
 
 	return APS_OK;
 }
@@ -62,7 +76,7 @@ int enumerate_devices(){
 	*/
 
 	set<string> oldSerials = deviceSerials;
-	deviceSerials = ethernetRM.enumerate();
+	deviceSerials = ethernetRM->enumerate();
 
 	//See if any devices have been removed
 	set<string> diffSerials;
@@ -72,7 +86,7 @@ int enumerate_devices(){
 	//Or if any devices have been added
 	diffSerials.clear();
 	set_difference(deviceSerials.begin(), deviceSerials.end(), oldSerials.begin(), oldSerials.end(), std::inserter(diffSerials, diffSerials.begin()));
-	for (auto serial : diffSerials) APSs[serial] = APS2(serial, &ethernetRM);
+	for (auto serial : diffSerials) APSs[serial] = APS2(serial, ethernetRM);
 
 	return APS_OK;
 }
