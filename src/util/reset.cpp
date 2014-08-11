@@ -30,17 +30,17 @@ int main (int argc, char* argv[])
   cout << concol::RED << "BBN AP2 Test Executable" << concol::RESET << endl;
 
 
-  int dbgLevel = 8;
+  int dbgLevel = 4;
   if (argc >= 2) {
     dbgLevel = atoi(argv[1]);
   }
 
   set_logging_level(dbgLevel);
+  set_log("stdout");
 
-  cout << concol::RED << "Attempting to initialize libaps" << concol::RESET << endl;
+  cout << concol::RED << "Enumerating devices" << concol::RESET << endl;
 
-  init();
-
+  enumerate_devices();
   int numDevices = get_numDevices();
 
   cout << concol::RED << numDevices << " APS device" << (numDevices > 1 ? "s": "")  << " found" << concol::RESET << endl;

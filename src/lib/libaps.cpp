@@ -15,17 +15,24 @@ map<string, APS2> APSs; //map to hold on to the APS instances
 set<string> deviceSerials; // set of APSs that responded to an enumerate broadcast
 
 // stub class to close the logger file handle when the driver goes out of scope
-class CleanUp {
+class InitAndCleanUp {
 public:
-	~CleanUp();
+	InitAndCleanUp();
+	~InitAndCleanUp();
 };
 
-CleanUp::~CleanUp() {
+InitAndCleanUp::InitAndCleanUp() {
+	//Open the default log file
+	FILE* pFile = fopen("libaps.log", "a");
+	Output2FILE::Stream() = pFile;
+}
+
+InitAndCleanUp::~InitAndCleanUp() {
 	if (Output2FILE::Stream()) {
 		fclose(Output2FILE::Stream());
 	}
 }
-CleanUp cleanup_;
+InitAndCleanUp initandcleanup_;
 
 shared_ptr<APSEthernet> get_interface() {
 	//See if we have to setup our own RM
@@ -43,28 +50,10 @@ shared_ptr<APSEthernet> get_interface() {
 extern "C" {
 #endif
 
-int init() {
-	//Create the logger
-	FILE* pFile = fopen("libaps.log", "a");
-	Output2FILE::Stream() = pFile;
-
-	//Enumerate the serial numbers and MAC addresses of the devices attached
-	enumerate_devices();
-
-	return APS_OK;
-}
-
-int init_nolog() {
-	//Enumerate the serial numbers and MAC addresses of the devices attached
-	enumerate_devices();
-
-	return APS_OK;
-}
-
 int enumerate_devices() {
 
 	/*
-	* Look for all APS devices in this APS Rack.
+	* Look for all APS devices on the local network.
 	*/
 	set<string> oldSerials = deviceSerials;
 	deviceSerials = get_interface()->enumerate();
@@ -208,8 +197,7 @@ int set_log(const char * fileNameArr) {
 		Output2FILE::Stream() = stdout;
 		return APS_OK;
 	}
-	else{
-
+	else {
 		FILE* pFile = fopen(fileName.c_str(), "a");
 		if (!pFile) {
 			return APS_FILE_ERROR;

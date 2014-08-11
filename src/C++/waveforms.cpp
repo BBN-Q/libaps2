@@ -70,11 +70,11 @@ int main (int argc, char* argv[])
   }
 
   set_logging_level(dbgLevel);
-  
-  cout << concol::RED << "Attempting to initialize libaps" << concol::RESET << endl;
+  set_log("stdout");
 
-  init_nolog();
+  cout << concol::RED << "Enumerating devices" << concol::RESET << endl;
 
+  enumerate_devices();
   int numDevices = get_numDevices();
 
   cout << concol::RED << numDevices << " APS device" << (numDevices > 1 ? "s": "")  << " found" << concol::RESET << endl;

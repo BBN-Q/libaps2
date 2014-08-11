@@ -12,29 +12,23 @@ is dropped from all methods except for `connect()`.
 High-level methods
 ------------------
 
-`int init()`
-
-	Initializes the libaps2 driver. You must call this method after loading
-	the libaps2 DLL into memory before the other methods will work.
-
 `int enumerate_devices()`
 
-	Called automatically by `init()`, this method sends out a broadcast packet
-	to find all APS2's on the local subnet. You may want to manually call this
-	method if an APS2 has been (dis)connected from the network. Follow this up
-	with a call to `get_deviceSerials()` to get a list of APS2 IP addresses.
-	Returns an APS_STATUS value.
+	This method sends out a broadcast packet to find all APS2's on the local
+	subnet. Follow this up with a call to `get_deviceSerials()` to get a list
+	of APS2 IP addresses. Returns an APS_STATUS value.
 
 `int get_numDevices()`
 
 	This method will return the number of APS2's found on the local subnet in the
-	last enumeration attempt.
+	last call to `enumerate_devices()`.
 
 `void get_deviceSerials(const char ** deviceIPs)`
 
 	Populates `deviceIPs[]` with C strings of APS2 IP addresses. The caller is
 	responsible for sizing deviceIPs appropriately. For example, in C++::
 
+		enumerate_devices();
 		int numDevices = get_numDevices();
 		const char ** serialBuffer = new const char*[numDevices];
 		get_deviceSerials(serialBuffer);
@@ -184,6 +178,11 @@ High-level methods
 
 Low-level methods
 -----------------
+
+`int set_log(char * logfile)`
+
+	Directs logging information to `logfile`, which can be either a full file
+	path, or one of the special strings "stdout" or "stderr".
 
 `int set_logging_level(int level)`
 

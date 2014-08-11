@@ -106,17 +106,18 @@ int main (int argc, char* argv[])
   concol::concolinit();
   cout << concol::RED << "BBN AP2 Programming Executable" << concol::RESET << endl;
 
-
-  int dbgLevel = 4;
-  set_logging_level(dbgLevel);
-
+  if (argc < 2) {
+    cout << "Usage: program path/to/bitfile" << endl;
+    return -1;
+  }
   string bitFile(argv[1]);
 
-  cout << concol::RED << "Attempting to initialize libaps" << concol::RESET << endl;
-
-  init();
+  set_logging_level(logDEBUG1);
   set_log("stdout");
 
+  cout << concol::RED << "Enumerating devices" << concol::RESET << endl;
+
+  enumerate_devices();
   int numDevices = get_numDevices();
 
   cout << concol::RED << numDevices << " APS device" << (numDevices > 1 ? "s": "")  << " found" << concol::RESET << endl;
