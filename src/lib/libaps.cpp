@@ -53,6 +53,8 @@ int create_interface() {
 	//Setup the network interface
 	if (ethernetRM == NULL) {
 		ethernetRM = new APSEthernet();
+	} else {
+		FILE_LOG(logDEBUG2) << "Ethernet interface already exists";
 	}
 	return APS_OK;
 }
@@ -62,6 +64,7 @@ int cleanup_interface() {
 		aps.second.disconnect();
 	}
 	delete ethernetRM;
+	ethernetRM = NULL;
 
 	return APS_OK;
 }
@@ -118,15 +121,17 @@ void get_deviceSerials(const char ** deviceSerialsOut) {
 //Assumes null-terminated deviceSerial
 int connect_APS(const char * deviceSerial) {
 	create_interface();
+	// TODO: test whether deviceSerial is in the APSs map first
 	return APSs[string(deviceSerial)].connect(ethernetRM);
 }
 
 //Assumes a null-terminated deviceSerial
 int disconnect_APS(const char * deviceSerial) {
-	return APSs[string(deviceSerial)].disconnect();
+	int result = APSs[string(deviceSerial)].disconnect();
 	if (!any_connected()) {
 		cleanup_interface();
 	}
+	return result;
 }
 
 int reset(const char * deviceSerial, int resetMode) {

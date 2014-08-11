@@ -1,6 +1,7 @@
 #include "APSEthernet.h"
 
 APSEthernet::APSEthernet() : socket_(ios_, udp::endpoint(udp::v4(), APS_PROTO)) {
+    FILE_LOG(logDEBUG) << "Creating ethernet interface";
     //enable broadcasting for enumerating
     socket_.set_option(asio::socket_base::broadcast(true));
 
@@ -12,7 +13,7 @@ APSEthernet::APSEthernet() : socket_(ios_, udp::endpoint(udp::v4(), APS_PROTO)) 
 };
 
 APSEthernet::~APSEthernet() {
-    FILE_LOG(logINFO) << "Cleaning up ethernet resource manager";
+    FILE_LOG(logDEBUG) << "Cleaning up ethernet interface";
     ios_.stop();
     receiveThread_.join();
 }
@@ -100,6 +101,10 @@ APSEthernet::EthernetError APSEthernet::connect(string serial) {
     mLock_.lock();
 	msgQueues_[serial] = queue<APSEthernetPacket>();
     mLock_.unlock();
+    if (devInfo_.find(serial) == devInfo_.end()) {
+        devInfo_[serial].endpoint = udp::endpoint(asio::ip::address_v4::from_string(serial), APS_PROTO);
+        devInfo_[serial].macAddr = MACAddr("FF:FF:FF:FF:FF:FF");
+    }
 	return SUCCESS;
 }
 
