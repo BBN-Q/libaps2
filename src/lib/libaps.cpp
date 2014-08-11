@@ -10,7 +10,7 @@
 #include "APSEthernet.h"
 #include "asio.hpp"
 
-weak_ptr<APSEthernet> ethernetRM; //resource manager for the asio thernet interface
+weak_ptr<APSEthernet> ethernetRM; //resource manager for the asio ethernet interface
 map<string, APS2> APSs; //map to hold on to the APS instances
 set<string> deviceSerials; // set of APSs that responded to an enumerate broadcast
 
@@ -26,6 +26,18 @@ CleanUp::~CleanUp() {
 	}
 }
 CleanUp cleanup_;
+
+shared_ptr<APSEthernet> get_interface() {
+	//See if we have to setup our own RM
+	shared_ptr<APSEthernet> myEthernetRM = ethernetRM.lock();
+
+	if (!myEthernetRM) {
+		myEthernetRM = std::make_shared<APSEthernet>();
+		ethernetRM = myEthernetRM;
+	}
+
+	return myEthernetRM;
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,27 +61,13 @@ int init_nolog() {
 	return APS_OK;
 }
 
-shared_ptr<APSEthernet> get_interface(){
-	//See if we have to setup our own RM
-	shared_ptr<APSEthernet> myEthernetRM = ethernetRM.lock();
-
-	if(!myEthernetRM){
-		myEthernetRM = std::make_shared<APSEthernet>();
-		ethernetRM = myEthernetRM;
-	}
-
-	return myEthernetRM;
-}
-
 int enumerate_devices() {
 
 	/*
 	* Look for all APS devices in this APS Rack.
 	*/
-	shared_ptr<APSEthernet> myEthernetRM = get_interface();
-
 	set<string> oldSerials = deviceSerials;
-	deviceSerials = myEthernetRM->enumerate();
+	deviceSerials = get_interface()->enumerate();
 
 	//See if any devices have been removed
 	set<string> diffSerials;
@@ -101,8 +99,7 @@ void get_deviceSerials(const char ** deviceSerialsOut) {
 //Assumes null-terminated deviceSerial
 int connect_APS(const char * deviceSerial) {
 	// TODO: test whether deviceSerial is in the APSs map first
-	shared_ptr<APSEthernet> myEthernetRM = get_interface();
-	return APSs[string(deviceSerial)].connect(myEthernetRM);
+	return APSs[string(deviceSerial)].connect(get_interface());
 }
 
 //Assumes a null-terminated deviceSerial

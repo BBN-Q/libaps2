@@ -22,7 +22,7 @@ public:
 	APS2(string);
 	~APS2();
 
-	APSEthernet::EthernetError connect(shared_ptr<APSEthernet> &);
+	APSEthernet::EthernetError connect(shared_ptr<APSEthernet> &&);
 	APSEthernet::EthernetError disconnect();
 
 	int init(const bool & = false, const int & bitFileNum = 0);

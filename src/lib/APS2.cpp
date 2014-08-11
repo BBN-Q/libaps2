@@ -9,7 +9,7 @@ APS2::APS2(string deviceSerial) :  isOpen{false}, deviceSerial_{deviceSerial}, s
 
 APS2::~APS2() = default;
 
-APSEthernet::EthernetError APS2::connect(shared_ptr<APSEthernet> & ethernetRM) {
+APSEthernet::EthernetError APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
 	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
 		APSEthernet::EthernetError success = ethernetRM_->connect(deviceSerial_);
