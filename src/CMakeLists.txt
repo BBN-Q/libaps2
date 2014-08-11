@@ -14,16 +14,11 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 #Look for hdf5 directly passed; otherwise look for system one
 if(NOT DEFINED HDF5_INCLUDE_DIR)
 	FIND_PACKAGE(HDF5)
-	if (NOT HDF5_FOUND)
-		message("Unable to find HDF5 libraries.")
-		return()
-	endif()
+else()
+	LINK_DIRECTORIES( ${LINK_DIRECTORIES} ${HDF5_INCLUDE_DIR}/../lib)
 endif()
 INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIR} )
 INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIR}/cpp )
-if(DEFINED HDF5_INCLUDE_DIR)
-	LINK_DIRECTORIES( ${LINK_DIRECTORIES} ${HDF5_INCLUDE_DIR}/../lib)
-endif()
 
 #Grab all the header files in the src directory including concol.h
 INCLUDE_DIRECTORIES("./lib/")
