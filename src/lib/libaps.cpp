@@ -14,32 +14,40 @@ APSEthernet *ethernetRM; //resource manager for the asio thernet interface
 map<string, APS2> APSs; //map to hold on to the APS instances
 set<string> deviceSerials; // set of APSs that responded to an enumerate broadcast
 
-// stub class for library house keeping
-class InitAndCleanUp {
+// stub class to close the logger file handle when the driver goes out of scope
+class CleanUp {
 public:
-	InitAndCleanUp();
-	~InitAndCleanUp();
+	~CleanUp();
 };
 
-InitAndCleanUp::InitAndCleanUp() {
+CleanUp::~CleanUp() {
+	if (Output2FILE::Stream()) {
+		fclose(Output2FILE::Stream());
+	}
+}
+CleanUp cleanup_;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int init() {
 	//Create the logger
 	FILE* pFile = fopen("libaps.log", "a");
 	Output2FILE::Stream() = pFile;
 
 	//Enumerate the serial numbers and MAC addresses of the devices attached
 	enumerate_devices();
+
+	return APS_OK;
 }
 
-InitAndCleanUp::~InitAndCleanUp() {
-	if (Output2FILE::Stream()) {
-		fclose(Output2FILE::Stream());
-	}
-}
-InitAndCleanUp cleanup_;
+int init_nolog() {
+	//Enumerate the serial numbers and MAC addresses of the devices attached
+	enumerate_devices();
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+	return APS_OK;
+}
 
 int create_interface() {
 	//Setup the network interface

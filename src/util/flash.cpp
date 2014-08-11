@@ -84,7 +84,7 @@ int main (int argc, char* argv[])
 
   cout << concol::RED << "Attempting to initialize libaps" << concol::RESET << endl;
 
-  set_log("stdout");
+  init_nolog();
 
   int numDevices = get_numDevices();
 
