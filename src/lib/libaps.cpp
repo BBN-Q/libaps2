@@ -98,8 +98,12 @@ void get_deviceSerials(const char ** deviceSerialsOut) {
 //Connect to a device specified by serial number string
 //Assumes null-terminated deviceSerial
 int connect_APS(const char * deviceSerial) {
-	// TODO: test whether deviceSerial is in the APSs map first
-	return APSs[string(deviceSerial)].connect(get_interface());
+	string serial = string(deviceSerial);
+	// create the APS2 object if it is not already in the map
+	if (APSs.find(serial) == APSs.end()) {
+		APSs[serial] = APS2(serial);
+	}
+	return APSs[serial].connect(get_interface());
 }
 
 //Assumes a null-terminated deviceSerial
