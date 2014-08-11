@@ -22,7 +22,7 @@ public:
 	APS2(string);
 	~APS2();
 
-	APSEthernet::EthernetError connect(APSEthernet *);
+	APSEthernet::EthernetError connect(shared_ptr<APSEthernet> &);
 	APSEthernet::EthernetError disconnect();
 
 	int init(const bool & = false, const int & bitFileNum = 0);
@@ -115,7 +115,7 @@ private:
 
 	string deviceSerial_;
 	vector<Channel> channels_;
-	APSEthernet * ethernetRM_;
+	shared_ptr<APSEthernet> ethernetRM_;
 	int samplingRate_;
 	MACAddr macAddr_;
 
@@ -166,6 +166,8 @@ private:
 	int write_state_to_hdf5(  H5::H5File & , const string & );
 	int read_state_from_hdf5( H5::H5File & , const string & );
 
+	//Non-exported functions
+	shared_ptr<APSEthernet> get_interface();
 	
 }; //end class APS2
 

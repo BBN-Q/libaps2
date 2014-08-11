@@ -95,11 +95,6 @@ EXPORT int set_mac_addr(const char *, uint64_t);
 
 EXPORT int write_SPI_setup(const char *);
 
-/* non-exported methods */
-int create_interface();
-int cleanup_interface();
-bool any_connected();
-
 #ifdef __cplusplus
 }
 #endif

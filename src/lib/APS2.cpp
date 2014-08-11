@@ -9,7 +9,7 @@ APS2::APS2(string deviceSerial) :  isOpen{false}, deviceSerial_{deviceSerial}, s
 
 APS2::~APS2() = default;
 
-APSEthernet::EthernetError APS2::connect(APSEthernet * ethernetRM) {
+APSEthernet::EthernetError APS2::connect(shared_ptr<APSEthernet> & ethernetRM) {
 	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
 		APSEthernet::EthernetError success = ethernetRM_->connect(deviceSerial_);
@@ -32,10 +32,11 @@ APSEthernet::EthernetError APS2::disconnect() {
 			FILE_LOG(logINFO) << "Closed connection to device: " << deviceSerial_;
 			isOpen = false;
 		}
+		//Release reference to ethernet RM
+		ethernetRM_.reset();
 		// TODO: save state information to file
 		return success;
 	}
-	ethernetRM_ = NULL;
 	return APSEthernet::SUCCESS;
 }
 

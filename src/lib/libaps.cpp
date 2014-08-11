@@ -3,14 +3,14 @@
  *
  */
 
+#include <sstream>
 #include "headings.h"
 #include "libaps.h"
-#include <sstream>
 #include "APS2.h"
 #include "APSEthernet.h"
 #include "asio.hpp"
 
-APSEthernet *ethernetRM; //resource manager for the asio thernet interface
+weak_ptr<APSEthernet> ethernetRM; //resource manager for the asio thernet interface
 map<string, APS2> APSs; //map to hold on to the APS instances
 set<string> deviceSerials; // set of APSs that responded to an enumerate broadcast
 
@@ -49,32 +49,16 @@ int init_nolog() {
 	return APS_OK;
 }
 
-int create_interface() {
-	//Setup the network interface
-	if (ethernetRM == NULL) {
-		ethernetRM = new APSEthernet();
-	} else {
-		FILE_LOG(logDEBUG2) << "Ethernet interface already exists";
-	}
-	return APS_OK;
-}
+shared_ptr<APSEthernet> get_interface(){
+	//See if we have to setup our own RM
+	shared_ptr<APSEthernet> myEthernetRM = ethernetRM.lock();
 
-int cleanup_interface() {
-	for (auto & aps : APSs) {
-		aps.second.disconnect();
+	if(!myEthernetRM){
+		myEthernetRM = std::make_shared<APSEthernet>();
+		ethernetRM = myEthernetRM;
 	}
-	delete ethernetRM;
-	ethernetRM = NULL;
 
-	return APS_OK;
-}
-
-bool any_connected() {
-	bool result = false;
-	for (auto & aps : APSs) {
-		result |= aps.second.isOpen;
-	}
-	return result;
+	return myEthernetRM;
 }
 
 int enumerate_devices() {
@@ -82,10 +66,10 @@ int enumerate_devices() {
 	/*
 	* Look for all APS devices in this APS Rack.
 	*/
-	create_interface();
+	shared_ptr<APSEthernet> myEthernetRM = get_interface();
 
 	set<string> oldSerials = deviceSerials;
-	deviceSerials = ethernetRM->enumerate();
+	deviceSerials = myEthernetRM->enumerate();
 
 	//See if any devices have been removed
 	set<string> diffSerials;
@@ -96,10 +80,6 @@ int enumerate_devices() {
 	diffSerials.clear();
 	set_difference(deviceSerials.begin(), deviceSerials.end(), oldSerials.begin(), oldSerials.end(), std::inserter(diffSerials, diffSerials.begin()));
 	for (auto serial : diffSerials) APSs[serial] = APS2(serial);
-
-	if (!any_connected()) {
-		cleanup_interface();
-	}
 
 	return APS_OK;
 }
@@ -120,17 +100,14 @@ void get_deviceSerials(const char ** deviceSerialsOut) {
 //Connect to a device specified by serial number string
 //Assumes null-terminated deviceSerial
 int connect_APS(const char * deviceSerial) {
-	create_interface();
 	// TODO: test whether deviceSerial is in the APSs map first
-	return APSs[string(deviceSerial)].connect(ethernetRM);
+	shared_ptr<APSEthernet> myEthernetRM = get_interface();
+	return APSs[string(deviceSerial)].connect(myEthernetRM);
 }
 
 //Assumes a null-terminated deviceSerial
 int disconnect_APS(const char * deviceSerial) {
 	int result = APSs[string(deviceSerial)].disconnect();
-	if (!any_connected()) {
-		cleanup_interface();
-	}
 	return result;
 }
 

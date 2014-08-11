@@ -28,7 +28,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <algorithm>
-
+ 
 using std::endl;
 using std::vector;
 using std::queue;
@@ -40,16 +40,18 @@ using std::cout;
 using std::endl;
 using std::runtime_error;
 
+#include <memory>
 #include <thread>
 #include <mutex>
 #include <atomic>
 #include <utility>
 #include <chrono>
 
+using std::shared_ptr;
+using std::weak_ptr;
 
 //We often deal with vectors of 16bit values
 typedef vector<uint16_t> WordVec;
-
 
 //HDF5 library
 #include "H5Cpp.h"
