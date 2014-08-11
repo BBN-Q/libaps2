@@ -28,7 +28,6 @@ enum APSErrorCode {
 
 EXPORT int init();
 EXPORT int init_nolog();
-EXPORT int cleanup();
 
 EXPORT int enumerate_devices();
 EXPORT int get_numDevices();
@@ -78,11 +77,10 @@ EXPORT int get_running(const char *);
 EXPORT int set_log(const char *);
 EXPORT int set_logging_level(int);
 
-/* more debug methods */
-//EXPORT int save_state_files();
-//EXPORT int read_state_files();
-//EXPORT int save_bulk_state_file();
-//EXPORT int read_bulk_state_file();
+EXPORT const char * get_ip_addr(const char *);
+EXPORT int set_ip_addr(const char *, const char *);
+
+/* private API methods */
 
 EXPORT int write_memory(const char *, uint32_t, uint32_t*, uint32_t);
 EXPORT int read_memory(const char *, uint32_t, uint32_t*, uint32_t);
@@ -94,10 +92,13 @@ EXPORT int read_flash(const char *, uint32_t, uint32_t, uint32_t*);
 
 EXPORT uint64_t get_mac_addr(const char *);
 EXPORT int set_mac_addr(const char *, uint64_t);
-EXPORT const char * get_ip_addr(const char *);
-EXPORT int set_ip_addr(const char *, const char *);
 
 EXPORT int write_SPI_setup(const char *);
+
+/* non-exported methods */
+int create_interface();
+int cleanup_interface();
+bool any_connected();
 
 #ifdef __cplusplus
 }

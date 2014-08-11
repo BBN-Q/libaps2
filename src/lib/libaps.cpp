@@ -36,13 +36,6 @@ int init() {
 	FILE* pFile = fopen("libaps.log", "a");
 	Output2FILE::Stream() = pFile;
 
-	//Setup the network interface
-	if (ethernetRM == NULL) {
-		ethernetRM = new APSEthernet();
-	} else {
-		ethernetRM->init();
-	}
-
 	//Enumerate the serial numbers and MAC addresses of the devices attached
 	enumerate_devices();
 
@@ -50,30 +43,43 @@ int init() {
 }
 
 int init_nolog() {
-	//Setup the network interface
-	if (ethernetRM == NULL) {
-		ethernetRM = new APSEthernet();
-	} else {
-		ethernetRM->init();
-	}
-
 	//Enumerate the serial numbers and MAC addresses of the devices attached
 	enumerate_devices();
 
 	return APS_OK;
 }
 
-int cleanup() {
+int create_interface() {
+	//Setup the network interface
+	if (ethernetRM == NULL) {
+		ethernetRM = new APSEthernet();
+	}
+	return APS_OK;
+}
+
+int cleanup_interface() {
+	for (auto & aps : APSs) {
+		aps.second.disconnect();
+	}
 	delete ethernetRM;
 
 	return APS_OK;
 }
 
-int enumerate_devices(){
+bool any_connected() {
+	bool result = false;
+	for (auto & aps : APSs) {
+		result |= aps.second.isOpen;
+	}
+	return result;
+}
+
+int enumerate_devices() {
 
 	/*
 	* Look for all APS devices in this APS Rack.
 	*/
+	create_interface();
 
 	set<string> oldSerials = deviceSerials;
 	deviceSerials = ethernetRM->enumerate();
@@ -86,19 +92,23 @@ int enumerate_devices(){
 	//Or if any devices have been added
 	diffSerials.clear();
 	set_difference(deviceSerials.begin(), deviceSerials.end(), oldSerials.begin(), oldSerials.end(), std::inserter(diffSerials, diffSerials.begin()));
-	for (auto serial : diffSerials) APSs[serial] = APS2(serial, ethernetRM);
+	for (auto serial : diffSerials) APSs[serial] = APS2(serial);
+
+	if (!any_connected()) {
+		cleanup_interface();
+	}
 
 	return APS_OK;
 }
 
-int get_numDevices(){
+int get_numDevices() {
 	return deviceSerials.size();
 }
 
-void get_deviceSerials(const char ** deviceSerialsOut){
+void get_deviceSerials(const char ** deviceSerialsOut) {
 	//Assumes sufficient memory has been allocated
 	size_t ct = 0;
-	for (auto & serial : deviceSerials){
+	for (auto & serial : deviceSerials) {
 		deviceSerialsOut[ct] = serial.c_str();
 		ct++;
 	}
@@ -106,22 +116,26 @@ void get_deviceSerials(const char ** deviceSerialsOut){
 
 //Connect to a device specified by serial number string
 //Assumes null-terminated deviceSerial
-int connect_APS(const char * deviceSerial){
-	return APSs[string(deviceSerial)].connect();
+int connect_APS(const char * deviceSerial) {
+	create_interface();
+	return APSs[string(deviceSerial)].connect(ethernetRM);
 }
 
 //Assumes a null-terminated deviceSerial
-int disconnect_APS(const char * deviceSerial){
+int disconnect_APS(const char * deviceSerial) {
 	return APSs[string(deviceSerial)].disconnect();
+	if (!any_connected()) {
+		cleanup_interface();
+	}
 }
 
-int reset(const char * deviceSerial, int resetMode){
+int reset(const char * deviceSerial, int resetMode) {
 	return APSs[string(deviceSerial)].reset(static_cast<APS_RESET_MODE_STAT>(resetMode));
 }
 
 //Initialize an APS unit
 //Assumes null-terminated bitFile
-int initAPS(const char * deviceSerial, int forceReload){
+int initAPS(const char * deviceSerial, int forceReload) {
 	try {
 		return APSs[string(deviceSerial)].init(forceReload);
 	} catch (std::exception& e) {
@@ -139,25 +153,25 @@ int get_firmware_version(const char * deviceSerial) {
 	return APSs[string(deviceSerial)].get_firmware_version();
 }
 
-double get_uptime(const char * deviceSerial){
+double get_uptime(const char * deviceSerial) {
 	return APSs[string(deviceSerial)].get_uptime();
 }
 
-int set_sampleRate(const char * deviceSerial, int freq){
+int set_sampleRate(const char * deviceSerial, int freq) {
 	return APSs[string(deviceSerial)].set_sampleRate(freq);
 }
 
-int get_sampleRate(const char * deviceSerial){
+int get_sampleRate(const char * deviceSerial) {
 	return APSs[string(deviceSerial)].get_sampleRate();
 }
 
 //Load the waveform library as floats
-int set_waveform_float(const char * deviceSerial, int channelNum, float* data, int numPts){
+int set_waveform_float(const char * deviceSerial, int channelNum, float* data, int numPts) {
 	return APSs[string(deviceSerial)].set_waveform( channelNum, vector<float>(data, data+numPts));
 }
 
 //Load the waveform library as int16
-int set_waveform_int(const char * deviceSerial, int channelNum, int16_t* data, int numPts){
+int set_waveform_int(const char * deviceSerial, int channelNum, int16_t* data, int numPts) {
 	return APSs[string(deviceSerial)].set_waveform(channelNum, vector<int16_t>(data, data+numPts));
 }
 
@@ -170,7 +184,7 @@ int write_sequence(const char * deviceSerial, uint64_t* data, uint32_t numWords)
 	return APSs[string(deviceSerial)].write_sequence(dataVec);
 }
 
-int load_sequence_file(const char * deviceSerial, const char * seqFile){
+int load_sequence_file(const char * deviceSerial, const char * seqFile) {
 	try {
 		return APSs[string(deviceSerial)].load_sequence_file(string(seqFile));
 	} catch (...) {
@@ -192,7 +206,7 @@ int stop(const char * deviceSerial) {
 	return APSs[string(deviceSerial)].stop();
 }
 
-int get_running(const char * deviceSerial){
+int get_running(const char * deviceSerial) {
 	return APSs[string(deviceSerial)].running;
 }
 
@@ -200,14 +214,14 @@ int get_running(const char * deviceSerial){
 int set_log(const char * fileNameArr) {
 
 	//Close the current file
-	if(Output2FILE::Stream()) fclose(Output2FILE::Stream());
+	if (Output2FILE::Stream()) fclose(Output2FILE::Stream());
 	
 	string fileName(fileNameArr);
-	if (fileName.compare("stdout") == 0){
+	if (fileName.compare("stdout") == 0) {
 		Output2FILE::Stream() = stdout;
 		return APS_OK;
 	}
-	else if (fileName.compare("stderr") == 0){
+	else if (fileName.compare("stderr") == 0) {
 		Output2FILE::Stream() = stdout;
 		return APS_OK;
 	}
@@ -222,7 +236,7 @@ int set_log(const char * fileNameArr) {
 	}
 }
 
-int set_logging_level(int logLevel){
+int set_logging_level(int logLevel) {
 	FILELog::ReportingLevel() = TLogLevel(logLevel);
 	return APS_OK;
 }
@@ -235,54 +249,37 @@ int get_trigger_source(const char * deviceSerial) {
 	return int(APSs[string(deviceSerial)].get_trigger_source());
 }
 
-int set_trigger_interval(const char * deviceSerial, double interval){
+int set_trigger_interval(const char * deviceSerial, double interval) {
 	return APSs[string(deviceSerial)].set_trigger_interval(interval);
 }
 
-double get_trigger_interval(const char * deviceSerial){
+double get_trigger_interval(const char * deviceSerial) {
 	return APSs[string(deviceSerial)].get_trigger_interval();
 }
 
-int set_channel_offset(const char * deviceSerial, int channelNum, float offset){
+int set_channel_offset(const char * deviceSerial, int channelNum, float offset) {
 	return APSs[string(deviceSerial)].set_channel_offset(channelNum, offset);
 }
-int set_channel_scale(const char * deviceSerial, int channelNum, float scale){
+int set_channel_scale(const char * deviceSerial, int channelNum, float scale) {
 	return APSs[string(deviceSerial)].set_channel_scale(channelNum, scale);
 }
-int set_channel_enabled(const char * deviceSerial, int channelNum, int enable){
+int set_channel_enabled(const char * deviceSerial, int channelNum, int enable) {
 	return APSs[string(deviceSerial)].set_channel_enabled(channelNum, enable);
 }
 
-float get_channel_offset(const char * deviceSerial, int channelNum){
+float get_channel_offset(const char * deviceSerial, int channelNum) {
 	return APSs[string(deviceSerial)].get_channel_offset(channelNum);
 }
-float get_channel_scale(const char * deviceSerial, int channelNum){
+float get_channel_scale(const char * deviceSerial, int channelNum) {
 	return APSs[string(deviceSerial)].get_channel_scale(channelNum);
 }
-int get_channel_enabled(const char * deviceSerial, int channelNum){
+int get_channel_enabled(const char * deviceSerial, int channelNum) {
 	return APSs[string(deviceSerial)].get_channel_enabled(channelNum);
 }
 
 int set_run_mode(const char * deviceSerial, int mode) {
 	return APSs[string(deviceSerial)].set_run_mode(RUN_MODE(mode));
 }
-
-//int save_state_files() {
-//	return APSRack_.save_state_files();
-//}
-//
-//int read_state_files() {
-//	return APSRack_.read_state_files();
-//}
-//
-//int save_bulk_state_file() {
-//	string fileName = "";
-//	return APSRack_.save_bulk_state_file(fileName);
-//}
-//int read_bulk_state_file() {
-//	string fileName = "";
-//	return APSRack_.read_bulk_state_file(fileName);
-//}
 
 int write_memory(const char * deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
 	vector<uint32_t> dataVec(data, data+numWords);
@@ -295,7 +292,7 @@ int read_memory(const char * deviceSerial, uint32_t addr, uint32_t* data, uint32
 	return 0;
 }
 
-int read_register(const char * deviceSerial, uint32_t addr){
+int read_register(const char * deviceSerial, uint32_t addr) {
 	uint32_t buffer[1];
 	read_memory(deviceSerial, addr, buffer, 1);
 	return buffer[0];

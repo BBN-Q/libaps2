@@ -320,7 +320,5 @@ int main (int argc, char* argv[])
   
   cout << concol::RED << "Finished!" << concol::RESET << endl;
  
-  cleanup();
- 
   return 0;
 }

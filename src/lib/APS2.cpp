@@ -2,16 +2,18 @@
 
 APS2::APS2() :  isOpen{false}, channels_(2), samplingRate_{-1} {};
 
-APS2::APS2(string deviceSerial, APSEthernet * ethernetRM) :  isOpen{false}, deviceSerial_{deviceSerial}, ethernetRM_{ethernetRM}, samplingRate_{-1} {
+APS2::APS2(string deviceSerial) :  isOpen{false}, deviceSerial_{deviceSerial}, samplingRate_{-1} {
 	channels_.reserve(2);
 	for(size_t ct=0; ct<2; ct++) channels_.push_back(Channel(ct));
 };
 
 APS2::~APS2() = default;
 
-APSEthernet::EthernetError APS2::connect(){
+APSEthernet::EthernetError APS2::connect(APSEthernet * ethernetRM) {
+	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
 		APSEthernet::EthernetError success = ethernetRM_->connect(deviceSerial_);
+		// TODO: send a status request to check the connection
 
 		if (success == APSEthernet::SUCCESS) {
 			FILE_LOG(logINFO) << "Opened connection to device: " << deviceSerial_;
@@ -23,8 +25,8 @@ APSEthernet::EthernetError APS2::connect(){
 	return APSEthernet::SUCCESS;
 }
 
-APSEthernet::EthernetError APS2::disconnect(){
-	if (isOpen){
+APSEthernet::EthernetError APS2::disconnect() {
+	if (isOpen) {
 		APSEthernet::EthernetError success = ethernetRM_->disconnect(deviceSerial_);
 		if (success == APSEthernet::SUCCESS) {
 			FILE_LOG(logINFO) << "Closed connection to device: " << deviceSerial_;
@@ -33,6 +35,7 @@ APSEthernet::EthernetError APS2::disconnect(){
 		// TODO: save state information to file
 		return success;
 	}
+	ethernetRM_ = NULL;
 	return APSEthernet::SUCCESS;
 }
 

@@ -72,7 +72,6 @@ int main (int argc, char* argv[])
   reset(deviceSerial.c_str(), static_cast<int>(APS_RESET_MODE_STAT::RECONFIG_EPROM));
 
   disconnect_APS(deviceSerial.c_str());
-  cleanup();
 
   delete[] serialBuffer;
 

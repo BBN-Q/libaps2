@@ -19,10 +19,10 @@ public:
 
 	//Constructors
 	APS2();
-	APS2(string, APSEthernet *);
+	APS2(string);
 	~APS2();
 
-	APSEthernet::EthernetError connect();
+	APSEthernet::EthernetError connect(APSEthernet *);
 	APSEthernet::EthernetError disconnect();
 
 	int init(const bool & = false, const int & bitFileNum = 0);
@@ -76,9 +76,6 @@ public:
 
 	int run();
 	int stop();
-
-	//The owning APSRack needs access to some private members
-	friend class APSRack;
 
 	//Whether the APS connection is open
 	bool isOpen;

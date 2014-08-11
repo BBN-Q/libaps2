@@ -158,7 +158,6 @@ int main (int argc, char* argv[])
   }
 
   disconnect_APS(deviceSerial.c_str());
-  cleanup();
 
   delete[] serialBuffer;
 
