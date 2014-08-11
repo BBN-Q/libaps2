@@ -4,8 +4,6 @@ end
 
 push!(DL_LOAD_PATH, "/home/cryan/Programming/Repos/libaps2/build/")
 
-ccall((:init, "libaps2"), Cint, ())
-
 function connect(aps::APS2, serial)
 	ccall((:connect_APS, "libaps2"), Cint, (Ptr{Cchar},), serial)
 	aps.serial = serial

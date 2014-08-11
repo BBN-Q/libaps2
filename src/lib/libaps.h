@@ -25,7 +25,6 @@ enum APSErrorCode {
 	APS_FILE_ERROR = -2
 };
 
-EXPORT int enumerate_devices();
 EXPORT int get_numDevices();
 EXPORT void get_deviceSerials(const char **);
 

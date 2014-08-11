@@ -50,28 +50,8 @@ shared_ptr<APSEthernet> get_interface() {
 extern "C" {
 #endif
 
-int enumerate_devices() {
-
-	/*
-	* Look for all APS devices on the local network.
-	*/
-	set<string> oldSerials = deviceSerials;
-	deviceSerials = get_interface()->enumerate();
-
-	//See if any devices have been removed
-	set<string> diffSerials;
-	set_difference(oldSerials.begin(), oldSerials.end(), deviceSerials.begin(), deviceSerials.end(), std::inserter(diffSerials, diffSerials.begin()));
-	for (auto serial : diffSerials) APSs.erase(serial);
-
-	//Or if any devices have been added
-	diffSerials.clear();
-	set_difference(deviceSerials.begin(), deviceSerials.end(), oldSerials.begin(), oldSerials.end(), std::inserter(diffSerials, diffSerials.begin()));
-	for (auto serial : diffSerials) APSs[serial] = APS2(serial);
-
-	return APS_OK;
-}
-
 int get_numDevices() {
+	deviceSerials = get_interface()->enumerate();
 	return deviceSerials.size();
 }
 
@@ -98,6 +78,7 @@ int connect_APS(const char * deviceSerial) {
 //Assumes a null-terminated deviceSerial
 int disconnect_APS(const char * deviceSerial) {
 	int result = APSs[string(deviceSerial)].disconnect();
+	APSs.erase(string(deviceSerial));
 	return result;
 }
 

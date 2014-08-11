@@ -12,23 +12,16 @@ is dropped from all methods except for `connect()`.
 High-level methods
 ------------------
 
-`int enumerate_devices()`
-
-	This method sends out a broadcast packet to find all APS2's on the local
-	subnet. Follow this up with a call to `get_deviceSerials()` to get a list
-	of APS2 IP addresses. Returns an APS_STATUS value.
-
 `int get_numDevices()`
 
-	This method will return the number of APS2's found on the local subnet in the
-	last call to `enumerate_devices()`.
+	This method sends out a broadcast packet to find all APS2's on the local
+	subnet and returns the number of devices found.
 
 `void get_deviceSerials(const char ** deviceIPs)`
 
 	Populates `deviceIPs[]` with C strings of APS2 IP addresses. The caller is
 	responsible for sizing deviceIPs appropriately. For example, in C++::
 
-		enumerate_devices();
 		int numDevices = get_numDevices();
 		const char ** serialBuffer = new const char*[numDevices];
 		get_deviceSerials(serialBuffer);

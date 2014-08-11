@@ -74,7 +74,6 @@ int main (int argc, char* argv[])
 
   cout << concol::RED << "Enumerating devices" << concol::RESET << endl;
 
-  enumerate_devices();
   int numDevices = get_numDevices();
 
   cout << concol::RED << numDevices << " APS device" << (numDevices > 1 ? "s": "")  << " found" << concol::RESET << endl;

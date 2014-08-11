@@ -39,7 +39,6 @@ classdef APS2 < handle
         end
         
         function [serials] = enumerate(obj)
-            calllib('libaps2', 'enumerate_devices');
             numDevices = calllib('libaps2', 'get_numDevices');
             serials = cell(1,numDevices);
             for ct = 1:numDevices
