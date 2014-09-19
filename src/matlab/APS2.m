@@ -20,14 +20,14 @@
 classdef APS2 < handle
     properties
         serial
-        libpath = 'C:\Users\qlab\Documents\GitHub\libaps2\build';
+        libpath = '../../build';
     end
     
     methods
         function obj = APS2()
             if ~libisloaded('libaps2')
                 curPath = fileparts(mfilename('fullpath'));
-                loadlibrary(fullfile(obj.libpath, 'libaps2.dll'), fullfile(curPath, 'libaps.matlab.h'));
+                loadlibrary(fullfile(curPath, obj.libpath, 'libaps2.dll'), fullfile(curPath, 'libaps.matlab.h'));
             end
         end
         
