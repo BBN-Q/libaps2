@@ -51,11 +51,18 @@ classdef APS2 < handle
         function connect(obj, serial)
             obj.serial = serial;
             calllib('libaps2', 'connect_APS', serial);
-            calllib('libaps2', 'initAPS', serial, 0);
+            obj.init();
         end
         
         function disconnect(obj)
             calllib('libaps2', 'disconnect_APS', obj.serial);
+        end
+        
+        function init(obj, force)
+            if ~exist('force', 'var')
+                force = 0;
+            end
+            calllib('libaps2', 'initAPS', obj.serial, force);
         end
         
         function run(obj)
@@ -118,6 +125,53 @@ classdef APS2 < handle
         
         function set_channel_enabled(obj, channel, enabled)
             calllib('libaps2', 'set_channel_enabled', obj.serial, channel-1, enabled);
+        end
+        
+        function setAll(obj,settings)
+            %setAll - Sets up the APS2 with a settings structure
+            % APS2.setAll(settings)
+            % The settings structure can contain
+            %  settings.
+            %           chan_x.amplitude
+            %           chan_x.offset
+            %           chan_x.enabled
+            %  settings.seqFile - hdf5 sequence file
+            %  settings.seqForce - force reload of file
+
+            % Setup some defaults 
+            if ~isfield(settings, 'seqForce')
+                settings.seqForce = 0;
+            end
+            if ~isfield(settings, 'lastseqFile')
+                settings.lastseqFile = '';
+            end
+            
+            % If we are going to call load_sequence below, we can clear all channel data first
+            if (~strcmp(settings.lastseqFile, settings.seqFile) || settings.seqForce)
+				calllib('libaps2', 'clear_channel_data', obj.serial);
+            end
+			
+            % Set the channel parameters;  set amplitude and offset before loading waveform data so that we
+ 			% only have to load it once.
+            channelStrs = {'chan_1','chan_2'};
+            for ct = 1:2
+                ch = channelStrs{ct};
+				obj.set_channel_scale(ct, settings.(ch).amplitude);
+				obj.set_channel_offset(ct, settings.(ch).offset);
+                obj.set_channel_enabled(ct, settings.(ch).enabled);
+            end
+            
+			% load a sequence file if the settings file is changed or if force == true
+			if isfield(settings, 'seqFile') && (~strcmp(settings.lastseqFile, settings.seqFile) || settings.seqForce)
+                obj.load_sequence(settings.seqFile);
+			end
+			
+            if isfield(settings, 'triggerInterval')
+                obj.set_trigger_interval(settings.triggerInterval);
+            end
+            if isfield(settings, 'triggerSource')
+                obj.set_trigger_source(settings.triggerSource');
+            end
         end
         
         % debug methods
