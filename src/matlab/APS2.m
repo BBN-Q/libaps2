@@ -23,6 +23,13 @@ classdef APS2 < handle
         libpath = '../../build';
     end
     
+    properties (Constant)
+        % run mode enum
+        RUN_SEQUENCE = 0
+        TRIG_WAVEFORM = 1
+        CW_WAVEFORM = 2
+    end
+    
     methods
         function obj = APS2()
             if ~libisloaded('libaps2')
@@ -98,8 +105,23 @@ classdef APS2 < handle
         end
         
         % waveform and instruction data methods
+        function load_waveform(obj, ch, wf)
+            switch(class(wf))
+                case 'int16'
+                    calllib('libaps2', 'set_waveform_int', obj.serial, ch-1, wf, length(wf));
+                case 'double'
+                    calllib('libaps2', 'set_waveform_float', obj.serial, ch-1, wf, length(wf));
+                otherwise
+                    error('Unhandled waveform data type');
+            end
+        end
+        
         function load_sequence(obj, filename)
             calllib('libaps2', 'load_sequence_file', obj.serial, filename);
+        end
+        
+        function set_run_mode(obj, mode)
+            calllib('libaps2', 'set_run_mode', obj.serial, mode);
         end
 
         % channel methods
@@ -150,6 +172,8 @@ classdef APS2 < handle
             if (~strcmp(settings.lastseqFile, settings.seqFile) || settings.seqForce)
 				calllib('libaps2', 'clear_channel_data', obj.serial);
             end
+            
+            obj.stop();
 			
             % Set the channel parameters;  set amplitude and offset before loading waveform data so that we
  			% only have to load it once.
@@ -177,6 +201,10 @@ classdef APS2 < handle
         % debug methods
         function set_logging_level(obj, level)
             calllib('libaps2', 'set_logging_level', level);
+        end
+        
+        function out = read_register(obj, addr)
+            out = calllib('libaps2', 'read_register', obj.serial, addr);
         end
     end
     

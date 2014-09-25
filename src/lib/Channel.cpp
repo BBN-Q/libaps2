@@ -44,6 +44,10 @@ float Channel::get_scale() const{
 	return scale_;
 }
 
+size_t Channel::get_length() const {
+	return waveform_.size();
+}
+
 
 int Channel::set_waveform(const vector<float> & data) {
 	//Check whether we need to resize the waveform vector

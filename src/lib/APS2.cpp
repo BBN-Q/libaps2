@@ -411,21 +411,27 @@ int APS2::stop() {
 }
 
 int APS2::set_run_mode(const RUN_MODE & mode) {
-/********************************************************************
- * Description : Sets run mode
- *
- * Inputs :     mode - 0 = LL mode 1 = waveform mode
- *
- * Returns : 0 on success < 0 on failure
- *
-********************************************************************/
-	
-	//Set the run mode bit
-	FILE_LOG(logINFO) << "Setting Run Mode ==> " << mode;
-	if (mode) {
-		set_bit(SEQ_CONTROL_ADDR, {RUNMODE_BIT});
-	} else {
-		clear_bit(SEQ_CONTROL_ADDR, {RUNMODE_BIT});
+	FILE_LOG(logDEBUG) << "Setting run mode to " << mode;
+
+	vector<uint64_t> instructions = WF_SEQ;
+	// inject waveform length into the instruction
+	FILE_LOG(logDEBUG2) << "Setting WFM instruction count = " << channels_[0].get_length() / 4;
+	instructions[1] |= (channels_[0].get_length() / 4) << 24;
+	switch (mode) {
+		case RUN_SEQUENCE:
+			// don't need to do anything... already there
+			break;
+		case TRIG_WAVEFORM:
+			write_sequence(instructions);
+			break;
+		case CW_WAVEFORM:
+			// remove the WAIT instruction
+			instructions.erase(instructions.begin());
+			write_sequence(instructions);
+			break;
+		default:
+			// unknown mode
+			return -1;
 	}
 
 	return 0;

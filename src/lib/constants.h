@@ -258,7 +258,7 @@ typedef enum {EXTERNAL=0, INTERNAL} TRIGGERSOURCE;
 
 typedef enum {LED_PLL_SYNC=1, LED_RUNNING} LED_MODE;
 
-typedef enum {RUN_SEQUENCE=0, RUN_WAVEFORM} RUN_MODE;
+typedef enum {RUN_SEQUENCE=0, TRIG_WAVEFORM, CW_WAVEFORM} RUN_MODE;
 
 //APS ethernet type
 static const uint16_t APS_PROTO = 0xBB4E;
@@ -302,5 +302,12 @@ static const vector<SPI_AddrData_t> PLL_INIT = {
 
 // VCXO setup sequence
 static const vector<uint8_t> VCXO_INIT = {0x8, 0x60, 0x0, 0x4, 0x64, 0x91, 0x0, 0x61};
+
+// "waveform mode" sequence
+static const vector<uint64_t> WF_SEQ = {
+	0x2100400000000000L, // WAIT for trig
+	0x0100000000000000L, // WFM
+	0x6000000000000000L  // GOTO 0
+};
 
 #endif /* CONSTANTS_H_ */
