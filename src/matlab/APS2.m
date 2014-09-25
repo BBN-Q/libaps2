@@ -28,6 +28,8 @@ classdef APS2 < handle
         RUN_SEQUENCE = 0
         TRIG_WAVEFORM = 1
         CW_WAVEFORM = 2
+        
+        samplingRate = 1200000000;
     end
     
     methods
