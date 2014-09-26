@@ -15,6 +15,13 @@ Building
 ------------
 For those wishing to develop or build the driver from source for use on Linux or OS X. Prebuilt binaries for Windows are available on the releases tab.
 
+### Clone repository
+We get the [asio] dependency via a submodule we need the --recursive switch
+
+  ```bash
+  git clone --recursive git@github.com:BBN-Q/libaps2.git
+  ```
+
 ### Dependencies
 
 * C++ compiler: Threaded support is important as we use C++11 std::thread. See below for OS specific compilers tested.
@@ -42,12 +49,11 @@ Using gcc on Windows is a rapidly moving target.  Our setup has changed every co
   make
   ```
 
-
 ### Linux
-Use your distributions package manager to install the dependencies and it should work out of the box.
+Use your distribution's package manager to install the dependencies and it should work out of the box.
 
 Tested on:
-* Linux Mint 17
+* Linux Mint 16
 
 ### OS X
 1. Install the command-line developer tools. 
