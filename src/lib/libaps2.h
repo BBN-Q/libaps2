@@ -1,5 +1,5 @@
 /*
- * libaps.h
+ * libaps2.h
  *
  *  Created on: Jun 25, 2012
  *      Author: qlab

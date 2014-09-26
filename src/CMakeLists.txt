@@ -33,7 +33,7 @@ ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11")
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
 
 SET ( DLL_SRC 
-	./lib/libaps.cpp
+	./lib/libaps2.cpp
 	./lib/Channel.cpp
 	./lib/APS2.cpp
 	./lib/APSEthernet.cpp
