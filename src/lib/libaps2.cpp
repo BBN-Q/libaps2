@@ -23,7 +23,7 @@ public:
 
 InitAndCleanUp::InitAndCleanUp() {
 	//Open the default log file
-	FILE* pFile = fopen("libaps.log", "a");
+	FILE* pFile = fopen("libaps2.log", "a");
 	Output2FILE::Stream() = pFile;
 }
 
