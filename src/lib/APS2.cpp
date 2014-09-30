@@ -1276,14 +1276,10 @@ int APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
 
 	uint32_t startAddr = (ch == 0) ? MEMORY_ADDR+WFA_OFFSET : MEMORY_ADDR+WFB_OFFSET;
 
-	//Waveform length used by FPGA must be an integer multiple of WF_MODULUS and is 0 counted
-	// uint32_t wfLength = wfData.size() / WF_MODULUS - 1;
-	// FILE_LOG(logINFO) << "Loading Waveform length " << wfData.size() << " (FPGA count = " << wfLength << " ) into DAC " << dac;
-
 	// disable cache
 	write_memory(CACHE_CONTROL_ADDR, 0);
 
-	FILE_LOG(logDEBUG2) << "Loading waveform at " << myhex << startAddr;
+	FILE_LOG(logDEBUG2) << "Loading waveform of length " << wfData.size() << " at address " << myhex << startAddr;
 	vector<uint32_t> packedData;
 	for (size_t ct=0; ct < wfData.size(); ct += 2) {
 		packedData.push_back(((uint32_t)wfData[ct] << 16) | (uint16_t)wfData[ct+1]);
