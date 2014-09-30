@@ -35,14 +35,6 @@ binaries. We provide MATLAB wrappers to this library, but the APS2 may be used
 with any software that can call a C-API DLL. To use the MATLAB driver, simply
 add the path of the unzipped driver to your MATLAB path.
 
-Once the APS2 has been powered on, the user must assign static IP addresses to
-each module. By default, the APS2 modules will have addresses on the
-192.168.5.X subnet. The ``enumerate()`` method in libaps2 may be used to
-find APS2 modules on your current subnet. Another method, ``set_ip_addr()``
-may be used to program new IP addresses. Since the APS2 modules will respond
-to any valid packet on its port, we recommend placing the APS2 system on a
-private network, or behind a firewall.
-
 The BBN APS2 has advanced sequencing capabilities. Fully taking advantage of
 these capabilities may require use of higher-level languages which can be
 'compiled down' into sequence instructions. BBN has produced one such
@@ -52,6 +44,53 @@ QGL for creating pulse sequences. You may also find the sequence file export
 code to be a useful template when developing your own libraries. A detailed
 instruction format specification can be found in the :ref:`instruction-spec`
 section.
+
+Networking Setup
+----------------
+Once the APS2 has been powered on, the user must assign static IP addresses to
+each module. By default, the APS2 modules will have addresses on the
+192.168.5.X subnet. The ``enumerate()`` method in libaps2 may be used to
+find APS2 modules on your current subnet. Another method, ``set_ip_addr()``
+may be used to program new IP addresses. Since the APS2 modules will respond
+to any valid packet on its port, we recommend placing the APS2 system on a
+private network, or behind a firewall.
+
+The control computer must be on the same subnet as the APS2 to respond to
+returning packets. Most operating systems allow multiple IP addresses to
+coexist on the same network card so the control computer must add a virtual IP
+on the subnet.
+
+Windows
+~~~~~~~~~~~~~~
+
+Under the Control Panel - Network and Internet - Network Connections click on
+the "Local Area Connection" and then properties to change the adapter
+settings. Then set the properties of the TCP/IPv4 interface.
+
+.. figure:: images/WindowsDualHome-1.png
+	:scale: 100%
+
+	**Step 1** accessing the IPv4 settings for the network interface. 
+
+Then under the Advanced tab it will be possible to add additional IP addresses. Unfortunately, Windows does not support multiple IP addresses with DHCP so a static address is required for the main network.
+
+.. figure:: images/WindowsDualHome-2.png
+	:scale: 100%
+
+	**Step 2** Adding addition IP addresses for the network interface. 
+
+Linux
+~~~~~~~~~~~~~~~
+Temporary IP addresses can be obtained by adding additional ethernet interfaces::
+
+	sudo ifconfig eth0:0 192.168.5.101 netmask 255.255.255.0 up
+
+A more permanent solution would involve editing the network interfaces file, e.g. ``/etc/network/interfaces``. 
+
+OS X 
+~~~~~~~~~~~~
+In the System Preferences pane under Networking use the "Plus" button to add an interface. 
+	
 
 .. rubric:: Footnotes
 .. [#f1] The APS2 use static self-assigned IP addresses and should ideally be behind the same router as the control computer.
