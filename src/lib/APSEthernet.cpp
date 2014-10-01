@@ -174,7 +174,7 @@ APSEthernet::EthernetError APSEthernet::send_chunk(string serial, vector<APSEthe
 
     unsigned seqNum, retryct = 0;
 
-    while( retryct++ < 3){
+    while (retryct++ < 3) {
         seqNum = 0;
         for (auto packet : chunk){
             packet.header.seqNum = seqNum;
@@ -195,7 +195,7 @@ APSEthernet::EthernetError APSEthernet::send_chunk(string serial, vector<APSEthe
         }
     }
 
-    if (retryct == 3){
+    if (retryct == 3) {
         return TIMEOUT;
     }
     return SUCCESS;
