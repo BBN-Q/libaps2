@@ -36,7 +36,7 @@ classdef APS2 < handle
         function obj = APS2()
             if ~libisloaded('libaps2')
                 curPath = fileparts(mfilename('fullpath'));
-                loadlibrary(fullfile(curPath, obj.libpath, 'libaps2.dll'), fullfile(curPath, 'libaps.matlab.h'));
+                loadlibrary(fullfile(curPath, obj.libpath, 'libaps2.dll'), fullfile(curPath, 'libaps2.matlab.h'));
             end
         end
         
@@ -106,6 +106,10 @@ classdef APS2 < handle
             calllib('libaps2', 'set_trigger_source', obj.serial, triggerSourceMap(lower(source)));
         end
         
+        function trigger(obj)
+            calllib('libaps2', 'trigger', obj.serial)
+        end
+
         % waveform and instruction data methods
         function load_waveform(obj, ch, wf)
             switch(class(wf))
