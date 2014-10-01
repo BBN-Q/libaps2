@@ -56,9 +56,6 @@ typedef vector<uint16_t> WordVec;
 //HDF5 library
 #include "H5Cpp.h"
 
-//Needed for usleep on gcc 4.7
-#include <unistd.h>
-
 //Deal with some Windows/Linux difference
 #ifdef _WIN32
 #include "winsock2.h"

@@ -385,25 +385,10 @@ int APS2::run() {
 }
 
 int APS2::stop() {
-
-	// stop all channels
-
-	//Try to stop in a wait for trigger state by making the trigger interval long
-	auto curTriggerInt = get_trigger_interval();
-	auto curTriggerSource = get_trigger_source();
-	set_trigger_interval(1);
-	set_trigger_source(INTERNAL);
-	usleep(1000);
-
 	//Put the state machine back in reset
 	clear_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
 
-	// restore trigger state
-	set_trigger_interval(curTriggerInt);
-	set_trigger_source(curTriggerSource);
-
 	return 0;
-
 }
 
 int APS2::set_run_mode(const RUN_MODE & mode) {
