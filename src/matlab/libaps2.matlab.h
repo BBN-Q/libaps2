@@ -51,6 +51,7 @@ EXPORT int set_trigger_source(const char *, int);
 EXPORT int get_trigger_source(const char *);
 EXPORT int set_trigger_interval(const char *, double);
 EXPORT double get_trigger_interval(const char *);
+EXPORT int trigger(const char *);
 
 EXPORT int set_waveform_float(const char *, int, float*, int);
 EXPORT int set_waveform_int(const char *, int, short*, int);
