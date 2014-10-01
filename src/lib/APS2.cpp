@@ -910,7 +910,7 @@ int APS2::test_PLL_sync() {
 	// Disable DDRs
 	set_bit(SEQ_CONTROL_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
 
-	static const int lowPhaseCutoff = 45, highPhaseCutoff = 135;
+	static const int lowPhaseCutoff = 30, highPhaseCutoff = 150;
 	// loop over channels
 	for (int ch = 0; ch < 2; ch++) {
 		//Loop over number of tries
