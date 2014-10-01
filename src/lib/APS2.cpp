@@ -366,7 +366,6 @@ TRIGGERSOURCE APS2::get_trigger_source() {
 int APS2::set_trigger_interval(const double & interval){
 
 	//SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
-	//note: clockCycles is zero-indexed and has a dead state (so subtract 2)
 	int clockCycles = interval*0.25*samplingRate_*1e6 - 1;
 
 	FILE_LOG(logDEBUG) << "Setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
@@ -377,7 +376,7 @@ int APS2::set_trigger_interval(const double & interval){
 double APS2::get_trigger_interval() {
 
 	uint32_t clockCycles = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
-	// Convert from clock cycles to time (note: trigger interval is zero indexed and has a dead state)
+	// Convert from clock cycles to time
 	return static_cast<double>(clockCycles + 1)/(0.25*samplingRate_*1e6);
 }
 
