@@ -58,8 +58,9 @@ function aps_proto.dissector(buffer,pinfo,tree)
     
     local subtree = tree:add(aps_proto,buffer())
 
-    local offset = 0
 
+    -- local offset = 0 -- for raw frames
+    local offset = 14 -- for UDP wrapped frames
  	subtree:add( a.seqnum , buffer(offset,2))
  	offset = offset + 2
     
@@ -178,6 +179,15 @@ function aps_proto.dissector(buffer,pinfo,tree)
 
     --subtree = subtree:add(buffer(6,4),"Addr:" .. buffer(6,4))
 end
-eth_table = DissectorTable.get("ethertype")
--- attach to ethernet type 0xBBAE
-eth_table:add(47950,aps_proto)
+
+--Use for raw ethernet frames
+-- eth_table = DissectorTable.get("ethertype")
+-- -- attach to ethernet type 0xBBAE
+-- eth_table:add(47950, aps_proto)
+
+
+--Use for UDP wrapped frames
+-- load the udp.port table
+udp_table = DissectorTable.get("udp.port")
+-- register our protocol to handle udp port 7777
+udp_table:add(47950, aps_proto)
