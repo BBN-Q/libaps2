@@ -340,27 +340,16 @@ int APS2::set_markers(const int & dac, const vector<uint8_t> & data) {
 
 int APS2::set_trigger_source(const TRIGGERSOURCE & triggerSource){
 
-	int returnVal=0;
+	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
 
-	switch (triggerSource){
-	case INTERNAL:
-		returnVal = set_bit(SEQ_CONTROL_ADDR, {TRIGSRC_BIT});
-		break;
-	case EXTERNAL:
-		returnVal = clear_bit(SEQ_CONTROL_ADDR, {TRIGSRC_BIT});
-		break;
-	default:
-		returnVal = -1;
-		break;
-	}
-
-	return returnVal;
+	//Set the trigger source bits
+	regVal = (regVal & ~(3 << TRIGSRC_BIT)) | (static_cast<uint32_t>(triggerSource) << TRIGSRC_BIT);
+	return write_memory(SEQ_CONTROL_ADDR, regVal);
 }
 
 TRIGGERSOURCE APS2::get_trigger_source() {
-	uint32_t regVal;
-	regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
-	return TRIGGERSOURCE((regVal & (1 << TRIGSRC_BIT)) != 0 ? INTERNAL : EXTERNAL);
+	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
+	return TRIGGERSOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
 }
 
 int APS2::set_trigger_interval(const double & interval){
@@ -378,6 +367,14 @@ double APS2::get_trigger_interval() {
 	uint32_t clockCycles = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
 	// Convert from clock cycles to time
 	return static_cast<double>(clockCycles + 1)/(0.25*samplingRate_*1e6);
+}
+
+int APS2::trigger(){
+	//Apply a software trigger by toggling the trigger line
+	uint32_t curReg = read_memory(SEQ_CONTROL_ADDR, 1)[0];
+
+	curReg ^= (1 << SOFT_TRIG_BIT);
+	return write_memory(SEQ_CONTROL_ADDR, curReg);
 }
 
 

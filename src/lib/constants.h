@@ -234,8 +234,8 @@ static const int FIRMWARE_VERSION =  0xA03;
 
 // sequencer control bits
 static const int SM_ENABLE_BIT = 0; // state machine enable
-static const int TRIGSRC_BIT = 1; // trigger source (0 = external, 1 = internal)
-static const int RUNMODE_BIT = 2; // run mode (0 = link list, 1 = waveform)
+static const int TRIGSRC_BIT = 1; // trigger source (0 = external, 1 = internal, 2 = software)
+static const int SOFT_TRIG_BIT = 3;
 
 // PLL bits
 static const int PLL_CHA_RST_BIT = 8;
@@ -254,7 +254,7 @@ static const uint32_t EPROM_BASE_IMAGE_ADDR = 0x01000000;
 static const uint32_t EPROM_MACIP_ADDR      = 0x00FF0000;
 
 // SEQUENCER MODES
-typedef enum {EXTERNAL=0, INTERNAL} TRIGGERSOURCE;
+typedef enum {EXTERNAL=0, INTERNAL, SOFTWARE} TRIGGERSOURCE;
 
 typedef enum {LED_PLL_SYNC=1, LED_RUNNING} LED_MODE;
 

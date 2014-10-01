@@ -209,6 +209,10 @@ double get_trigger_interval(const char * deviceSerial) {
 	return APSs[string(deviceSerial)].get_trigger_interval();
 }
 
+int trigger(const char* deviceSerial) {
+	return APSs[string(deviceSerial)].trigger();
+}
+
 int set_channel_offset(const char * deviceSerial, int channelNum, float offset) {
 	return APSs[string(deviceSerial)].set_channel_offset(channelNum, offset);
 }
