@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iterator>
 #include <algorithm>
+#include <signal.h>
 
 #include "headings.h"
 #include "libaps2.h"
@@ -26,6 +27,16 @@ const option::Descriptor usage[] =
 	                                         "  play_waveform --wfA=../examples/wfB.dat --trigMode=2\n" },
 	{0,0,0,0,0,0}
 };
+
+
+static string deviceSerial;
+
+void clean_up(int sigValue){
+	std::cout << std::endl;
+	stop(deviceSerial.c_str());
+	disconnect_APS(deviceSerial.c_str());
+	exit(1);
+}
 
 int main(int argc, char* argv[])
 {
@@ -84,7 +95,7 @@ int main(int argc, char* argv[])
 	wfA.resize(longestLength, 0);
 	wfB.resize(longestLength, 0);
 
-	string deviceSerial = get_device_id();
+	deviceSerial = get_device_id();
 
 	set_logging_level(debugLevel);
 	set_log("stdout");
@@ -113,32 +124,30 @@ int main(int argc, char* argv[])
 
 	run(deviceSerial.c_str());
 
+	//Catch ctrl-c to clean_up the APS -- see http://zguide.zeromq.org/cpp:interrupt
+	struct sigaction action;
+	action.sa_handler = clean_up;
+	action.sa_flags = 0;
+	sigemptyset(&action.sa_mask);
+	sigaction(SIGINT, &action, NULL);
+
 	//For software trigger, trigger on key stroke
-	std::string charIn;
 	if (triggerSource == 2) {
-		std::cout << "Return to trigger or enter `q` to quit";
-		getline(cin, charIn);
-		while(charIn != "q") {
-			if (charIn == "t"){
-				trigger(deviceSerial.c_str());
-			}
-			getline(cin, charIn);
+		std::cout << "Return to trigger or ctrl-c to exit";
+		while(true) {
+			cin.get();
+			cout << "Got something!";
+			trigger(deviceSerial.c_str());
 		}
 		std::cout << std::endl;
 	}
 	else {
-		std::cout << "Enter `q` to quit";
-		getline(cin, charIn);
-		while(cin >> charIn) {
-			if (charIn == "q") {
-				break;
-			}
-			getline(cin, charIn);
+		std::cout << "Ctrl-c to quit";
+		while(true) {
+			cin.get();
+			cout << "Got something!";
 		}
-		std::cout << std::endl;
 	}
-
-	stop(deviceSerial.c_str());
 
 	return 0;
  }
