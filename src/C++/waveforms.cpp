@@ -8,23 +8,6 @@
 
 using namespace std;
 
-// command options functions taken from:
-// http://stackoverflow.com/questions/865668/parse-command-line-arguments
-string getCmdOption(char ** begin, char ** end, const std::string & option)
-{
-  char ** itr = std::find(begin, end, option);
-  if (itr != end && ++itr != end)
-  {
-    return string(*itr);
-  }
-  return "";
-}
-
-bool cmdOptionExists(char** begin, char** end, const std::string& option)
-{
-  return std::find(begin, end, option) != end;
-}
-
 int get_device_id() {
   cout << "Choose device ID [0]: ";
   string input = "";
