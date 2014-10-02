@@ -181,6 +181,7 @@ APSEthernet::EthernetError APSEthernet::send_chunk(string serial, vector<APSEthe
             seqNum++;
             FILE_LOG(logDEBUG4) << "Packet command: " << print_APSCommand(packet.header.command);
             socket_.send_to(asio::buffer(packet.serialize()), devInfo_[serial].endpoint);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         
         if(noACK) break;
