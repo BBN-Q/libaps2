@@ -897,6 +897,32 @@ struct Arg
     else
       return ARG_IGNORE;
   }
+
+  static option::ArgStatus Required(const option::Option& option, bool msg)
+  {
+    if (option.arg != 0)
+      return option::ARG_OK;
+    if (msg) std::cerr << "Option '" << option.name << "' requires an argument" << std::endl;
+    return option::ARG_ILLEGAL;
+  }
+
+  static option::ArgStatus Numeric(const option::Option& option, bool msg)
+  {
+    size_t endPtr = 0;
+    try {
+      std::stod(std::string(option.arg), &endPtr);
+      if (endPtr != 0) {
+        return option::ARG_OK;
+      }
+      else {
+        return option::ARG_ILLEGAL;
+      }
+    }
+    catch (const std::invalid_argument& ia) {
+      std::cerr << "Invalid numeric argument: " << ia.what() << std::endl;
+      return option::ARG_ILLEGAL;
+    }
+  }
 };
 
 /**
