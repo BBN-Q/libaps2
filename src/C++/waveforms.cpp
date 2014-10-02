@@ -6,22 +6,10 @@
 
 #include <concol.h>
 
+#include "helpers.h"
+
 using namespace std;
 
-int get_device_id() {
-  cout << "Choose device ID [0]: ";
-  string input = "";
-  getline(cin, input);
-
-  if (input.length() == 0) {
-    return 0;
-  }
-  int device_id;
-  stringstream mystream(input);
-
-  mystream >> device_id;
-  return device_id;
-}
 
 vector<uint64_t> read_seq_file(string fileName) {
   std::ifstream FID (fileName, std::ios::in);
@@ -55,31 +43,7 @@ int main (int argc, char* argv[])
   set_logging_level(dbgLevel);
   set_log("stdout");
 
-  cout << concol::RED << "Enumerating devices" << concol::RESET << endl;
-
-  int numDevices = get_numDevices();
-
-  cout << concol::RED << numDevices << " APS device" << (numDevices > 1 ? "s": "")  << " found" << concol::RESET << endl;
-
-  if (numDevices < 1)
-  	return 0;
-  
-  cout << concol::RED << "Attempting to get serials" << concol::RESET << endl;
-
-  const char ** serialBuffer = new const char*[numDevices];
-  get_deviceSerials(serialBuffer);
-
-  for (int cnt=0; cnt < numDevices; cnt++) {
-  	cout << concol::RED << "Device " << cnt << " serial #: " << serialBuffer[cnt] << concol::RESET << endl;
-  }
-
-  string deviceSerial;
-
-  if (numDevices == 1) {
-    deviceSerial = string(serialBuffer[0]);
-  } else {
-    deviceSerial = string(serialBuffer[get_device_id()]);
-  }
+  string deviceSerial = get_device_id();
 
   connect_APS(deviceSerial.c_str());
 
@@ -298,7 +262,6 @@ int main (int argc, char* argv[])
   cout << "DMA status reg: " << hexn<8> << testInt << endl;
 
   disconnect_APS(deviceSerial.c_str());
-  delete[] serialBuffer;
   
   cout << concol::RED << "Finished!" << concol::RESET << endl;
  
