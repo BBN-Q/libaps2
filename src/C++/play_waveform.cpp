@@ -21,7 +21,7 @@ const option::Descriptor usage[] =
 	{WFB_FILE, 0,"", "wfB", option::Arg::Required, "  --wfB  \tChannel B waveform file (ASCII signed 16 bit integer)" },
 	{TRIG_MODE, 0,"", "trigMode", option::Arg::Required, "  --trigMode  \tTrigger mode (0: external; 1: internal; 2: software" },
 	{TRIG_INTERVAL,  0,"", "trigInterval", option::Arg::Numeric, "  --trigRep  \tInternal trigger interval" },
-	{LOG_LEVEL,  0,"", "debugLevel", option::Arg::Numeric, "  --debugLevel  \tDebug level to print" },
+	{LOG_LEVEL,  0,"", "logLevel", option::Arg::Numeric, "  --logLevel  \tLogging level level to print" },
 	{UNKNOWN, 0,"" ,  ""   , option::Arg::None, "\nExamples:\n"
 	                                         "  play_waveform --wfA=../examples/wfA.dat --wfB=../examples/wfB.dat\n"
 	                                         "  play_waveform --wfA=../examples/wfB.dat --trigMode=2\n" },
@@ -31,12 +31,31 @@ const option::Descriptor usage[] =
 
 static string deviceSerial;
 
+
+#ifdef _WIN32
+BOOL WINAPI ConsoleHandler(DWORD dwType)
+{
+	switch(dwType) {
+	    case CTRL_C_EVENT:
+	        printf("ctrl-c\n");
+			std::cout << std::endl;
+			stop(deviceSerial.c_str());
+			disconnect_APS(deviceSerial.c_str());
+			exit(1);
+	    default:
+	        printf("Some other event\n");
+	}
+    return TRUE;
+}
+#else
 void clean_up(int sigValue){
 	std::cout << std::endl;
 	stop(deviceSerial.c_str());
 	disconnect_APS(deviceSerial.c_str());
 	exit(1);
 }
+#endif
+
 
 int main(int argc, char* argv[])
 {
@@ -83,6 +102,7 @@ int main(int argc, char* argv[])
 	if (options[WFA_FILE]) {
 		ifs.open(std::string(options[WFA_FILE].arg));
 		std::copy(std::istream_iterator<int16_t>(ifs), std::istream_iterator<int16_t>(), std::back_inserter(wfA) );
+		ifs.close();
 	}
 
 	if (options[WFB_FILE]) {
@@ -125,27 +145,33 @@ int main(int argc, char* argv[])
 	run(deviceSerial.c_str());
 
 	//Catch ctrl-c to clean_up the APS -- see http://zguide.zeromq.org/cpp:interrupt
+	//Unfortunately we have some platform nonsense here
+	#ifdef _WIN32
+	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)ConsoleHandler, TRUE)) {
+        std::cerr << "Unable to install handler!" << std::endl;
+        return EXIT_FAILURE;
+    }
+	#else
 	struct sigaction action;
 	action.sa_handler = clean_up;
 	action.sa_flags = 0;
 	sigemptyset(&action.sa_mask);
 	sigaction(SIGINT, &action, NULL);
+	#endif
 
 	//For software trigger, trigger on key stroke
 	if (triggerSource == 2) {
-		std::cout << "Return to trigger or ctrl-c to exit";
+		cout << "Return to trigger or ctrl-c to exit";
 		while(true) {
 			cin.get();
-			cout << "Got something!";
 			trigger(deviceSerial.c_str());
 		}
-		std::cout << std::endl;
+		cout << endl;
 	}
 	else {
-		std::cout << "Ctrl-c to quit";
+		cout << "Ctrl-c to quit";
 		while(true) {
 			cin.get();
-			cout << "Got something!";
 		}
 	}
 
