@@ -51,9 +51,10 @@ set(APS2_VERSION_PATCH 0)
 set(APS2_VERSION_STRING ${APS2_VERSION_MAJOR}.${APS2_VERSION_MINOR}.${APS2_VERSION_PATCH})
 set_target_properties(aps2 PROPERTIES VERSION ${APS2_VERSION_STRING} SOVERSION ${APS2_VERSION_MAJOR})
 
-ADD_EXECUTABLE(test
-	./C++/main.cpp
+ADD_EXECUTABLE(play_waveform
+	./C++/play_waveform.cpp
 )
+TARGET_LINK_LIBRARIES(play_waveform aps2)
 
 ADD_EXECUTABLE(waveforms
 	./C++/waveforms.cpp
@@ -71,7 +72,6 @@ ADD_EXECUTABLE(program
 	./util/program.cpp
 )
 
-TARGET_LINK_LIBRARIES(test aps2)
 TARGET_LINK_LIBRARIES(flash aps2)
 TARGET_LINK_LIBRARIES(waveforms aps2)
 TARGET_LINK_LIBRARIES(reset aps2)

@@ -340,33 +340,21 @@ int APS2::set_markers(const int & dac, const vector<uint8_t> & data) {
 
 int APS2::set_trigger_source(const TRIGGERSOURCE & triggerSource){
 
-	int returnVal=0;
+	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
 
-	switch (triggerSource){
-	case INTERNAL:
-		returnVal = set_bit(SEQ_CONTROL_ADDR, {TRIGSRC_BIT});
-		break;
-	case EXTERNAL:
-		returnVal = clear_bit(SEQ_CONTROL_ADDR, {TRIGSRC_BIT});
-		break;
-	default:
-		returnVal = -1;
-		break;
-	}
-
-	return returnVal;
+	//Set the trigger source bits
+	regVal = (regVal & ~(3 << TRIGSRC_BIT)) | (static_cast<uint32_t>(triggerSource) << TRIGSRC_BIT);
+	return write_memory(SEQ_CONTROL_ADDR, regVal);
 }
 
 TRIGGERSOURCE APS2::get_trigger_source() {
-	uint32_t regVal;
-	regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
-	return TRIGGERSOURCE((regVal & (1 << TRIGSRC_BIT)) != 0 ? INTERNAL : EXTERNAL);
+	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
+	return TRIGGERSOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
 }
 
 int APS2::set_trigger_interval(const double & interval){
 
 	//SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
-	//note: clockCycles is zero-indexed and has a dead state (so subtract 2)
 	int clockCycles = interval*0.25*samplingRate_*1e6 - 1;
 
 	FILE_LOG(logDEBUG) << "Setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
@@ -377,8 +365,18 @@ int APS2::set_trigger_interval(const double & interval){
 double APS2::get_trigger_interval() {
 
 	uint32_t clockCycles = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
-	// Convert from clock cycles to time (note: trigger interval is zero indexed and has a dead state)
+	// Convert from clock cycles to time
 	return static_cast<double>(clockCycles + 1)/(0.25*samplingRate_*1e6);
+}
+
+int APS2::trigger(){
+	//Apply a software trigger by toggling the trigger line
+	FILE_LOG(logDEBUG) << "Sending software trigger";
+	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
+	FILE_LOG(logDEBUG3) << "SEQ_CONTROL register was " << hexn<8> << regVal;
+	regVal ^= (1 << SOFT_TRIG_BIT);
+	FILE_LOG(logDEBUG3) << "Setting SEQ_CONTROL register to " << hexn<8> << regVal;
+	return write_memory(SEQ_CONTROL_ADDR, regVal);
 }
 
 
@@ -389,25 +387,10 @@ int APS2::run() {
 }
 
 int APS2::stop() {
-
-	// stop all channels
-
-	//Try to stop in a wait for trigger state by making the trigger interval long
-	auto curTriggerInt = get_trigger_interval();
-	auto curTriggerSource = get_trigger_source();
-	set_trigger_interval(1);
-	set_trigger_source(INTERNAL);
-	usleep(1000);
-
 	//Put the state machine back in reset
 	clear_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
 
-	// restore trigger state
-	set_trigger_interval(curTriggerInt);
-	set_trigger_source(curTriggerSource);
-
 	return 0;
-
 }
 
 int APS2::set_run_mode(const RUN_MODE & mode) {

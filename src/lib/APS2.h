@@ -50,6 +50,7 @@ public:
 	TRIGGERSOURCE get_trigger_source();
 	int set_trigger_interval(const double &);
 	double get_trigger_interval();
+	int trigger();
 
 	int set_channel_enabled(const int &, const bool &);
 	bool get_channel_enabled(const int &) const;
