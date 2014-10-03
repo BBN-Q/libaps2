@@ -339,6 +339,7 @@ int APS2::set_markers(const int & dac, const vector<uint8_t> & data) {
 }
 
 int APS2::set_trigger_source(const TRIGGERSOURCE & triggerSource){
+	FILE_LOG(logDEBUG) << "Setting trigger source to " << triggerSource;
 
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
 
@@ -1233,22 +1234,22 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec){
 		//LVDS Phase 1 Reg 17 (SEL1=0; SEL0=0; SIGREAD=1; SYNC_EN=1; LVDS_EN=1)
 		write_reg(17, 0x26);
 		bistVals.push_back( (read_reg(21) << 24) | (read_reg(20) << 16) | (read_reg(19) << 8) | read_reg(18) ); 
-		FILE_LOG(logDEBUG1) << "LVDS Phase 1 BIST" << hexn<8> << bistVals.back();
+		FILE_LOG(logDEBUG1) << "LVDS Phase 1 BIST " << hexn<8> << bistVals.back();
 
 		//LVDS Phase 2
 		write_reg(17, 0x66);
 		bistVals.push_back( (read_reg(21) << 24) | (read_reg(20) << 16) | (read_reg(19) << 8) | read_reg(18) ); 
-		FILE_LOG(logDEBUG1) << "LVDS Phase 2 BIST" << hexn<8> << bistVals.back();
+		FILE_LOG(logDEBUG1) << "LVDS Phase 2 BIST " << hexn<8> << bistVals.back();
 
 		//SYNC Phase 1
 		write_reg(17, 0xA6);
 		bistVals.push_back( (read_reg(21) << 24) | (read_reg(20) << 16) | (read_reg(19) << 8) | read_reg(18) ); 
-		FILE_LOG(logDEBUG1) << "SYNC Phase 1 BIST" << hexn<8> << bistVals.back();
+		FILE_LOG(logDEBUG1) << "SYNC Phase 1 BIST " << hexn<8> << bistVals.back();
 
 		//SYNC Phase 2
 		write_reg(17, 0xE6);
 		bistVals.push_back( (read_reg(21) << 24) | (read_reg(20) << 16) | (read_reg(19) << 8) | read_reg(18) ); 
-		FILE_LOG(logDEBUG1) << "SYNC Phase 2 BIST" << hexn<8> << bistVals.back();
+		FILE_LOG(logDEBUG1) << "SYNC Phase 2 BIST " << hexn<8> << bistVals.back();
 
 		return bistVals;
 	};
@@ -1273,16 +1274,16 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec){
 	bool toggle = false;
     std::partition_copy(testVec.begin(),
                         testVec.end(),
-                        std::back_inserter(evenSamples),
                         std::back_inserter(oddSamples),
+                        std::back_inserter(evenSamples),
                         [&toggle](int) { return toggle = !toggle; });
 
     //
     uint32_t phase1BIST = calc_bist(oddSamples);
     uint32_t phase2BIST = calc_bist(evenSamples);
 
-    FILE_LOG(logDEBUG) << "Expected phase 1 BIST register" << hexn<8> << phase1BIST;
-    FILE_LOG(logDEBUG) << "Expected phase 2 BIST register" << hexn<8> << phase2BIST;
+    FILE_LOG(logDEBUG) << "Expected phase 1 BIST register " << hexn<8> << phase1BIST;
+    FILE_LOG(logDEBUG) << "Expected phase 2 BIST register " << hexn<8> << phase2BIST;
 
 	//Load the test vector and setup software triggered waveform mode
 	write_waveform(dac, testVec);
@@ -1347,6 +1348,8 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec){
 	read_BIST_sig();
 	trigger();
 	read_BIST_sig();
+
+	stop();
 
 	return 0;
 
