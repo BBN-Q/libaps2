@@ -371,10 +371,12 @@ double APS2::get_trigger_interval() {
 
 int APS2::trigger(){
 	//Apply a software trigger by toggling the trigger line
-	uint32_t curReg = read_memory(SEQ_CONTROL_ADDR, 1)[0];
-
-	curReg ^= (1 << SOFT_TRIG_BIT);
-	return write_memory(SEQ_CONTROL_ADDR, curReg);
+	FILE_LOG(logDEBUG) << "Sending software trigger";
+	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
+	FILE_LOG(logDEBUG3) << "SEQ_CONTROL register was " << hexn<8> << regVal;
+	regVal ^= (1 << SOFT_TRIG_BIT);
+	FILE_LOG(logDEBUG3) << "Setting SEQ_CONTROL register to " << hexn<8> << regVal;
+	return write_memory(SEQ_CONTROL_ADDR, regVal);
 }
 
 
