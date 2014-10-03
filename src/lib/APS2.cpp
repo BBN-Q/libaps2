@@ -1211,6 +1211,111 @@ int APS2::disable_DAC_FIFO(const int & dac) {
 	return 0;
 }
 
+int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec){
+	//TODO: split into subfunctions
+	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
+	uint8_t regVal;
+	uint32_t bistVal;
+	vector<uint32_t> msg
+
+	FILE_LOG(logINFO) << "Running DAC BIST for DAC " << dac;
+
+	//Load the test vector and setup software triggered waveform mode
+	write_waveform(dac, testVec);
+	set_run_mode(TRIG_WAVEFORM);
+
+	// Following Page 45 of the AD9736 datasheet
+
+	// Step 1: set the reset bit (Reg 0, bit 5)
+	regVal = read_SPI(targets[dac], 0);
+	FILE_LOG(logDEBUG3) << "Register 0 is currently " << hexn<2> << regVal;
+	regVal |= (1 << 5);
+	msg = build_DAC_SPI_msg(targets[dac], {0, regVal});
+	write_SPI(msg);
+
+	// Step 2: set the zero register to 0x0000 for signed data (note inconsistency between page 44 and 45 of manual)
+	set_offset_register(dac, 0);
+
+	// Step 3 and 4 : run data clock for 16 cycles should happen with etherent latency
+
+	// Step 5: clear the reset bit
+	regVal &= ~(1 << 5);
+	msg = build_DAC_SPI_msg(targets[dac], {0, regVal});
+	write_SPI(msg);
+
+	// Step 6: wait
+
+	// Step 7: set the reset bit
+	regVal |= (1 << 5);
+	msg = build_DAC_SPI_msg(targets[dac], {0, regVal});
+	write_SPI(msg);
+
+	// Step 8: wait
+
+	// Step 9: clear reset bit
+	regVal &= ~(1 << 5);
+	msg = build_DAC_SPI_msg(targets[dac], {0, regVal});
+	write_SPI(msg);
+
+	// Step 10: set operating mode
+
+	// Step 11: Set CLEAR (Reg. 17, Bit 0), SYNC_EN (Reg. 17, Bit 1), and LVDS_EN (Reg. 17, Bit 2) high
+	regVal = read_SPI(targets[dac], 17);
+	regVal |= (1 << 0) | (1 << 1) | (1 << 2);
+	msg = build_DAC_SPI_msg(targets[dac], {17, regVal});
+	write_SPI(msg);
+
+	// Step 12: wait...
+
+	// Step 13: clear the CLEAR bit
+	regVal &= ~(1 << 0);
+	msg = build_DAC_SPI_msg(targets[dac], {17, regVal});
+	write_SPI(msg);
+
+	// Step 14: read the BIST registers to confirm all zeros
+	// Note error in part (b's) should read registers 21-18
+	//LVDS Phase 1 Reg 17 (SEL1=0; SEL0=0; SIGREAD=1; SYNC_EN=1; LVDS_EN=1)
+	regVal = 0x26;
+	msg = build_DAC_SPI_msg(targets[dac], {17, regVal});
+	write_SPI(msg);
+	bistVal = (read_SPI(targest[dac], 21) << 24) | (read_SPI(targest[dac], 20) << 16) | (read_SPI(targest[dac], 19) << 8) | read_SPI(targest[dac], 18); 
+	FILE_LOG(logDEBUG1) << "LVDS Phase 1 zero check BIST" << hexn<8> << bistVal;
+
+	//LVDS Phase 2
+	regVal = 0x66;
+	msg = build_DAC_SPI_msg(targets[dac], {17, regVal});
+	write_SPI(msg);
+	bistVal = (read_SPI(targest[dac], 21) << 24) | (read_SPI(targest[dac], 20) << 16) | (read_SPI(targest[dac], 19) << 8) | read_SPI(targest[dac], 18); 
+	FILE_LOG(logDEBUG1) << "LVDS Phase 2 zero check BIST" << hexn<8> << bistVal;
+
+	//SYNC Phase 1
+	regVal = 0xA6;
+	msg = build_DAC_SPI_msg(targets[dac], {17, regVal});
+	write_SPI(msg);
+	bistVal = (read_SPI(targest[dac], 21) << 24) | (read_SPI(targest[dac], 20) << 16) | (read_SPI(targest[dac], 19) << 8) | read_SPI(targest[dac], 18); 
+	FILE_LOG(logDEBUG1) << "SYNC Phase 1 zero check BIST" << hexn<8> << bistVal;
+
+	//SYNC Phase 2
+	regVal = 0xE6;
+	msg = build_DAC_SPI_msg(targets[dac], {17, regVal});
+	write_SPI(msg);
+	bistVal = (read_SPI(targest[dac], 21) << 24) | (read_SPI(targest[dac], 20) << 16) | (read_SPI(targest[dac], 19) << 8) | read_SPI(targest[dac], 18); 
+	FILE_LOG(logDEBUG1) << "SYNC Phase 2 zero check BIST" << hexn<8> << bistVal;
+
+	//Clock in a single run of the waveform
+	run();
+	trigger();
+	stop();
+	
+
+
+
+
+
+
+
+}
+
 int APS2::set_offset_register(const int & dac, const float & offset) {
 	/* APS2::set_offset_register
 	 * Write the zero register for the associated channel
