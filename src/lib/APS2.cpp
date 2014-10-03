@@ -1254,6 +1254,37 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec){
 		return bistVals;
 	}
 
+	//Calculate expected signature
+	calc_bist = [&](const vector<int16_t> dataVec) {
+		uint32_t lfsr = 0;
+		const uint32_t maskBottom14 = 0x3fff;
+		for(auto v : dataVec){
+			if (v != 0) {
+				//Shift
+				lfsr = (lfsr << 1) | (lfsr >> 31);
+				//Now ~xor the bottom 14 bits with the input data
+				lfsr = (lfsr & ~maskBottom14) | ( ~(lfsr ^ v) & maskBottom14);
+			}
+		}
+		return lfsr;
+	}
+
+	// The two different phases take the even/odd samples
+	vector<int16_t> evenSamples, oddSamples;
+	bool toggle = false;
+    std::partition_copy(testVec.begin(),
+                        testVec.end(),
+                        std::back_inserter(evenSamples),
+                        std::back_inserter(oddSamples),
+                        [&toggle](int) { return toggle = !toggle; });
+
+    //
+    uint32_t phase1BIST = calc_bist(oddSamples);
+    uint32_t phase2BIST = calc_bist(evenSamples);
+
+    FILE_LOG(logDEBUG) << "Expected phase 1 BIST register" << hexn<8> << phase1BIST;
+    FILE_LOG(logDEBUG) << "Expected phase 2 BIST register" << hexn<8> << phase2BIST;
+
 	//Load the test vector and setup software triggered waveform mode
 	write_waveform(dac, testVec);
 	set_run_mode(TRIG_WAVEFORM);
