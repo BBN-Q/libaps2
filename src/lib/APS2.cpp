@@ -1232,23 +1232,24 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec){
 	auto read_BIST_sig = [&](){
 		vector<uint32_t> bistVals;
 		//LVDS Phase 1 Reg 17 (SEL1=0; SEL0=0; SIGREAD=1; SYNC_EN=1; LVDS_EN=1)
+		//Not the BIST byte ordering seems to be backwards to the data sheet
 		write_reg(17, 0x26);
-		bistVals.push_back( (read_reg(21) << 24) | (read_reg(20) << 16) | (read_reg(19) << 8) | read_reg(18) ); 
+		bistVals.push_back( (read_reg(18) << 24) | (read_reg(19) << 16) | (read_reg(20) << 8) | read_reg(21) );
 		FILE_LOG(logDEBUG1) << "LVDS Phase 1 BIST " << hexn<8> << bistVals.back();
 
 		//LVDS Phase 2
 		write_reg(17, 0x66);
-		bistVals.push_back( (read_reg(21) << 24) | (read_reg(20) << 16) | (read_reg(19) << 8) | read_reg(18) ); 
+		bistVals.push_back( (read_reg(18) << 24) | (read_reg(19) << 16) | (read_reg(20) << 8) | read_reg(21) );
 		FILE_LOG(logDEBUG1) << "LVDS Phase 2 BIST " << hexn<8> << bistVals.back();
 
 		//SYNC Phase 1
 		write_reg(17, 0xA6);
-		bistVals.push_back( (read_reg(21) << 24) | (read_reg(20) << 16) | (read_reg(19) << 8) | read_reg(18) ); 
+		bistVals.push_back( (read_reg(18) << 24) | (read_reg(19) << 16) | (read_reg(20) << 8) | read_reg(21) );
 		FILE_LOG(logDEBUG1) << "SYNC Phase 1 BIST " << hexn<8> << bistVals.back();
 
 		//SYNC Phase 2
 		write_reg(17, 0xE6);
-		bistVals.push_back( (read_reg(21) << 24) | (read_reg(20) << 16) | (read_reg(19) << 8) | read_reg(18) ); 
+		bistVals.push_back( (read_reg(18) << 24) | (read_reg(19) << 16) | (read_reg(20) << 8) | read_reg(21) );
 		FILE_LOG(logDEBUG1) << "SYNC Phase 2 BIST " << hexn<8> << bistVals.back();
 
 		return bistVals;
