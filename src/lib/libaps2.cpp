@@ -285,6 +285,11 @@ int write_SPI_setup(const char * deviceSerial) {
 	return APSs[string(deviceSerial)].write_SPI_setup();
 }
 
+int run_DAC_BIST(const char * deviceSerial, const int dac, uint16_t* data, unsigned int length){
+	vector<int16_t> testVec(data, data+length);
+	return APSs[string(deviceSerial)].run_DAC_BIST(dac, testVec);
+}
+
 #ifdef __cplusplus
 }
 #endif

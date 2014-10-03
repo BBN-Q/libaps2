@@ -91,6 +91,8 @@ EXPORT int set_mac_addr(const char *, uint64_t);
 
 EXPORT int write_SPI_setup(const char *);
 
+EXPORT int run_DAC_BIST(const char *, const int, uint16_t*, unsigned int);
+
 #ifdef __cplusplus
 }
 #endif

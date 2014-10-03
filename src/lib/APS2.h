@@ -112,6 +112,10 @@ public:
 
 	//Create/restore setup SPI sequence
 	int write_SPI_setup();
+
+	// DAC BIST test
+	int run_DAC_BIST(const int &, const vector<int16_t> &);
+	
 private:
 
 	string deviceSerial_;

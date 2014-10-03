@@ -1215,7 +1215,6 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec){
 	//TODO: split into subfunctions
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
 	uint8_t regVal;
-	uint32_t bistVal;
 
 	FILE_LOG(logINFO) << "Running DAC BIST for DAC " << dac;
 
@@ -1224,38 +1223,38 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec){
 	//Read/write DAC SPI registers
 	auto read_reg = [&](const uint16_t & addr) { return read_SPI(targets[dac], addr); };	
 	auto write_reg = [&](const uint16_t & addr, const uint8_t & data) {
-		vector<uint32_t> msg = build_DAC_SPI_msg(targets[dac], {addr, data});
+		vector<uint32_t> msg = build_DAC_SPI_msg(targets[dac], {{addr, data}} );
 		write_SPI(msg);
-	}
+	};
 
 	//Read the BIST signature
 	auto read_BIST_sig = [&](){
 		vector<uint32_t> bistVals;
 		//LVDS Phase 1 Reg 17 (SEL1=0; SEL0=0; SIGREAD=1; SYNC_EN=1; LVDS_EN=1)
 		write_reg(17, 0x26);
-		bistVals.push_back( (reg_reg(21) << 24) | (reg_reg(20) << 16) | (reg_reg(19) << 8) | reg_reg(18) ); 
+		bistVals.push_back( (read_reg(21) << 24) | (read_reg(20) << 16) | (read_reg(19) << 8) | read_reg(18) ); 
 		FILE_LOG(logDEBUG1) << "LVDS Phase 1 BIST" << hexn<8> << bistVals.back();
 
 		//LVDS Phase 2
 		write_reg(17, 0x66);
-		bistVals.push_back( (reg_reg(21) << 24) | (reg_reg(20) << 16) | (reg_reg(19) << 8) | reg_reg(18) ); 
+		bistVals.push_back( (read_reg(21) << 24) | (read_reg(20) << 16) | (read_reg(19) << 8) | read_reg(18) ); 
 		FILE_LOG(logDEBUG1) << "LVDS Phase 2 BIST" << hexn<8> << bistVals.back();
 
 		//SYNC Phase 1
 		write_reg(17, 0xA6);
-		bistVals.push_back( (reg_reg(21) << 24) | (reg_reg(20) << 16) | (reg_reg(19) << 8) | reg_reg(18) ); 
+		bistVals.push_back( (read_reg(21) << 24) | (read_reg(20) << 16) | (read_reg(19) << 8) | read_reg(18) ); 
 		FILE_LOG(logDEBUG1) << "SYNC Phase 1 BIST" << hexn<8> << bistVals.back();
 
 		//SYNC Phase 2
 		write_reg(17, 0xE6);
-		bistVals.push_back( (reg_reg(21) << 24) | (reg_reg(20) << 16) | (reg_reg(19) << 8) | reg_reg(18) ); 
+		bistVals.push_back( (read_reg(21) << 24) | (read_reg(20) << 16) | (read_reg(19) << 8) | read_reg(18) ); 
 		FILE_LOG(logDEBUG1) << "SYNC Phase 2 BIST" << hexn<8> << bistVals.back();
 
 		return bistVals;
-	}
+	};
 
 	//Calculate expected signature
-	calc_bist = [&](const vector<int16_t> dataVec) {
+	auto calc_bist = [&](const vector<int16_t> dataVec) {
 		uint32_t lfsr = 0;
 		const uint32_t maskBottom14 = 0x3fff;
 		for(auto v : dataVec){
@@ -1267,7 +1266,7 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec){
 			}
 		}
 		return lfsr;
-	}
+	};
 
 	// The two different phases take the even/odd samples
 	vector<int16_t> evenSamples, oddSamples;
@@ -1348,6 +1347,8 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec){
 	read_BIST_sig();
 	trigger();
 	read_BIST_sig();
+
+	return 0;
 
 }
 
