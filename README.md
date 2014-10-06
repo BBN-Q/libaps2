@@ -38,6 +38,7 @@ Using gcc on Windows is a rapidly moving target.  Our setup has changed every co
   pacman -S make
   pacman -S mingw64/mingw-w64-x86_64-cmake
   pacman -S mingw64/mingw-w64-x86_64-gcc
+  pacman -S mingw64/mingw-w64-x86_64-gdb
   pacman -S mingw64/mingw-w64-x86_64-hdf5
   ```
 3. Finally build in the libaps2 folder
