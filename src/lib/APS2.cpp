@@ -399,8 +399,9 @@ int APS2::set_run_mode(const RUN_MODE & mode) {
 
 	vector<uint64_t> instructions = WF_SEQ;
 	// inject waveform length into the instruction
-	FILE_LOG(logDEBUG2) << "Setting WFM instruction count = " << (channels_[0].get_length() / 4) - 1;
-	instructions[1] |= ((channels_[0].get_length() / 4) - 1) << 24;
+	size_t wfCount = (std::max(channels_[0].get_length(), channels_[1].get_length()) / 4) - 1;
+	FILE_LOG(logDEBUG2) << "Setting WFM instruction count = " << wfCount;
+	instructions[1] |= wfCount << 24;
 	switch (mode) {
 		case RUN_SEQUENCE:
 			// don't need to do anything... already there
