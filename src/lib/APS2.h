@@ -114,8 +114,9 @@ public:
 	int write_SPI_setup();
 
 	// DAC BIST test
-	int run_DAC_BIST(const int &, const vector<int16_t> &);
-	
+	int run_DAC_BIST(const int &, const vector<int16_t> &, vector<uint32_t> &);
+	int set_DAC_SD(const int &, const uint8_t &);
+
 private:
 
 	string deviceSerial_;

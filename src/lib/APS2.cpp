@@ -1041,13 +1041,6 @@ int APS2::setup_DAC(const int & dac)
 	vector<uint32_t> msg;
 	uint8_t SD, MSD, MHD;
 	uint8_t edgeMSD, edgeMHD;
-	uint8_t interruptAddr, controllerAddr, sdAddr, msdMhdAddr;
-
-	// relevant DAC registers
-	interruptAddr = 0x1; // LVDS[7] SYNC[6]
-	controllerAddr = 0x6; // LSURV[7] LAUTO[6] LFLT[5:2] LTRH[1:0]
-	sdAddr = 0x5; // SD[7:4] CHECK[0]
-	msdMhdAddr = 0x4; // MSD[7:4] MHD[3:0]
 
 	if (dac < 0 || dac >= NUM_CHANNELS) {
 		FILE_LOG(logERROR) << "FPGA::setup_DAC: unknown DAC, " << dac;
@@ -1056,44 +1049,49 @@ int APS2::setup_DAC(const int & dac)
 	FILE_LOG(logINFO) << "Setting up DAC " << dac;
 
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
-	
+
+	// Step 0: check control clock divider
+	data = read_SPI(targets[dac], DAC_CONTROLLERCLOCK_ADDR);
+	FILE_LOG(logDEBUG1) << "DAC controller clock divider register = " << (data & 0xf);
+	// Max freq is 1.2GS/s so dividing by 128 gets us below 10MHz for sure
+	msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLERCLOCK_ADDR, 5}});
+	write_SPI(msg);
+
 	// Step 1: calibrate and set the LVDS controller.
 	// get initial states of registers
 	
 	// TODO: remove int(... & 0x1F)
-	data = read_SPI(targets[dac], interruptAddr);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(interruptAddr & 0x1F) << " Val: " << int(data & 0xFF);
-	data = read_SPI(targets[dac], msdMhdAddr);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(msdMhdAddr & 0x1F) << " Val: " << int(data & 0xFF);
-	data = read_SPI(targets[dac], sdAddr);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(sdAddr & 0x1F) << " Val: " << int(data & 0xFF);
+	data = read_SPI(targets[dac], DAC_INTERRUPT_ADDR);
+	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_INTERRUPT_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	data = read_SPI(targets[dac], DAC_MSDMHD_ADDR);
+	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	data = read_SPI(targets[dac], DAC_SD_ADDR);
+	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 
 	// Ensure that surveilance and auto modes are off
-	data = read_SPI(targets[dac], controllerAddr);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(controllerAddr & 0x1F) << " Val: " << int(data & 0xFF);
+	data = read_SPI(targets[dac], DAC_CONTROLLER_ADDR);
+	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_CONTROLLER_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 	data = 0;
-	msg = build_DAC_SPI_msg(targets[dac], {{controllerAddr, data}});
+	msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLER_ADDR, data}});
 	write_SPI(msg);
 
 	// Slide the data valid window left (with MSD) and check for the interrupt
 	SD = 0;  //(sample delay nibble, stored in Reg. 5, bits 7:4)
 	MSD = 0; //(setup delay nibble, stored in Reg. 4, bits 7:4)
 	MHD = 0; //(hold delay nibble,  stored in Reg. 4, bits 3:0)
-	data = SD << 4;
 
-	msg = build_DAC_SPI_msg(targets[dac], {{sdAddr, data}});
-	write_SPI(msg);
+	set_DAC_SD(dac, SD);
 
 	for (MSD = 0; MSD < 16; MSD++) {
 		FILE_LOG(logDEBUG2) <<  "Setting MSD: " << int(MSD);
 		
 		data = (MSD << 4) | MHD;
-		msg = build_DAC_SPI_msg(targets[dac], {{msdMhdAddr, data}});
+		msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
 		write_SPI(msg);
-		FILE_LOG(logDEBUG2) <<  "Write Reg: " << myhex << int(msdMhdAddr & 0x1F) << " Val: " << int(data & 0xFF);
+		FILE_LOG(logDEBUG2) <<  "Write Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 		
-		data = read_SPI(targets[dac], sdAddr);
-		FILE_LOG(logDEBUG2) <<  "Read Reg: " << myhex << int(sdAddr & 0x1F) << " Val: " << int(data & 0xFF);
+		data = read_SPI(targets[dac], DAC_SD_ADDR);
+		FILE_LOG(logDEBUG2) <<  "Read Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 		
 		bool check = data & 1;
 		FILE_LOG(logDEBUG2) << "Check: " << check;
@@ -1109,10 +1107,10 @@ int APS2::setup_DAC(const int & dac)
 		FILE_LOG(logDEBUG2) <<  "Setting MHD: " << int(MHD);
 		
 		data = (MSD << 4) | MHD;
-		msg = build_DAC_SPI_msg(targets[dac], {{msdMhdAddr, data}});
+		msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
 		write_SPI(msg);
 		
-		data = read_SPI(targets[dac], sdAddr);
+		data = read_SPI(targets[dac], DAC_SD_ADDR);
 		FILE_LOG(logDEBUG2) << "Read: " << myhex << int(data & 0xFF);
 		bool check = data & 1;
 		FILE_LOG(logDEBUG2) << "Check: " << check;
@@ -1122,18 +1120,15 @@ int APS2::setup_DAC(const int & dac)
 	edgeMHD = MHD;
 	FILE_LOG(logDEBUG) << "Found MHD = " << int(edgeMHD);
 	SD = (edgeMHD - edgeMSD) / 2;
-	FILE_LOG(logDEBUG) << "Setting SD = " << int(SD);
 
 	// Clear MSD and MHD
 	MHD = 0;
 	data = (MSD << 4) | MHD;
-	msg = build_DAC_SPI_msg(targets[dac], {{msdMhdAddr, data}});
+	msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
 	write_SPI(msg);
 
 	// Set the optimal sample delay (SD)
-	data = SD << 4;
-	msg = build_DAC_SPI_msg(targets[dac], {{sdAddr, data}});
-	write_SPI(msg);
+	set_DAC_SD(dac, SD);
 
 	// AD9376 data sheet advises us to enable surveilance and auto modes, but this
 	// has introduced output glitches in limited testing
@@ -1141,13 +1136,24 @@ int APS2::setup_DAC(const int & dac)
 	// int filter_length = 12;
 	// int threshold = 1;
 	// data = (1 << 7) | (1 << 6) | (filter_length << 2) | (threshold & 0x3);
-	// msg = build_DAC_SPI_msg(targets[dac], {{controllerAddr, data}});
+	// msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLER_ADDR, data}});
 	// write_SPI(msg);
 	
 	// turn on SYNC FIFO (limited testing doesn't show it to help)
 	// enable_DAC_FIFO(dac);
 
 	return 0;
+}
+
+int APS2::set_DAC_SD(const int & dac, const uint8_t & sd) {
+	//Sets the sample delay 
+	FILE_LOG(logDEBUG) << "Setting SD = " << int(sd);
+	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
+	auto msg = build_DAC_SPI_msg(targets[dac], {{DAC_SD_ADDR, ((sd & 0xf) << 4)}});
+	auto result = write_SPI(msg);
+	auto data = read_SPI(targets[dac], DAC_SD_ADDR);
+	FILE_LOG(logDEBUG1) << "Read SD = " << (data >> 4);
+	return result;
 }
 
 int APS2::run_chip_config(const uint32_t & addr /* default = 0 */) {
@@ -1213,7 +1219,7 @@ int APS2::disable_DAC_FIFO(const int & dac) {
 	return 0;
 }
 
-int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec){
+int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<uint32_t> & results){
 	//TODO: split into subfunctions
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
 	uint8_t regVal;
@@ -1294,6 +1300,10 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec){
 	run();
 	
 	// Following Page 45 of the AD9736 datasheet
+	// Step 0: save the current state of SD and control clock divider
+	auto ccd = read_reg(DAC_CONTROLLERCLOCK_ADDR);
+	auto sd = read_reg(DAC_SD_ADDR);
+	FILE_LOG(logDEBUG1) << "Read SD = " << (sd >> 4);
 
 	// Step 1: set the reset bit (Reg 0, bit 5)
 	regVal = read_reg(0);
@@ -1323,6 +1333,9 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec){
 	write_reg(0, regVal);
 
 	// Step 10: set operating mode
+	// clock controller
+	write_reg(DAC_SD_ADDR, sd);
+	write_reg(DAC_CONTROLLERCLOCK_ADDR, ccd);
 
 	// Step 11: Set CLEAR (Reg. 17, Bit 0), SYNC_EN (Reg. 17, Bit 1), and LVDS_EN (Reg. 17, Bit 2) high
 	write_reg(17, 0x07);
@@ -1349,12 +1362,26 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec){
 	write_reg(17, 0x06);
 	read_BIST_sig();
 	trigger();
-	read_BIST_sig();
+
+	results = read_BIST_sig();
+	results.push_back(phase2BIST);
+	results.push_back(phase1BIST);
 
 	stop();
 
-	return 0;
+	//Pump the reset line to turn off BIST mode
+	regVal = read_reg(0);
+	regVal |= (1 << 5);
+	write_reg(0, regVal);
+	regVal &= ~(1 << 5);
+	write_reg(0, regVal);
 
+	//restore registers
+	write_reg(DAC_SD_ADDR, sd);
+	write_reg(DAC_CONTROLLERCLOCK_ADDR, ccd);
+
+	bool passed = (results[0] == phase2BIST) && (results[1] == phase1BIST) && (results[2] == phase2BIST) && (results[3] == phase1BIST);
+	return passed;
 }
 
 int APS2::set_offset_register(const int & dac, const float & offset) {

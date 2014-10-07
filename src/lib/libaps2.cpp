@@ -285,9 +285,16 @@ int write_SPI_setup(const char * deviceSerial) {
 	return APSs[string(deviceSerial)].write_SPI_setup();
 }
 
-int run_DAC_BIST(const char * deviceSerial, const int dac, uint16_t* data, unsigned int length){
+int run_DAC_BIST(const char * deviceSerial, const int dac, uint16_t* data, unsigned int length, uint32_t* results){
 	vector<int16_t> testVec(data, data+length);
-	return APSs[string(deviceSerial)].run_DAC_BIST(dac, testVec);
+	vector<uint32_t> tmpResults;
+	int passed = APSs[string(deviceSerial)].run_DAC_BIST(dac, testVec, tmpResults);
+	std::copy(tmpResults.begin(), tmpResults.end(), results);
+	return passed;
+}
+
+int set_DAC_SD(const char * deviceSerial, const int dac, const uint8_t sd){
+	return APSs[string(deviceSerial)].set_DAC_SD(dac, sd);
 }
 
 #ifdef __cplusplus
