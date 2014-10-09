@@ -61,15 +61,16 @@ int main(int argc, char* argv[])
 {
 	argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
 	option::Stats  stats(usage, argc, argv);
-	option::Option options[stats.options_max], buffer[stats.buffer_max];
+	option::Option *options = new option::Option[stats.options_max];
+	option::Option *buffer = new option::Option[stats.buffer_max];
 	option::Parser parse(usage, argc, argv, options, buffer);
 
 	if (parse.error())
 	 return -1;
 
 	if (options[HELP] || argc == 0) {
-	 option::printUsage(std::cout, usage);
-	 return 0;
+		option::printUsage(std::cout, usage);
+		return 0;
 	}
 
 	for (option::Option* opt = options[UNKNOWN]; opt; opt = opt->next())
@@ -175,5 +176,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	delete[] options;
+	delete[] buffer;
 	return 0;
  }

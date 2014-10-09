@@ -247,6 +247,13 @@ static const int PLL_SYS_LOCK_BIT = 0;
 static const int PLL_CHA_LOCK_BIT = 1;
 static const int PLL_CHB_LOCK_BIT = 2;
 
+//DAC SPI Addresses
+static const uint8_t DAC_INTERRUPT_ADDR = 1; // LVDS[7] SYNC[6]
+static const uint8_t DAC_CONTROLLER_ADDR = 6; // LSURV[7] LAUTO[6] LFLT[5:2] LTRH[1:0]
+static const uint8_t DAC_CONTROLLERCLOCK_ADDR = 0x16;
+static const uint8_t DAC_SD_ADDR = 5; // SD[7:4] CHECK[0]
+static const uint8_t DAC_MSDMHD_ADDR = 4; // MSD[7:4] MHD[3:0]
+
 // EPROM MEMORY MAP
 static const uint32_t EPROM_SPI_CONFIG_ADDR = 0x0;
 static const uint32_t EPROM_USER_IMAGE_ADDR = 0x00010000;

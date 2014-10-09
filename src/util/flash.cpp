@@ -75,7 +75,7 @@ int main (int argc, char* argv[])
   cout << concol::RED << "BBN AP2 Flash Test Executable" << concol::RESET << endl;
 
 
-  int dbgLevel = 8;
+  int dbgLevel = 4;
   if (argc >= 2) {
     dbgLevel = atoi(argv[1]);
   }

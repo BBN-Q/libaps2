@@ -339,6 +339,7 @@ int APS2::set_markers(const int & dac, const vector<uint8_t> & data) {
 }
 
 int APS2::set_trigger_source(const TRIGGERSOURCE & triggerSource){
+	FILE_LOG(logDEBUG) << "Setting trigger source to " << triggerSource;
 
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
 
@@ -398,8 +399,9 @@ int APS2::set_run_mode(const RUN_MODE & mode) {
 
 	vector<uint64_t> instructions = WF_SEQ;
 	// inject waveform length into the instruction
-	FILE_LOG(logDEBUG2) << "Setting WFM instruction count = " << (channels_[0].get_length() / 4) - 1;
-	instructions[1] |= ((channels_[0].get_length() / 4) - 1) << 24;
+	size_t wfCount = (std::max(channels_[0].get_length(), channels_[1].get_length()) / 4) - 1;
+	FILE_LOG(logDEBUG2) << "Setting WFM instruction count = " << wfCount;
+	instructions[1] |= wfCount << 24;
 	switch (mode) {
 		case RUN_SEQUENCE:
 			// don't need to do anything... already there
@@ -890,10 +892,14 @@ int APS2::test_PLL_sync() {
 
 	FILE_LOG(logINFO) << "Running channel sync procedure";
 	
+	// Disable DAC FIFOs
+	for (int dac = 0; dac < NUM_CHANNELS; dac++) {
+		disable_DAC_FIFO(dac);
+	}
 	// Disable DDRs
 	set_bit(SEQ_CONTROL_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
 
-	static const int lowPhaseCutoff = 30, highPhaseCutoff = 150;
+	static const int lowPhaseCutoff = 45, highPhaseCutoff = 135;
 	// loop over channels
 	for (int ch = 0; ch < 2; ch++) {
 		//Loop over number of tries
@@ -928,6 +934,10 @@ int APS2::test_PLL_sync() {
 
 	// Enable DDRs
 	clear_bit(SEQ_CONTROL_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
+	// Enable DAC FIFOs
+	for (int dac = 0; dac < NUM_CHANNELS; dac++) {
+		enable_DAC_FIFO(dac);
+	}
 
 	FILE_LOG(logINFO) << "Sync test complete";
 
@@ -1039,13 +1049,6 @@ int APS2::setup_DAC(const int & dac)
 	vector<uint32_t> msg;
 	uint8_t SD, MSD, MHD;
 	uint8_t edgeMSD, edgeMHD;
-	uint8_t interruptAddr, controllerAddr, sdAddr, msdMhdAddr;
-
-	// relevant DAC registers
-	interruptAddr = 0x1; // LVDS[7] SYNC[6]
-	controllerAddr = 0x6; // LSURV[7] LAUTO[6] LFLT[5:2] LTRH[1:0]
-	sdAddr = 0x5; // SD[7:4] CHECK[0]
-	msdMhdAddr = 0x4; // MSD[7:4] MHD[3:0]
 
 	if (dac < 0 || dac >= NUM_CHANNELS) {
 		FILE_LOG(logERROR) << "FPGA::setup_DAC: unknown DAC, " << dac;
@@ -1054,44 +1057,51 @@ int APS2::setup_DAC(const int & dac)
 	FILE_LOG(logINFO) << "Setting up DAC " << dac;
 
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
-	
+
+	// Step 0: check control clock divider
+	data = read_SPI(targets[dac], DAC_CONTROLLERCLOCK_ADDR);
+	FILE_LOG(logDEBUG1) << "DAC controller clock divider register = " << (data & 0xf);
+	// Max freq is 1.2GS/s so dividing by 128 gets us below 10MHz for sure
+	msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLERCLOCK_ADDR, 5}});
+	write_SPI(msg);
+
+	disable_DAC_FIFO(dac);
+
 	// Step 1: calibrate and set the LVDS controller.
 	// get initial states of registers
 	
 	// TODO: remove int(... & 0x1F)
-	data = read_SPI(targets[dac], interruptAddr);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(interruptAddr & 0x1F) << " Val: " << int(data & 0xFF);
-	data = read_SPI(targets[dac], msdMhdAddr);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(msdMhdAddr & 0x1F) << " Val: " << int(data & 0xFF);
-	data = read_SPI(targets[dac], sdAddr);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(sdAddr & 0x1F) << " Val: " << int(data & 0xFF);
+	data = read_SPI(targets[dac], DAC_INTERRUPT_ADDR);
+	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_INTERRUPT_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	data = read_SPI(targets[dac], DAC_MSDMHD_ADDR);
+	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	data = read_SPI(targets[dac], DAC_SD_ADDR);
+	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 
 	// Ensure that surveilance and auto modes are off
-	data = read_SPI(targets[dac], controllerAddr);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(controllerAddr & 0x1F) << " Val: " << int(data & 0xFF);
+	data = read_SPI(targets[dac], DAC_CONTROLLER_ADDR);
+	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_CONTROLLER_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 	data = 0;
-	msg = build_DAC_SPI_msg(targets[dac], {{controllerAddr, data}});
+	msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLER_ADDR, data}});
 	write_SPI(msg);
 
 	// Slide the data valid window left (with MSD) and check for the interrupt
 	SD = 0;  //(sample delay nibble, stored in Reg. 5, bits 7:4)
 	MSD = 0; //(setup delay nibble, stored in Reg. 4, bits 7:4)
 	MHD = 0; //(hold delay nibble,  stored in Reg. 4, bits 3:0)
-	data = SD << 4;
 
-	msg = build_DAC_SPI_msg(targets[dac], {{sdAddr, data}});
-	write_SPI(msg);
+	set_DAC_SD(dac, SD);
 
 	for (MSD = 0; MSD < 16; MSD++) {
 		FILE_LOG(logDEBUG2) <<  "Setting MSD: " << int(MSD);
 		
 		data = (MSD << 4) | MHD;
-		msg = build_DAC_SPI_msg(targets[dac], {{msdMhdAddr, data}});
+		msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
 		write_SPI(msg);
-		FILE_LOG(logDEBUG2) <<  "Write Reg: " << myhex << int(msdMhdAddr & 0x1F) << " Val: " << int(data & 0xFF);
+		FILE_LOG(logDEBUG2) <<  "Write Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 		
-		data = read_SPI(targets[dac], sdAddr);
-		FILE_LOG(logDEBUG2) <<  "Read Reg: " << myhex << int(sdAddr & 0x1F) << " Val: " << int(data & 0xFF);
+		data = read_SPI(targets[dac], DAC_SD_ADDR);
+		FILE_LOG(logDEBUG2) <<  "Read Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 		
 		bool check = data & 1;
 		FILE_LOG(logDEBUG2) << "Check: " << check;
@@ -1107,10 +1117,10 @@ int APS2::setup_DAC(const int & dac)
 		FILE_LOG(logDEBUG2) <<  "Setting MHD: " << int(MHD);
 		
 		data = (MSD << 4) | MHD;
-		msg = build_DAC_SPI_msg(targets[dac], {{msdMhdAddr, data}});
+		msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
 		write_SPI(msg);
 		
-		data = read_SPI(targets[dac], sdAddr);
+		data = read_SPI(targets[dac], DAC_SD_ADDR);
 		FILE_LOG(logDEBUG2) << "Read: " << myhex << int(data & 0xFF);
 		bool check = data & 1;
 		FILE_LOG(logDEBUG2) << "Check: " << check;
@@ -1120,18 +1130,15 @@ int APS2::setup_DAC(const int & dac)
 	edgeMHD = MHD;
 	FILE_LOG(logDEBUG) << "Found MHD = " << int(edgeMHD);
 	SD = (edgeMHD - edgeMSD) / 2;
-	FILE_LOG(logDEBUG) << "Setting SD = " << int(SD);
 
 	// Clear MSD and MHD
 	MHD = 0;
 	data = (MSD << 4) | MHD;
-	msg = build_DAC_SPI_msg(targets[dac], {{msdMhdAddr, data}});
+	msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
 	write_SPI(msg);
 
 	// Set the optimal sample delay (SD)
-	data = SD << 4;
-	msg = build_DAC_SPI_msg(targets[dac], {{sdAddr, data}});
-	write_SPI(msg);
+	set_DAC_SD(dac, SD);
 
 	// AD9376 data sheet advises us to enable surveilance and auto modes, but this
 	// has introduced output glitches in limited testing
@@ -1139,13 +1146,21 @@ int APS2::setup_DAC(const int & dac)
 	// int filter_length = 12;
 	// int threshold = 1;
 	// data = (1 << 7) | (1 << 6) | (filter_length << 2) | (threshold & 0x3);
-	// msg = build_DAC_SPI_msg(targets[dac], {{controllerAddr, data}});
+	// msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLER_ADDR, data}});
 	// write_SPI(msg);
 	
-	// turn on SYNC FIFO (limited testing doesn't show it to help)
-	// enable_DAC_FIFO(dac);
+	// turn on SYNC FIFO
+	enable_DAC_FIFO(dac);
 
 	return 0;
+}
+
+int APS2::set_DAC_SD(const int & dac, const uint8_t & sd) {
+	//Sets the sample delay 
+	FILE_LOG(logDEBUG) << "Setting SD = " << int(sd);
+	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
+	auto msg = build_DAC_SPI_msg(targets[dac], {{DAC_SD_ADDR, ((sd & 0xf) << 4)}});
+	return write_SPI(msg);
 }
 
 int APS2::run_chip_config(const uint32_t & addr /* default = 0 */) {
@@ -1192,7 +1207,7 @@ int APS2::enable_DAC_FIFO(const int & dac) {
 	FILE_LOG(logDEBUG2) << "Read: " << myhex << int(data & 0xFF);
 	FILE_LOG(logDEBUG) << "FIFO phase = " << ((data & 0x70) >> 4);
 
-	//TODO: return an error code if the FIFO phase is bad
+	//TODO: fix the FIFO phase if too close together
 	return 0;
 }
 
@@ -1209,6 +1224,171 @@ int APS2::disable_DAC_FIFO(const int & dac) {
 	write_SPI(msg);
 
 	return 0;
+}
+
+int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<uint32_t> & results){
+	//TODO: split into subfunctions
+	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
+	uint8_t regVal;
+
+	FILE_LOG(logINFO) << "Running DAC BIST for DAC " << dac;
+
+	// A few helper lambdas
+
+	//Read/write DAC SPI registers
+	auto read_reg = [&](const uint16_t & addr) { return read_SPI(targets[dac], addr); };	
+	auto write_reg = [&](const uint16_t & addr, const uint8_t & data) {
+		vector<uint32_t> msg = build_DAC_SPI_msg(targets[dac], {{addr, data}} );
+		write_SPI(msg);
+	};
+
+	//Read the BIST signature
+	auto read_BIST_sig = [&](){
+		vector<uint32_t> bistVals;
+		//LVDS Phase 1 Reg 17 (SEL1=0; SEL0=0; SIGREAD=1; SYNC_EN=1; LVDS_EN=1)
+		//Not the BIST byte ordering seems to be backwards to the data sheet
+		write_reg(17, 0x26);
+		bistVals.push_back( (read_reg(18) << 24) | (read_reg(19) << 16) | (read_reg(20) << 8) | read_reg(21) );
+		FILE_LOG(logDEBUG1) << "LVDS Phase 1 BIST " << hexn<8> << bistVals.back();
+
+		//LVDS Phase 2
+		write_reg(17, 0x66);
+		bistVals.push_back( (read_reg(18) << 24) | (read_reg(19) << 16) | (read_reg(20) << 8) | read_reg(21) );
+		FILE_LOG(logDEBUG1) << "LVDS Phase 2 BIST " << hexn<8> << bistVals.back();
+
+		//SYNC Phase 1
+		write_reg(17, 0xA6);
+		bistVals.push_back( (read_reg(18) << 24) | (read_reg(19) << 16) | (read_reg(20) << 8) | read_reg(21) );
+		FILE_LOG(logDEBUG1) << "SYNC Phase 1 BIST " << hexn<8> << bistVals.back();
+
+		//SYNC Phase 2
+		write_reg(17, 0xE6);
+		bistVals.push_back( (read_reg(18) << 24) | (read_reg(19) << 16) | (read_reg(20) << 8) | read_reg(21) );
+		FILE_LOG(logDEBUG1) << "SYNC Phase 2 BIST " << hexn<8> << bistVals.back();
+
+		return bistVals;
+	};
+
+	//Calculate expected signature
+	auto calc_bist = [&](const vector<int16_t> dataVec) {
+		uint32_t lfsr = 0;
+		const uint32_t maskBottom14 = 0x3fff;
+		for(auto v : dataVec){
+			if (v != 0) {
+				//Shift
+				lfsr = (lfsr << 1) | (lfsr >> 31);
+				//Now ~xor the bottom 14 bits with the input data
+				lfsr = (lfsr & ~maskBottom14) | ( ~(lfsr ^ v) & maskBottom14);
+			}
+		}
+		return lfsr;
+	};
+
+	// The two different phases take the even/odd samples
+	vector<int16_t> evenSamples, oddSamples;
+	bool toggle = false;
+    std::partition_copy(testVec.begin(),
+                        testVec.end(),
+                        std::back_inserter(oddSamples),
+                        std::back_inserter(evenSamples),
+                        [&toggle](int) { return toggle = !toggle; });
+
+    //
+    uint32_t phase1BIST = calc_bist(oddSamples);
+    uint32_t phase2BIST = calc_bist(evenSamples);
+
+    FILE_LOG(logDEBUG) << "Expected phase 1 BIST register " << hexn<8> << phase1BIST;
+    FILE_LOG(logDEBUG) << "Expected phase 2 BIST register " << hexn<8> << phase2BIST;
+
+	//Load the test vector and setup software triggered waveform mode
+	set_waveform(dac, testVec);
+	set_run_mode(TRIG_WAVEFORM);
+	set_trigger_source(SOFTWARE);
+	run();
+	
+	// Following Page 45 of the AD9736 datasheet
+	// Step 0: save the current state of SD and control clock divider
+	auto ccd = read_reg(DAC_CONTROLLERCLOCK_ADDR);
+	auto sd = read_reg(DAC_SD_ADDR);
+	FILE_LOG(logDEBUG1) << "Read SD = " << (sd >> 4);
+
+	// Step 1: set the reset bit (Reg 0, bit 5)
+	regVal = read_reg(0);
+	FILE_LOG(logDEBUG3) << "Register 0 is currently " << hexn<2> << regVal;
+	regVal |= (1 << 5);
+	write_reg(0, regVal);
+
+	// Step 2: set the zero register to 0x0000 for signed data (note inconsistency between page 44 and 45 of manual)
+	set_offset_register(dac, 0);
+
+	// Step 3 and 4 : run data clock for 16 cycles -- should happen with ethernet latency for free
+
+	// Step 5: clear the reset bit
+	regVal &= ~(1 << 5);
+	write_reg(0, regVal);
+
+	// Step 6: wait
+
+	// Step 7: set the reset bit
+	regVal |= (1 << 5);
+	write_reg(0, regVal);
+
+	// Step 8: wait
+
+	// Step 9: clear reset bit
+	regVal &= ~(1 << 5);
+	write_reg(0, regVal);
+
+	// Step 10: set operating mode
+	// clock controller
+	write_reg(DAC_SD_ADDR, sd);
+	write_reg(DAC_CONTROLLERCLOCK_ADDR, ccd);
+
+	// Step 11: Set CLEAR (Reg. 17, Bit 0), SYNC_EN (Reg. 17, Bit 1), and LVDS_EN (Reg. 17, Bit 2) high
+	write_reg(17, 0x07);
+
+	// Step 12: wait...
+
+	// Step 13: clear the CLEAR bit
+	write_reg(17, 0x06);
+
+	// Step 14: read the BIST registers to confirm all zeros
+	// Note error in part (b's) should read registers 21-18
+	read_BIST_sig();
+
+	// Step 15: Clock in a single run of the waveform
+	trigger();
+
+	// Step 16: data held at zero because outputValid is low
+
+	// Step 17: read the BIST registers again
+	read_BIST_sig();
+
+	// Step 18: loop back to 11
+	write_reg(17, 0x07);
+	write_reg(17, 0x06);
+	read_BIST_sig();
+	trigger();
+
+	results = read_BIST_sig();
+	results.push_back(phase2BIST);
+	results.push_back(phase1BIST);
+
+	stop();
+
+	//Pump the reset line to turn off BIST mode
+	regVal = read_reg(0);
+	regVal |= (1 << 5);
+	write_reg(0, regVal);
+	regVal &= ~(1 << 5);
+	write_reg(0, regVal);
+
+	//restore registers
+	write_reg(DAC_SD_ADDR, sd);
+	write_reg(DAC_CONTROLLERCLOCK_ADDR, ccd);
+
+	bool passed = (results[0] == phase2BIST) && (results[1] == phase1BIST) && (results[2] == phase2BIST) && (results[3] == phase1BIST);
+	return passed;
 }
 
 int APS2::set_offset_register(const int & dac, const float & offset) {
