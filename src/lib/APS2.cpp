@@ -892,6 +892,10 @@ int APS2::test_PLL_sync() {
 
 	FILE_LOG(logINFO) << "Running channel sync procedure";
 	
+	// Disable DAC FIFOs
+	for (int dac = 0; dac < NUM_CHANNELS; dac++) {
+		disable_DAC_FIFO(dac);
+	}
 	// Disable DDRs
 	set_bit(SEQ_CONTROL_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
 
@@ -930,6 +934,10 @@ int APS2::test_PLL_sync() {
 
 	// Enable DDRs
 	clear_bit(SEQ_CONTROL_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
+	// Enable DAC FIFOs
+	for (int dac = 0; dac < NUM_CHANNELS; dac++) {
+		enable_DAC_FIFO(dac);
+	}
 
 	FILE_LOG(logINFO) << "Sync test complete";
 
@@ -1057,6 +1065,8 @@ int APS2::setup_DAC(const int & dac)
 	msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLERCLOCK_ADDR, 5}});
 	write_SPI(msg);
 
+	disable_DAC_FIFO(dac);
+
 	// Step 1: calibrate and set the LVDS controller.
 	// get initial states of registers
 	
@@ -1139,8 +1149,8 @@ int APS2::setup_DAC(const int & dac)
 	// msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLER_ADDR, data}});
 	// write_SPI(msg);
 	
-	// turn on SYNC FIFO (limited testing doesn't show it to help)
-	// enable_DAC_FIFO(dac);
+	// turn on SYNC FIFO
+	enable_DAC_FIFO(dac);
 
 	return 0;
 }
@@ -1197,7 +1207,7 @@ int APS2::enable_DAC_FIFO(const int & dac) {
 	FILE_LOG(logDEBUG2) << "Read: " << myhex << int(data & 0xFF);
 	FILE_LOG(logDEBUG) << "FIFO phase = " << ((data & 0x70) >> 4);
 
-	//TODO: return an error code if the FIFO phase is bad
+	//TODO: fix the FIFO phase if too close together
 	return 0;
 }
 
