@@ -252,7 +252,7 @@ static const uint8_t DAC_INTERRUPT_ADDR = 1; // LVDS[7] SYNC[6]
 static const uint8_t DAC_CONTROLLER_ADDR = 6; // LSURV[7] LAUTO[6] LFLT[5:2] LTRH[1:0]
 static const uint8_t DAC_CONTROLLERCLOCK_ADDR = 0x16;
 static const uint8_t DAC_SD_ADDR = 5; // SD[7:4] CHECK[0]
-static const uint8_t DAC_MSDMHD_ADDR = 6; // MSD[7:4] MHD[3:0]
+static const uint8_t DAC_MSDMHD_ADDR = 4; // MSD[7:4] MHD[3:0]
 
 // EPROM MEMORY MAP
 static const uint32_t EPROM_SPI_CONFIG_ADDR = 0x0;
