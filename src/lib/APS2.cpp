@@ -895,7 +895,7 @@ int APS2::test_PLL_sync() {
 	// Disable DDRs
 	set_bit(SEQ_CONTROL_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
 
-	static const int lowPhaseCutoff = 30, highPhaseCutoff = 150;
+	static const int lowPhaseCutoff = 45, highPhaseCutoff = 135;
 	// loop over channels
 	for (int ch = 0; ch < 2; ch++) {
 		//Loop over number of tries
@@ -1150,10 +1150,7 @@ int APS2::set_DAC_SD(const int & dac, const uint8_t & sd) {
 	FILE_LOG(logDEBUG) << "Setting SD = " << int(sd);
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
 	auto msg = build_DAC_SPI_msg(targets[dac], {{DAC_SD_ADDR, ((sd & 0xf) << 4)}});
-	auto result = write_SPI(msg);
-	auto data = read_SPI(targets[dac], DAC_SD_ADDR);
-	FILE_LOG(logDEBUG1) << "Read SD = " << (data >> 4);
-	return result;
+	return write_SPI(msg);
 }
 
 int APS2::run_chip_config(const uint32_t & addr /* default = 0 */) {
