@@ -1189,38 +1189,55 @@ int APS2::enable_DAC_FIFO(const int & dac) {
 	}
 
 	uint8_t data = 0;
-	uint16_t syncAddr = 0x0;
-	uint16_t fifoStatusAddr = 0x7; // FIFOSTAT[7] FIFOPHASE[6:4]
 	FILE_LOG(logDEBUG) << "Enabling DAC " << dac << " FIFO";
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
 
 	// set sync bit (Reg 0, bit 2)
-	data = read_SPI(targets[dac], syncAddr);
+	data = read_SPI(targets[dac], DAC_SYNC_ADDR);
 	data = data | (1 << 2);
-	vector<uint32_t> msg = build_DAC_SPI_msg(targets[dac], {{syncAddr, data}});
+	vector<uint32_t> msg = build_DAC_SPI_msg(targets[dac], {{DAC_SYNC_ADDR, data}});
+	write_SPI(msg);
+
+	// clear OFFSET bits
+	msg = build_DAC_SPI_msg(targets[dac], {{DAC_FIFOSTAT_ADDR, 0}});
 	write_SPI(msg);
 
 	// read back FIFO phase to ensure we are in a safe zone
-	data = read_SPI(targets[dac], fifoStatusAddr);
-
-	// phase (FIFOSTAT) is in bits <6:4>
+	data = read_SPI(targets[dac], DAC_FIFOSTAT_ADDR);
 	FILE_LOG(logDEBUG2) << "Read: " << myhex << int(data & 0xFF);
-	FILE_LOG(logDEBUG) << "FIFO phase = " << ((data & 0x70) >> 4);
 
-	//TODO: fix the FIFO phase if too close together
+	// phase (FIFOPHASE) is in bits <6:4>
+	data = (data & 0x70) >> 4;
+	FILE_LOG(logDEBUG) << "FIFO phase = " << int(data);
+
+	// fix the FIFO phase if too close together
+	// want to get to a phase of 3 or 4, but can only change it by decreasing in steps of 2 (mod 8),
+	// i.e. setting OFFSET = 1, decreases the phase by 2
+	// reduce the problem to making 0, 1, 2, 3 move towards 2
+	int8_t offset = ((data + 1) / 2) % 4;
+	offset = mymod(offset - 2, 4);
+	FILE_LOG(logDEBUG) << "Setting FIFO offset = " << int(offset);
+
+	msg = build_DAC_SPI_msg(targets[dac], {{DAC_FIFOSTAT_ADDR, offset}});
+	write_SPI(msg);
+
+	// verify by measuring FIFO offset again
+	data = read_SPI(targets[dac], DAC_FIFOSTAT_ADDR);
+	data = (data & 0x70) >> 4;
+	FILE_LOG(logDEBUG) << "FIFO phase = " << int(data);
+
 	return 0;
 }
 
 int APS2::disable_DAC_FIFO(const int & dac) {
 	uint8_t data, mask;
-	uint32_t syncAddr = 0x0;
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
 
 	FILE_LOG(logDEBUG1) << "Disable DAC " << dac << " FIFO";
 	// clear sync bit
-	data = read_SPI(targets[dac], syncAddr);
+	data = read_SPI(targets[dac], DAC_SYNC_ADDR);
 	mask = (0x1 << 2);
-	vector<uint32_t> msg = build_DAC_SPI_msg(targets[dac], {{syncAddr, data & ~mask}});
+	vector<uint32_t> msg = build_DAC_SPI_msg(targets[dac], {{DAC_SYNC_ADDR, data & ~mask}});
 	write_SPI(msg);
 
 	return 0;
