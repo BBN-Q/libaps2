@@ -8,12 +8,13 @@
 
 using namespace std;
 
-enum MODE {DRAM, EPROM};
+enum MODE {DRAM, EPROM, EPROM_BACKUP};
 
 MODE get_mode() {
   cout << concol::RED << "Programming options:" << concol::RESET << endl;
   cout << "1) Upload DRAM image" << endl;
-  cout << "2) Update EPROM image" << endl << endl;
+  cout << "2) Update EPROM image" << endl;
+  cout << "3) Update backup EPROM image" << endl << endl;
   cout << "Choose option [1]: ";
 
   char input;
@@ -25,6 +26,9 @@ MODE get_mode() {
       break;
     case '2':
       return EPROM;
+      break;
+    case '3':
+      return EPROM_BACKUP;
       break;
   }
 }
@@ -70,7 +74,7 @@ vector<uint32_t> read_bit_file(string fileName) {
   return packedData;
 }
 
-int write_image(string deviceSerial, string fileName) {
+int write_image(string deviceSerial, string fileName, MODE mode) {
   vector<uint32_t> data;
   try {
     data = read_bit_file(fileName);
@@ -78,7 +82,19 @@ int write_image(string deviceSerial, string fileName) {
     cout << concol::RED << "Unable to open file." << concol::RESET << endl;
     return -1;
   }
-  write_flash(deviceSerial.c_str(), EPROM_USER_IMAGE_ADDR, data.data(), data.size());
+  uint32_t addr;
+  switch (mode) {
+    case EPROM:
+      addr = EPROM_USER_IMAGE_ADDR;
+      break;
+    case EPROM_BACKUP:
+      addr = EPROM_BASE_IMAGE_ADDR;
+      break;
+    default:
+      cout << concol::RED << "Unrecognized mode: " << mode << concol::RESET << endl;
+      return -2;
+  }
+  write_flash(deviceSerial.c_str(), addr, data.data(), data.size());
   //verify the write
   vector<uint32_t> buffer(256);
   uint32_t numWords = 256;
@@ -90,7 +106,7 @@ int write_image(string deviceSerial, string fileName) {
     if (std::distance(data.begin() + ct, data.end()) < 256) {
       numWords = std::distance(data.begin() + ct, data.end());
     }
-    read_flash(deviceSerial.c_str(), EPROM_USER_IMAGE_ADDR + 4*ct, numWords, buffer.data());
+    read_flash(deviceSerial.c_str(), addr + 4*ct, numWords, buffer.data());
     if (!std::equal(buffer.begin(), buffer.begin()+numWords, data.begin()+ct)) {
       cout << endl << "Mismatched data at offset " << hexn<6> << ct << endl;
       return -2;
@@ -147,8 +163,9 @@ int main (int argc, char* argv[])
 
   switch (mode) {
     case EPROM:
+    case EPROM_BACKUP:
       cout << concol::RED << "Reprogramming EPROM image" << concol::RESET << endl;
-      write_image(deviceSerial, bitFile);
+      write_image(deviceSerial, bitFile, mode);
       break;
 
     case DRAM:
