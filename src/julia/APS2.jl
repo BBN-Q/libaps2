@@ -47,11 +47,11 @@ function test_BIST_bits(aps::APS2, dac)
 		print("Testing bit $bit: ")
 		testVec = (int16(rand(Bool, 100)) .<< bit) * (bit == 13 ? -1 : 1)
 		passedVec[bit+1], bistVals = run_DAC_BIST(aps, dac, testVec)
-		LVDSPhase1 = bistVals[1] == bistVals[5]
-		LVDSPhase2 = bistVals[2] == bistVals[6]
-		SYNCPhase1 = bistVals[3] == bistVals[1]
-		SYNCPhase2 = bistVals[4] == bistVals[2]
-		println("LVDS: Phase 1 = $LVDSPhase1 and Phase 2 = $LVDSPhase2; SYNC: Phase 1 = $SYNCPhase1 and Phase 2 = $SYNCPhase2")
+		LVDSPhase1 = bistVals[1] == bistVals[5] ? "pass" : "fail"
+		LVDSPhase2 = bistVals[2] == bistVals[6] ? "pass" : "fail"
+		SYNCPhase1 = bistVals[3] == bistVals[1] ? "pass" : "fail"
+		SYNCPhase2 = bistVals[4] == bistVals[2] ? "pass" : "fail"
+		println("LVDS: $LVDSPhase1 / $LVDSPhase2; SYNC: $SYNCPhase1 / $SYNCPhase2")
 	end
 
 	return passedVec
