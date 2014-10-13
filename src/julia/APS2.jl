@@ -33,7 +33,7 @@ set_channel_offset(aps::APS2, chan, offset) =
 get_firmware_version(aps::APS2) = ccall((:get_firmware_version, "libaps2"), Cint, (Ptr{Cchar},), aps.serial)
 
 function run_DAC_BIST(aps::APS2, dac, testVec::Vector{Int16})
-	results = Array(Uint32, 6)
+	results = Array(Uint32, 8)
 	passed = ccall((:run_DAC_BIST, "libaps2"),
 						Cint, (Ptr{Cchar}, Cint, Ptr{Int16}, Cuint, Ptr{Uint32}),
 						aps.serial, dac, testVec, length(testVec), results)
@@ -47,11 +47,13 @@ function test_BIST_bits(aps::APS2, dac)
 		print("Testing bit $bit: ")
 		testVec = (int16(rand(Bool, 100)) .<< bit) * (bit == 13 ? -1 : 1)
 		passedVec[bit+1], bistVals = run_DAC_BIST(aps, dac, testVec)
-		LVDSPhase1 = bistVals[1] == bistVals[5] ? "pass" : "fail"
-		LVDSPhase2 = bistVals[2] == bistVals[6] ? "pass" : "fail"
-		SYNCPhase1 = bistVals[3] == bistVals[1] ? "pass" : "fail"
-		SYNCPhase2 = bistVals[4] == bistVals[2] ? "pass" : "fail"
-		println("LVDS: $LVDSPhase1 / $LVDSPhase2; SYNC: $SYNCPhase1 / $SYNCPhase2")
+		FPGAPhase1 = bistVals[3] == bistVals[1] ? "pass" : "fail"
+		FPGAPhase2 = bistVals[4] == bistVals[2] ? "pass" : "fail"
+		LVDSPhase1 = bistVals[5] == bistVals[1] ? "pass" : "fail"
+		LVDSPhase2 = bistVals[6] == bistVals[2] ? "pass" : "fail"
+		SYNCPhase1 = bistVals[7] == bistVals[7] ? "pass" : "fail"
+		SYNCPhase2 = bistVals[8] == bistVals[8] ? "pass" : "fail"
+		println("FPGA: $FPGAPhase1 / $FPGAPhase2; LVDS: $LVDSPhase1 / $LVDSPhase2; SYNC: $SYNCPhase1 / $SYNCPhase2")
 	end
 
 	return passedVec

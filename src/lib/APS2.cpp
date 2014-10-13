@@ -1244,8 +1244,16 @@ int APS2::disable_DAC_FIFO(const int & dac) {
 }
 
 int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<uint32_t> & results){
-	//TODO: split into subfunctions
+	/*
+	Measures the DAC BIST registers for a given test vector at three stages: leaving the FPGA, registering
+	the data on the DAC at the LVDS stage, synronizing to the output stage on the DAC. It returns the BIST
+	results as a vector:
+	results = {IdealPhase1, IdealPhase2, FPGAPhase1, FPGAPhase2, LVDSPhase1, LVDSPhase2, SYNCPhase1, SYNCPhase2}
+	*/
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
+	const vector<uint32_t> FPGA_Reg_Phase1 = {DAC_BIST_CHA_PH1_ADDR, DAC_BIST_CHB_PH1_ADDR};
+	const vector<uint32_t> FPGA_Reg_Phase2 = {DAC_BIST_CHA_PH2_ADDR, DAC_BIST_CHB_PH2_ADDR};
+	const vector<int> FPGA_Reg_ResetBits = {DAC_BIST_CHA_RST_BIT, DAC_BIST_CHB_RST_BIT};
 	uint8_t regVal;
 
 	FILE_LOG(logINFO) << "Running DAC BIST for DAC " << dac;
@@ -1262,6 +1270,13 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	//Read the BIST signature
 	auto read_BIST_sig = [&](){
 		vector<uint32_t> bistVals;
+		//Read the on-board values first
+		bistVals.push_back(read_memory(FPGA_Reg_Phase1[dac], 1)[0]);
+		FILE_LOG(logDEBUG1) << "FPGA Phase 1 BIST " << hexn<8> << bistVals.back();
+		bistVals.push_back(read_memory(FPGA_Reg_Phase2[dac], 1)[0]);
+		FILE_LOG(logDEBUG1) << "FPGA Phase 2 BIST " << hexn<8> << bistVals.back();
+
+		//Now the DAC registers
 		//LVDS Phase 1 Reg 17 (SEL1=0; SEL0=0; SIGREAD=1; SYNC_EN=1; LVDS_EN=1)
 		//Not the BIST byte ordering seems to be backwards to the data sheet
 		write_reg(17, 0x26);
@@ -1331,7 +1346,6 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 
 	// Step 1: set the reset bit (Reg 0, bit 5)
 	regVal = read_reg(0);
-	FILE_LOG(logDEBUG3) << "Register 0 is currently " << hexn<2> << regVal;
 	regVal |= (1 << 5);
 	write_reg(0, regVal);
 
@@ -1363,11 +1377,14 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 
 	// Step 11: Set CLEAR (Reg. 17, Bit 0), SYNC_EN (Reg. 17, Bit 1), and LVDS_EN (Reg. 17, Bit 2) high
 	write_reg(17, 0x07);
+	// Also reset the FPGA BIST registers at this point
+	set_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
 
 	// Step 12: wait...
 
 	// Step 13: clear the CLEAR bit
 	write_reg(17, 0x06);
+	clear_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
 
 	// Step 14: read the BIST registers to confirm all zeros
 	// Note error in part (b's) should read registers 21-18
@@ -1383,13 +1400,18 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 
 	// Step 18: loop back to 11
 	write_reg(17, 0x07);
+	set_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
 	write_reg(17, 0x06);
+	clear_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
 	read_BIST_sig();
 	trigger();
 
-	results = read_BIST_sig();
+	results.clear();
+	//Phase I and II seem to be swapped...
 	results.push_back(phase2BIST);
 	results.push_back(phase1BIST);
+	auto readResults = read_BIST_sig();
+	results.insert(results.end(), readResults.begin(), readResults.end());
 
 	stop();
 
@@ -1404,7 +1426,7 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	write_reg(DAC_SD_ADDR, sd);
 	write_reg(DAC_CONTROLLERCLOCK_ADDR, ccd);
 
-	bool passed = (results[0] == phase2BIST) && (results[1] == phase1BIST) && (results[2] == phase2BIST) && (results[3] == phase1BIST);
+	bool passed = (readResults[0] == phase2BIST) && (readResults[1] == phase1BIST) && (readResults[2] == phase2BIST) && (readResults[3] == phase1BIST) && (readResults[4] == phase2BIST) && (readResults[5] == phase1BIST);
 	return passed;
 }
 
