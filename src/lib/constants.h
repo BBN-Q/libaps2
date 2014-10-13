@@ -210,19 +210,25 @@ enum CONFIGURATION_SOURCE {
 
 
 //FPGA registers
-static const uint32_t REGISTER_ADDR      = 0x44A00000u;
-static const uint32_t PLL_STATUS_ADDR    = REGISTER_ADDR + 0*4;
-static const uint32_t PHASE_COUNT_A_ADDR = REGISTER_ADDR + 1*4;
-static const uint32_t PHASE_COUNT_B_ADDR = REGISTER_ADDR + 2*4;
-static const uint32_t CACHE_STATUS_ADDR  = REGISTER_ADDR + 3*4;
-static const uint32_t CACHE_CONTROL_ADDR = REGISTER_ADDR + 4*4;
-static const uint32_t WFA_OFFSET_ADDR    = REGISTER_ADDR + 5*4;
-static const uint32_t WFB_OFFSET_ADDR    = REGISTER_ADDR + 6*4;
-static const uint32_t SEQ_OFFSET_ADDR    = REGISTER_ADDR + 7*4;
-static const uint32_t SEQ_CONTROL_ADDR   = REGISTER_ADDR + 9*4;
-static const uint32_t ZERO_OUT_ADDR      = REGISTER_ADDR + 10*4;
-static const uint32_t TRIGGER_WORD_ADDR  = REGISTER_ADDR + 11*4;
-static const uint32_t TRIGGER_INTERVAL_ADDR = REGISTER_ADDR + 12*4;
+static const uint32_t CSR_AXI_OFFSET      = 0x44A00000u;
+static const uint32_t PLL_STATUS_ADDR    = CSR_AXI_OFFSET + 0*4;
+static const uint32_t PHASE_COUNT_A_ADDR = CSR_AXI_OFFSET + 1*4;
+static const uint32_t PHASE_COUNT_B_ADDR = CSR_AXI_OFFSET + 2*4;
+static const uint32_t CACHE_STATUS_ADDR  = CSR_AXI_OFFSET + 3*4;
+static const uint32_t CACHE_CONTROL_ADDR = CSR_AXI_OFFSET + 4*4;
+static const uint32_t WFA_OFFSET_ADDR    = CSR_AXI_OFFSET + 5*4;
+static const uint32_t WFB_OFFSET_ADDR    = CSR_AXI_OFFSET + 6*4;
+static const uint32_t SEQ_OFFSET_ADDR    = CSR_AXI_OFFSET + 7*4;
+static const uint32_t RESETS_ADDR        = CSR_AXI_OFFSET + 8*4;
+static const uint32_t SEQ_CONTROL_ADDR   = CSR_AXI_OFFSET + 9*4;
+static const uint32_t ZERO_OUT_ADDR      = CSR_AXI_OFFSET + 10*4;
+static const uint32_t TRIGGER_WORD_ADDR  = CSR_AXI_OFFSET + 11*4;
+static const uint32_t TRIGGER_INTERVAL_ADDR = CSR_AXI_OFFSET + 12*4;
+static const uint32_t DAC_BIST_CHA_PH1_ADDR = CSR_AXI_OFFSET + 13*4;
+static const uint32_t DAC_BIST_CHA_PH2_ADDR = CSR_AXI_OFFSET + 14*4;
+static const uint32_t DAC_BIST_CHB_PH1_ADDR = CSR_AXI_OFFSET + 15*4;
+static const uint32_t DAC_BIST_CHB_PH2_ADDR = CSR_AXI_OFFSET + 16*4;
+
 
 static const uint32_t MEMORY_ADDR = 0x00000000u;
 static const uint32_t WFA_OFFSET  = 0;
@@ -242,6 +248,9 @@ static const int PLL_CHA_RST_BIT = 8;
 static const int PLL_CHB_RST_BIT = 9;
 static const int IO_CHA_RST_BIT = 10;
 static const int IO_CHB_RST_BIT = 11;
+static const int DAC_BIST_CHA_RST_BIT = 12;
+static const int DAC_BIST_CHB_RST_BIT = 13;
+
 // TODO: implement these in logic?
 static const int PLL_SYS_LOCK_BIT = 0;
 static const int PLL_CHA_LOCK_BIT = 1;

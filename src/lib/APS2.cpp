@@ -897,7 +897,7 @@ int APS2::test_PLL_sync() {
 		disable_DAC_FIFO(dac);
 	}
 	// Disable DDRs
-	set_bit(SEQ_CONTROL_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
+	set_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
 
 	static const int lowPhaseCutoff = 45, highPhaseCutoff = 135;
 	// loop over channels
@@ -914,7 +914,7 @@ int APS2::test_PLL_sync() {
 				break;
 			} else {
 				// disable the channel PLL
-				set_bit(SEQ_CONTROL_ADDR, {CH_PLL_RESET_BIT[ch]});
+				set_bit(RESETS_ADDR, {CH_PLL_RESET_BIT[ch]});
 
 				if (ch_phase_deg >= lowPhaseCutoff && ch_phase_deg <= highPhaseCutoff) {
 					// disable then enable the DAC PLL
@@ -923,7 +923,7 @@ int APS2::test_PLL_sync() {
 				}
 
 				// enable the channel pll
-				clear_bit(SEQ_CONTROL_ADDR, {CH_PLL_RESET_BIT[ch]});
+				clear_bit(RESETS_ADDR, {CH_PLL_RESET_BIT[ch]});
 			}
 			if (ct == MAX_PHASE_TEST_CNT-1) {
 				FILE_LOG(logINFO) << "DAC " << ((ch==0) ? "A" : "B") << " failed to sync";
@@ -933,7 +933,7 @@ int APS2::test_PLL_sync() {
 	}
 
 	// Enable DDRs
-	clear_bit(SEQ_CONTROL_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
+	clear_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
 	// Enable DAC FIFOs
 	for (int dac = 0; dac < NUM_CHANNELS; dac++) {
 		enable_DAC_FIFO(dac);
