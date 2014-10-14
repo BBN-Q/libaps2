@@ -1333,6 +1333,8 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
     FILE_LOG(logDEBUG) << "Expected phase 2 BIST register " << hexn<8> << phase2BIST;
 
 	//Load the test vector and setup software triggered waveform mode
+	//Clear the channel data on both channels so we get the right waveform length
+	clear_channel_data();
 	set_waveform(dac, testVec);
 	set_run_mode(TRIG_WAVEFORM);
 	set_trigger_source(SOFTWARE);
