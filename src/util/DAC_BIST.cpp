@@ -21,7 +21,6 @@ int main(int argc, char const *argv[])
 	string deviceSerial = get_device_id();
 
 	set_logging_level(4);
-	set_log("stdout");
 
 	connect_APS(deviceSerial.c_str());
 
@@ -59,14 +58,14 @@ int main(int argc, char const *argv[])
 			}
 			run_DAC_BIST(deviceSerial.c_str(), dac, testVec.data(), testVec.size(), results.data());
 
-			FPGAPhase1 = results[3] == results[1] ? "pass" : "fail";
-			FPGAPhase2 = results[4] == results[2] ? "pass" : "fail";
-			LVDSPhase1 = results[5] == results[1] ? "pass" : "fail";
-			LVDSPhase2 = results[6] == results[2] ? "pass" : "fail";
-			SYNCPhase1 = results[7] == results[7] ? "pass" : "fail";
-			SYNCPhase2 = results[8] == results[8] ? "pass" : "fail";
+			FPGAPhase1 = results[2] == results[0] ? "pass" : "fail";
+			FPGAPhase2 = results[3] == results[1] ? "pass" : "fail";
+			LVDSPhase1 = results[4] == results[0] ? "pass" : "fail";
+			LVDSPhase2 = results[5] == results[1] ? "pass" : "fail";
+			SYNCPhase1 = results[6] == results[4] ? "pass" : "fail";
+			SYNCPhase2 = results[7] == results[5] ? "pass" : "fail";
 
-			cout << "FPGA: " << FPGAPhase1 << " / " << FPGAPhase2 << "LVDS: " << LVDSPhase1 << " / " << LVDSPhase2 << "SYNC: " << SYNCPhase1 << " / " << SYNCPhase2 << endl;
+			cout << "FPGA: " << FPGAPhase1 << " / " << FPGAPhase2 << " LVDS: " << LVDSPhase1 << " / " << LVDSPhase2 << " SYNC: " << SYNCPhase1 << " / " << SYNCPhase2 << endl;
 
 		}
 		cout << endl;
@@ -78,17 +77,19 @@ int main(int argc, char const *argv[])
 		}
 		run_DAC_BIST(deviceSerial.c_str(), dac, testVec.data(), testVec.size(), results.data());
 
-		FPGAPhase1 = results[3] == results[1] ? "pass" : "fail";
-		FPGAPhase2 = results[4] == results[2] ? "pass" : "fail";
-		LVDSPhase1 = results[5] == results[1] ? "pass" : "fail";
-		LVDSPhase2 = results[6] == results[2] ? "pass" : "fail";
-		SYNCPhase1 = results[7] == results[7] ? "pass" : "fail";
-		SYNCPhase2 = results[8] == results[8] ? "pass" : "fail";
+		FPGAPhase1 = results[2] == results[0] ? "pass" : "fail";
+		FPGAPhase2 = results[3] == results[1] ? "pass" : "fail";
+		LVDSPhase1 = results[4] == results[0] ? "pass" : "fail";
+		LVDSPhase2 = results[5] == results[1] ? "pass" : "fail";
+		SYNCPhase1 = results[6] == results[4] ? "pass" : "fail";
+		SYNCPhase2 = results[7] == results[5] ? "pass" : "fail";
 
-		cout << "FPGA: " << FPGAPhase1 << " / " << FPGAPhase2 << "LVDS: " << LVDSPhase1 << " / " << LVDSPhase2 << "SYNC: " << SYNCPhase1 << " / " << SYNCPhase2 << endl;
+		cout << "FPGA: " << FPGAPhase1 << " / " << FPGAPhase2 << " LVDS: " << LVDSPhase1 << " / " << LVDSPhase2 << " SYNC: " << SYNCPhase1 << " / " << SYNCPhase2 << endl;
 		cout << endl;
 		cout << endl;
 	}
+
+	disconnect_APS(deviceSerial.c_str());
 
 	return 0;
 }
