@@ -1,8 +1,12 @@
 #include <iostream>
+#include <sstream>
+
+#include "concol.h"
 
 using std::cout;
 using std::cin;
 using std::endl;
+using std::string;
 
 string get_device_id() {
   
