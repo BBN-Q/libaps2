@@ -5,6 +5,10 @@
  *      Author: cryan
  */
 
+#include <vector>
+
+using std::vector;
+
 #ifndef CONSTANTS_H_
 #define CONSTANTS_H_
 

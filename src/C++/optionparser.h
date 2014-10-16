@@ -861,14 +861,6 @@ private:
  *     return option::ARG_ILLEGAL;
  *   }
  *
- *   static option::ArgStatus NonEmpty(const option::Option& option, bool msg)
- *   {
- *     if (option.arg != 0 && option.arg[0] != 0)
- *       return option::ARG_OK;
- *
- *     if (msg) printError("Option '", option, "' requires a non-empty argument\n");
- *     return option::ARG_ILLEGAL;
- *   }
  *
  *   static option::ArgStatus Numeric(const option::Option& option, bool msg)
  *   {
@@ -898,6 +890,14 @@ struct Arg
       return ARG_OK;
     else
       return ARG_IGNORE;
+  }
+
+  static option::ArgStatus NonEmpty(const option::Option& option, bool msg)
+  {
+    if (option.arg != 0 && option.arg[0] != 0)
+      return option::ARG_OK;
+    if (msg) std::cerr << "Option '" << option << "' requires a non-empty argument" << std::endl;
+    return option::ARG_ILLEGAL;
   }
 
   static option::ArgStatus Required(const option::Option& option, bool msg)
