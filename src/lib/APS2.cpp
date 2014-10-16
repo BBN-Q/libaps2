@@ -579,8 +579,14 @@ int APS2::erase_flash(uint32_t addr, uint32_t numBytes) {
 
 	uint32_t erasedBytes = 0;
 
+	//Since erasing can take a while throw up some info if we have are erasing more than 1MB 
+	bool verbose = numBytes > 1048576 ? true : false;
+
 	while(erasedBytes < numBytes) {
-		FILE_LOG(logDEBUG) << "Erasing a 64 KB page at addr: " << myhex << addr;
+		if (verbose && !mymod(erasedBytes, 1048576)){
+			FILE_LOG(logDEBUG) << "Flash erase " << 100*erasedBytes / numBytes << "% complete";
+		}
+		FILE_LOG(logDEBUG2) << "Erasing a 64 KB page at addr: " << myhex << addr;
 		write_command(command, addr, false);
 		APSEthernetPacket p = read_packets(1)[0];
 		if (p.header.command.mode_stat == EPROM_OPERATION_FAILED){
