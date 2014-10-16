@@ -2,6 +2,7 @@
 #include <iterator>
 #include <signal.h>
 #include <vector>
+#include <thread>
 
 #include "libaps2.h"
 #include "concol.h"
@@ -34,30 +35,10 @@ const option::Descriptor usage[] =
 static string deviceSerial;
 
 
+//We're going to use _kbhit to catch keyboard events
 #ifdef _WIN32
-BOOL WINAPI ConsoleHandler(DWORD dwType)
-{
-	switch(dwType) {
-	    case CTRL_C_EVENT:
-	        printf("ctrl-c\n");
-			cout << endl;
-			stop(deviceSerial.c_str());
-			disconnect_APS(deviceSerial.c_str());
-			exit(1);
-	    default:
-	        printf("Some other event\n");
-	}
-    return TRUE;
-}
-#else
-void clean_up(int sigValue){
-	cout << endl;
-	stop(deviceSerial.c_str());
-	disconnect_APS(deviceSerial.c_str());
-	exit(1);
-}
+#include <conio.h>
 #endif
-
 
 int main(int argc, char* argv[])
 {
@@ -82,7 +63,7 @@ int main(int argc, char* argv[])
 	 cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
 	//Debug level
-	int debugLevel = 4;
+	int debugLevel = 1;
 	if (options[LOG_LEVEL]) {
 		debugLevel = atoi(options[LOG_LEVEL].arg);
 	}
@@ -147,36 +128,32 @@ int main(int argc, char* argv[])
 
 	run(deviceSerial.c_str());
 
-	//Catch ctrl-c to clean_up the APS -- see http://zguide.zeromq.org/cpp:interrupt
-	//Unfortunately we have some platform nonsense here
-	#ifdef _WIN32
-	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)ConsoleHandler, TRUE)) {
-        std::cerr << "Unable to install handler!" << endl;
-        return EXIT_FAILURE;
-    }
-	#else
-	struct sigaction action;
-	action.sa_handler = clean_up;
-	action.sa_flags = 0;
-	sigemptyset(&action.sa_mask);
-	sigaction(SIGINT, &action, NULL);
-	#endif
-
 	//For software trigger, trigger on key stroke
 	if (triggerSource == 2) {
-		cout << "Return to trigger or ctrl-c to exit";
+		cout << "Press t to trigger or q to exit";
 		while(true) {
-			cin.get();
-			trigger(deviceSerial.c_str());
+			while(!_kbhit()){
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			}
+			char keyStroke = cin.get();
+			if (keyStroke == 't') {
+				trigger(deviceSerial.c_str());
+			} else if (keyStroke == 'q') {
+				break;
+			}
 		}
 		cout << endl;
 	}
 	else {
-		cout << "Ctrl-c to quit";
-		while(true) {
-			cin.get();
+		cout << "Press any key to stop";
+		while(!_kbhit()){
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
+		cout << endl;
 	}
+
+	stop(deviceSerial.c_str());
+	disconnect_APS(deviceSerial.c_str());
 
 	delete[] options;
 	delete[] buffer;
