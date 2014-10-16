@@ -32,8 +32,6 @@ const option::Descriptor usage[] =
 };
 
 
-static string deviceSerial;
-
 int main(int argc, char* argv[])
 {
 	argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
@@ -95,7 +93,7 @@ int main(int argc, char* argv[])
 	wfA.resize(longestLength, 0);
 	wfB.resize(longestLength, 0);
 
-	deviceSerial = get_device_id();
+	string deviceSerial = get_device_id();
 
 	set_logging_level(debugLevel);
 	set_log("stdout");
