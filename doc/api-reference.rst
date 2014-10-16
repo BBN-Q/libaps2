@@ -108,7 +108,8 @@ High-level methods
 
 `int set_trigger_source(const char * deviceIP, int triggerSource)`
 
-	Sets the trigger source to external (`triggerSource` = 0) or internal (`triggerSource` = 1).
+	Sets the trigger source to external (`triggerSource` = 0), internal
+	(`triggerSource` = 1), or software (`triggerSource` = 2).
 
 `int get_trigger_source(const char * deviceIP)`
 
@@ -121,6 +122,10 @@ High-level methods
 `double get_trigger_interval(const char * deviceIP)`
 
 	Returns the current internal trigger interval.
+
+`int trigger(const char * deviceIP)`
+
+	Sends a software trigger to the APS2.
 
 `int set_waveform_float(const char * deviceIP, int channel, float* data, int numPts)`
 
@@ -149,8 +154,12 @@ High-level methods
 
 `int set_run_mode(const char * deviceIP, int mode)`
 
-	**FOR FUTURE USE ONLY** Changes the APS2 run mode from sequence (`mode` = 0)
-	to waveform (`mode` = 1)
+	Changes the APS2 run mode to sequence (`mode` = 0, the default) or
+	waveform (`mode` = 1) **IMPORTANT CAVEAT** The APS2 does not "remember"
+	its current playback mode. In particular, uploading new sequence or
+	waveform data will cause the APS2 to return to 'sequence' mode. To use
+	'waveform' mode, call `set_run_mode` only after calling `set_waveform_float`
+	or `set_waveform_int`.
 
 `int run(const char * deviceIP)`
 

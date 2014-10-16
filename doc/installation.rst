@@ -8,7 +8,7 @@ The BBN APS2 system contains one or more analog output modules and an advanced
 trigger module in an enclosure that supplies power to each module. Up to 9
 analog modules may be installed in a single 19" 8U enclosure, providing 18
 analog output channels. Installing a new module only requires plugging it into
-a free slot on a powered-off system, then connecting SATA cables from the new
+a free slot of a powered-off system, then connecting a SATA cable from the new
 APS module to the trigger module.
 
 Each module in an APS2 system acts as an independent network endpoint. The
@@ -18,10 +18,10 @@ computer not be separated by too many network hops. If possible, locate the
 host and APS2 on a common switch or router [#f1]_.
 
 While the APS can run in a standalone configuration, we recommend running with
-a 10~MHz (+7 dBm) external reference. This reference must be supplied at the
-corresponding front panel inputs before powering on the system. Multiple
-devices can be synchronized by supplying an external trigger that is phase
-locked to this same reference.
+a 10 MHz (+7 dBm) external reference (square wave or sine wave). This
+reference must be supplied at the corresponding front panel inputs before
+powering on the system. Multiple devices can be synchronized by supplying an
+external trigger that is phase locked to this same reference.
 
 .. _software-installation:
 
@@ -47,13 +47,16 @@ section.
 
 Networking Setup
 ----------------
+
 Once the APS2 has been powered on, the user must assign static IP addresses to
 each module. By default, the APS2 modules will have addresses on the
-192.168.5.X subnet. The ``enumerate()`` method in libaps2 may be used to
-find APS2 modules on your current subnet. Another method, ``set_ip_addr()``
-may be used to program new IP addresses. Since the APS2 modules will respond
-to any valid packet on its port, we recommend placing the APS2 system on a
-private network, or behind a firewall.
+192.168.2.X subnet (e.g. the leftmost module in the system will have the
+address 192.168.2.2, and increase sequentially left-to-right). The
+``enumerate()`` method in libaps2 may be used to find APS2 modules on your
+current subnet. Another method, ``set_ip_addr()`` may be used to program new
+IP addresses. Since the APS2 modules will respond to any valid packet on its
+port, we recommend placing the APS2 system on a private network, or behind a
+firewall.
 
 The control computer must be on the same subnet as the APS2 to respond to
 returning packets. Most operating systems allow multiple IP addresses to
