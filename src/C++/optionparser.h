@@ -211,6 +211,8 @@
  *
  */
 
+ #include <stdexcept>
+
 #ifndef OPTIONPARSER_H_
 #define OPTIONPARSER_H_
 

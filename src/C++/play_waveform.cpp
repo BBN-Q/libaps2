@@ -1,15 +1,17 @@
 #include <iostream>
 #include <iterator>
-#include <algorithm>
 #include <signal.h>
+#include <vector>
 
-#include "headings.h"
 #include "libaps2.h"
-#include "constants.h"
 #include "concol.h"
 #include "helpers.h"
 
 #include "optionparser.h"
+
+using std::vector;
+using std::cout;
+using std::endl;
 
 enum  optionIndex { UNKNOWN, HELP, WFA_FILE, WFB_FILE, TRIG_MODE, TRIG_INTERVAL, LOG_LEVEL};
 const option::Descriptor usage[] =
@@ -17,8 +19,8 @@ const option::Descriptor usage[] =
 	{UNKNOWN, 0,"" , ""    , option::Arg::None, "USAGE: play_waveform [options]\n\n"
 	                                         "Options:" },
 	{HELP,    0,"" , "help", option::Arg::None, "  --help  \tPrint usage and exit." },
-	{WFA_FILE, 0,"", "wfA", option::Arg::Required, "  --wfA  \tChannel A waveform file (ASCII signed 16 bit integer)" },
-	{WFB_FILE, 0,"", "wfB", option::Arg::Required, "  --wfB  \tChannel B waveform file (ASCII signed 16 bit integer)" },
+	{WFA_FILE, 0,"", "wfA", option::Arg::Required, "  --wfA  \tChannel A waveform file (ASCII one signed 16 bit integer per line)" },
+	{WFB_FILE, 0,"", "wfB", option::Arg::Required, "  --wfB  \tChannel B waveform file (ASCII one signed 16 bit integer per line)" },
 	{TRIG_MODE, 0,"", "trigMode", option::Arg::Required, "  --trigMode  \tTrigger mode (0: external; 1: internal; 2: software" },
 	{TRIG_INTERVAL,  0,"", "trigInterval", option::Arg::Numeric, "  --trigRep  \tInternal trigger interval" },
 	{LOG_LEVEL,  0,"", "logLevel", option::Arg::Numeric, "  --logLevel  \tLogging level level to print" },
@@ -38,7 +40,7 @@ BOOL WINAPI ConsoleHandler(DWORD dwType)
 	switch(dwType) {
 	    case CTRL_C_EVENT:
 	        printf("ctrl-c\n");
-			std::cout << std::endl;
+			cout << endl;
 			stop(deviceSerial.c_str());
 			disconnect_APS(deviceSerial.c_str());
 			exit(1);
@@ -49,7 +51,7 @@ BOOL WINAPI ConsoleHandler(DWORD dwType)
 }
 #else
 void clean_up(int sigValue){
-	std::cout << std::endl;
+	cout << endl;
 	stop(deviceSerial.c_str());
 	disconnect_APS(deviceSerial.c_str());
 	exit(1);
@@ -69,15 +71,15 @@ int main(int argc, char* argv[])
 	 return -1;
 
 	if (options[HELP] || argc == 0) {
-		option::printUsage(std::cout, usage);
+		option::printUsage(cout, usage);
 		return 0;
 	}
 
 	for (option::Option* opt = options[UNKNOWN]; opt; opt = opt->next())
-	 std::cout << "Unknown option: " << opt->name << "\n";
+	 cout << "Unknown option: " << opt->name << "\n";
 
 	for (int i = 0; i < parse.nonOptionsCount(); ++i)
-	 std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
+	 cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
 	//Debug level
 	int debugLevel = 4;
@@ -149,7 +151,7 @@ int main(int argc, char* argv[])
 	//Unfortunately we have some platform nonsense here
 	#ifdef _WIN32
 	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)ConsoleHandler, TRUE)) {
-        std::cerr << "Unable to install handler!" << std::endl;
+        std::cerr << "Unable to install handler!" << endl;
         return EXIT_FAILURE;
     }
 	#else
