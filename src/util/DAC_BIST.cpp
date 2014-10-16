@@ -52,7 +52,7 @@ int main(int argc, char const *argv[])
 		{
 			cout << "Testing bit " << bit << ": ";
 			testVec.clear();
-			for (int ct = 0; ct < 100; ++ct)
+			for (int ct = 0; ct < 1000; ++ct)
 			{
 				testVec.push_back( (randbit() << bit) * (bit == 13 ? -1 : 1) );
 			}
@@ -71,7 +71,7 @@ int main(int argc, char const *argv[])
 		cout << endl;
 		cout << "Testing random waveform... ";
 		testVec.clear();
-		for (int ct = 0; ct < 8000; ++ct)
+		for (int ct = 0; ct < 65536; ++ct)
 		{
 			testVec.push_back(randWord());
 		}
