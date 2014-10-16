@@ -79,7 +79,6 @@ vector<uint32_t> read_bit_file(string fileName) {
     packet = htonl(packet);
   }
 
-  cout << "Bit file is " << packedData.size() << " 32-bit words long" << endl;
   return packedData;
 }
 
@@ -151,11 +150,22 @@ int main (int argc, char* argv[])
   for (int i = 0; i < parse.nonOptionsCount(); ++i)
    std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
+  string bitFile;
+  if (options[BIT_FILE]) {
+    bitFile = string(options[BIT_FILE].arg);
+  }
+  else {
+    std::cerr << "Bitfile option is required." << endl;
+    return -1;
+  }
+
+
   //Debug level
-  int logLevel = 2;
+  int logLevel = 3;
   if (options[LOG_LEVEL]) {
     logLevel = atoi(options[LOG_LEVEL].arg);
   }
+  set_log("stdout");
   set_logging_level(logLevel);
 
   string deviceSerial;
@@ -169,13 +179,13 @@ int main (int argc, char* argv[])
   MODE mode;
   if (options[PROG_MODE]) {
     string modeIn(options[PROG_MODE].arg);
-    if (modeIn.compare("DRAM")) {
+    if (!modeIn.compare("DRAM")) {
       mode = DRAM;
     }
-    else if (modeIn.compare("EPROM")){
+    else if (!modeIn.compare("EPROM")){
       mode = EPROM;
     }
-    else if (modeIn.compare("BACKUP")){
+    else if (!modeIn.compare("BACKUP")){
       mode = EPROM_BACKUP;
     }
     else{
@@ -185,8 +195,6 @@ int main (int argc, char* argv[])
   } else {
     mode = get_mode();
   }
-
-  string bitFile(options[BIT_FILE].arg);
 
   connect_APS(deviceSerial.c_str());
 
