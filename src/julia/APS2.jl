@@ -61,4 +61,22 @@ end
 
 set_DAC_SD(aps::APS2, dac, sd) = ccall((:set_DAC_SD, "libaps2"), Cint, (Ptr{Cchar}, Cint, Cchar), aps.serial, dac, sd)
 
+function create_test_waveform()
+	#Create a test pattern with the follow pattens separated by 10ns of zero:
+	# * a full scale ramp
+	# * gaussians with 256/128/64/32/16/8 points
+	# * +/- square pulses with 256/128/64/32/16/8 points
 
+	wf = int16([-8192:8191])
+	for ex = 8:-1:3
+		xpts = linspace(-2,2, 2^ex)
+		vertShift = exp(-(2 + xpts[2] - xpts[1])^2/2)
+		gaussWF = int16((8191/(1-vertShift)) * (exp(-xpts.^2/2) - vertShift))
+		wf = cat(1, wf, zeros(Int16, 12), gaussWF)
+	end
+
+	for ex = 8:-1:3
+		wf = cat(1, wf, zeros(Int16, 12), fill(int16(8191), int(2^ex/2)), fill(int16(-8192), int(2^ex/2)))
+	end
+	return wf
+end
