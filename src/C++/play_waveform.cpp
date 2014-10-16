@@ -34,12 +34,6 @@ const option::Descriptor usage[] =
 
 static string deviceSerial;
 
-
-//We're going to use _kbhit to catch keyboard events
-#ifdef _WIN32
-#include <conio.h>
-#endif
-
 int main(int argc, char* argv[])
 {
 	argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
@@ -87,11 +81,13 @@ int main(int argc, char* argv[])
 		ifs.open(std::string(options[WFA_FILE].arg));
 		std::copy(std::istream_iterator<int16_t>(ifs), std::istream_iterator<int16_t>(), std::back_inserter(wfA) );
 		ifs.close();
+		cout << "Loaded " << wfA.size() << " samples for waveform A." << endl;
 	}
 
 	if (options[WFB_FILE]) {
 		ifs.open(std::string(options[WFB_FILE].arg));
 		std::copy(std::istream_iterator<int16_t>(ifs), std::istream_iterator<int16_t>(), std::back_inserter(wfB) );
+		cout << "Loaded " << wfB.size() << " samples for waveform B." << endl;
 	}
 
 	//Pad the waveforms so they are the same size
@@ -130,11 +126,8 @@ int main(int argc, char* argv[])
 
 	//For software trigger, trigger on key stroke
 	if (triggerSource == 2) {
-		cout << "Press t to trigger or q to exit";
+		cout << "Press t-Return to trigger or q-Return to exit" << endl;
 		while(true) {
-			while(!_kbhit()){
-				std::this_thread::sleep_for(std::chrono::milliseconds(1));
-			}
 			char keyStroke = cin.get();
 			if (keyStroke == 't') {
 				trigger(deviceSerial.c_str());
@@ -142,14 +135,10 @@ int main(int argc, char* argv[])
 				break;
 			}
 		}
-		cout << endl;
 	}
 	else {
 		cout << "Press any key to stop";
-		while(!_kbhit()){
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
-		}
-		cout << endl;
+		cin.get();
 	}
 
 	stop(deviceSerial.c_str());
