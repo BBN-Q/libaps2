@@ -56,6 +56,11 @@ ADD_EXECUTABLE(play_waveform
 )
 TARGET_LINK_LIBRARIES(play_waveform aps2)
 
+ADD_EXECUTABLE(play_sequence
+	./C++/play_sequence.cpp
+)
+TARGET_LINK_LIBRARIES(play_sequence aps2)
+
 ADD_EXECUTABLE(waveforms
 	./C++/waveforms.cpp
 )
