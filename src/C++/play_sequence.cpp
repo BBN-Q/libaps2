@@ -15,10 +15,10 @@ const option::Descriptor usage[] =
 	{UNKNOWN, 0,"" , ""    , option::Arg::None, "USAGE: play_sequence [options]\n\n"
 	                                         "Options:" },
 	{HELP,    0,"" , "help", option::Arg::None, "  --help  \tPrint usage and exit." },
-	{SEQ_FILE, 0,"", "seqFile", option::Arg::Required, "  --seqFile  \tHDF5 sequence file to play" },
-	{TRIG_MODE, 0,"", "trigMode", option::Arg::Required, "  --trigMode  \tTrigger mode (0: external; 1: internal; 2: software (optional; default=1)" },
-	{TRIG_INTERVAL,  0,"", "trigInterval", option::Arg::Numeric, "  --trigRep  \t(optional) Internal trigger interval (optional; default=10ms)" },
-	{LOG_LEVEL,  0,"", "logLevel", option::Arg::Numeric, "  --logLevel  \t(optional) Logging level level to print to console (optional; default=2/INFO)" },
+	{SEQ_FILE, 0,"", "seqFile", option::Arg::Required, "  --seqFile  \tHDF5 sequence file to play." },
+	{TRIG_MODE, 0,"", "trigMode", option::Arg::Required, "  --trigMode  \tTrigger mode (0: external; 1: internal; 2: software - optional; default=1)." },
+	{TRIG_INTERVAL,  0,"", "trigInterval", option::Arg::Numeric, "  --trigRep  \t(optional) Internal trigger interval (optional; default=10ms)." },
+	{LOG_LEVEL,  0,"", "logLevel", option::Arg::Numeric, "  --logLevel  \t(optional) Logging level level to print to console (optional; default=2/INFO)." },
 	{UNKNOWN, 0,"" ,  ""   , option::Arg::None, "\nExamples:\n"
 	                                         "  play_sequence --seqFile=../examples/ramsey_tppi.h5\n"
 	                                         "  play_sequence --seqFile=../examples/rampey_slipped.h5 --trigMode=2\n" },
@@ -49,9 +49,9 @@ int main(int argc, char* argv[])
 	 std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
 	//Debug level
-	int debugLevel = 2;
+	int logLevel = 2;
 	if (options[LOG_LEVEL]) {
-		debugLevel = atoi(options[LOG_LEVEL].arg);
+		logLevel = atoi(options[LOG_LEVEL].arg);
 	}
 
 	//Trigger source -- default of internal
@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
 
 	string deviceSerial = get_device_id();
 
-	set_logging_level(debugLevel);
+	set_logging_level(logLevel);
 	set_log("stdout");
 
 	connect_APS(deviceSerial.c_str());

@@ -21,10 +21,10 @@ const option::Descriptor usage[] =
   {UNKNOWN, 0,"" , ""    , option::Arg::None, "USAGE: play_waveform [options]\n\n"
                                            "Options:" },
   {HELP,    0,"" , "help", option::Arg::None, "  --help  \tPrint usage and exit." },
-  {BIT_FILE, 0,"", "bitFile", option::Arg::Required, "  --bitFile  \tPath to firmware bitfile." },
-  {IP_ADDR,  0,"", "ipAddr", option::Arg::NonEmpty, "  --ipAddr  \tIP address of unit to program (optional)" },
-  {PROG_MODE, 0,"", "progMode", option::Arg::NonEmpty, "  --progMode  \t(optional) Where to program firmware DRAM/EPROM/BACKUP (optional)" },
-  {LOG_LEVEL,  0,"", "logLevel", option::Arg::Numeric, "  --logLevel  \t(optional) Logging level level to print (optional; default=2/INFO)" },
+  {BIT_FILE, 0,"", "bitFile", option::Arg::Required, "  --bitFile  \tPath to firmware bitfile (required)." },
+  {IP_ADDR,  0,"", "ipAddr", option::Arg::NonEmpty, "  --ipAddr  \tIP address of unit to program (optional)." },
+  {PROG_MODE, 0,"", "progMode", option::Arg::NonEmpty, "  --progMode  \t(optional) Where to program firmware DRAM/EPROM/BACKUP (optional)." },
+  {LOG_LEVEL,  0,"", "logLevel", option::Arg::Numeric, "  --logLevel  \t(optional) Logging level level to print (optional; default=3/DEBUG)." },
   {UNKNOWN, 0,"" ,  ""   , option::Arg::None, "\nExamples:\n"
                                            "  program --bitFile=/path/to/bitfile (all other options will be prompted for)\n"
                                            "  program --bitFile=/path/to/bitfile --ipAddr=192.168.2.2 --progMode=DRAM " },

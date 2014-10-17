@@ -20,11 +20,11 @@ const option::Descriptor usage[] =
 	{UNKNOWN, 0,"" , ""    , option::Arg::None, "USAGE: play_waveform [options]\n\n"
 	                                         "Options:" },
 	{HELP,    0,"" , "help", option::Arg::None, "  --help  \tPrint usage and exit." },
-	{WFA_FILE, 0,"", "wfA", option::Arg::Required, "  --wfA  \tChannel A waveform file (ASCII one signed 16 bit integer per line)" },
-	{WFB_FILE, 0,"", "wfB", option::Arg::Required, "  --wfB  \tChannel B waveform file (ASCII one signed 16 bit integer per line)" },
-	{TRIG_MODE, 0,"", "trigMode", option::Arg::Required, "  --trigMode  \tTrigger mode (0: external; 1: internal; 2: software" },
-	{TRIG_INTERVAL,  0,"", "trigInterval", option::Arg::Numeric, "  --trigRep  \tInternal trigger interval" },
-	{LOG_LEVEL,  0,"", "logLevel", option::Arg::Numeric, "  --logLevel  \tLogging level level to print" },
+	{WFA_FILE, 0,"", "wfA", option::Arg::Required, "  --wfA  \tChannel A waveform file (ASCII one signed 16 bit integer per line).  Only wfA or wfB required." },
+	{WFB_FILE, 0,"", "wfB", option::Arg::Required, "  --wfB  \tChannel B waveform file (ASCII one signed 16 bit integer per line). Only wfA or wfB required." },
+	{TRIG_MODE, 0,"", "trigMode", option::Arg::Required, "  --trigMode  \tTrigger mode (0: external; 1: internal; 2: software - optional; default=1)." },
+	{TRIG_INTERVAL,  0,"", "trigInterval", option::Arg::Numeric, "  --trigRep  \tInternal trigger interval (optional; default=10ms)." },
+	{LOG_LEVEL,  0,"", "logLevel", option::Arg::Numeric, "  --logLevel  \tLogging level level to print (optional; default=2/INFO)." },
 	{UNKNOWN, 0,"" ,  ""   , option::Arg::None, "\nExamples:\n"
 	                                         "  play_waveform --wfA=../examples/wfA.dat --wfB=../examples/wfB.dat\n"
 	                                         "  play_waveform --wfA=../examples/wfB.dat --trigMode=2\n" },
@@ -55,9 +55,9 @@ int main(int argc, char* argv[])
 	 cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
 	//Debug level
-	int debugLevel = 1;
+	int logLevel = 2;
 	if (options[LOG_LEVEL]) {
-		debugLevel = atoi(options[LOG_LEVEL].arg);
+		logLevel = atoi(options[LOG_LEVEL].arg);
 	}
 
 	//Trigger source -- default of internal
@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
 
 	string deviceSerial = get_device_id();
 
-	set_logging_level(debugLevel);
+	set_logging_level(logLevel);
 	set_log("stdout");
 
 	connect_APS(deviceSerial.c_str());
