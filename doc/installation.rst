@@ -75,7 +75,9 @@ settings. Then set the properties of the TCP/IPv4 interface.
 
 	**Step 1** accessing the IPv4 settings for the network interface. 
 
-Then under the Advanced tab it will be possible to add additional IP addresses. Unfortunately, Windows does not support multiple IP addresses with DHCP so a static address is required for the main network.
+Then under the Advanced tab it will be possible to add additional IP
+addresses. Unfortunately, Windows does not support multiple IP addresses with
+DHCP so a static address is required for the main network.
 
 .. figure:: images/WindowsDualHome-2.png
 	:scale: 100%
@@ -84,16 +86,53 @@ Then under the Advanced tab it will be possible to add additional IP addresses. 
 
 Linux
 ~~~~~~~~~~~~~~~
-Temporary IP addresses can be obtained by adding additional ethernet interfaces::
 
-	sudo ifconfig eth0:0 192.168.5.101 netmask 255.255.255.0 up
+Temporary IP addresses can be obtained by adding additional ethernet
+interfaces::
 
-A more permanent solution would involve editing the network interfaces file, e.g. ``/etc/network/interfaces``. 
+	sudo ifconfig eth0:0 192.168.2.1 netmask 255.255.255.0 up
+
+A more permanent solution would involve editing the network interfaces file,
+e.g. ``/etc/network/interfaces``.
 
 OS X 
 ~~~~~~~~~~~~
-In the System Preferences pane under Networking use the "Plus" button to add an interface. 
+
+In the System Preferences pane under Networking use the "Plus" button to add
+an interface.
 	
+
+Firmware Updates
+-------------------------
+
+BBN releases periodic firmware updates with bug-fixes and enhancements.  These
+can be loaded onto the APS2 modules using the ``program`` program::
+
+	./program
+	BBN AP2 Firmware Programming Executable
+	USAGE: play_waveform [options]
+	
+	Options:
+	  --help      Print usage and exit.
+	  --bitFile   Path to firmware bitfile.
+	  --ipAddr    IP address of unit to program (optional).
+	  --progMode  (optional) Where to program firmware DRAM/EPROM/BACKUP (optional).
+	  --logLevel  (optional) Logging level level to print (optional; default=2/INFO).
+	
+	Examples:
+	  program --bitFile=/path/to/bitfile (all other options will be prompted for)
+	  program --bitFile=/path/to/bitfile --ipAddr=192.168.2.2 --progMode=DRAM 
+
+The program will prompt the user for ip address and programming mode. The APS2
+can boot from multiple locations: volatile DRAM; non-volatile flash or if
+all else fails a master backup in flash.  The DRAM storage takes only a few
+seconds to program and is used from temporary booting for testing purposes.
+It will be lost on a power cycle.  Once you are happy there are no issues with
+the new bitfile you can program it to the flash memory so the module will boot
+from the new firmware on a power cycle.  This process involves erasing,
+writing and verifiying and takes several minutes. The backup firmware should
+only be programmed in the rare cases BBN releases an update to the backup
+image.
 
 .. rubric:: Footnotes
 .. [#f1] The APS2 use static self-assigned IP addresses and should ideally be behind the same router as the control computer.
