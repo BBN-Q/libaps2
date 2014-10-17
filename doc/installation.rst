@@ -33,7 +33,11 @@ download this driver from our APS2 source code repository
 (http://github.com/BBN-Q/libaps2). Click on 'releases' to find the latest
 binaries. We provide MATLAB wrappers to this library, but the APS2 may be used
 with any software that can call a C-API DLL. To use the MATLAB driver, simply
-add the path of the unzipped driver to your MATLAB path.
+add the path of the unzipped driver to your MATLAB path. The driver depends on
+other shared libraries, for example HDF5 and the gcc libstdc++ from MinGW-w64.
+We include these DLL's with the Windows releases and they need be in the same
+folder as the driver to ensure they can by dynamically loaded with the libaps2
+driver [#f2]_.
 
 The BBN APS2 has advanced sequencing capabilities. Fully taking advantage of
 these capabilities may require use of higher-level languages which can be
@@ -135,4 +139,8 @@ only be programmed in the rare cases BBN releases an update to the backup
 image.
 
 .. rubric:: Footnotes
-.. [#f1] The APS2 use static self-assigned IP addresses and should ideally be behind the same router as the control computer.
+
+.. [#f1] The APS2 use static self-assigned IP addresses and should ideally be
+.. [#behind the same router as the control computer.
+
+.. [#f2] There is the potential for conflicts with previously loaded DLL's that are incompatible versions.  For example, if you have loaded another driver into Matlab that was built with a different version of MinGW-w64 or trying to load libaps2 into Julia which was built with a different version of MinGW-w64. There is no easy solution to this problem on the Windows platform.Please contact BBN if you run into this situation.
