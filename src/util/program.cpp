@@ -18,7 +18,7 @@ using std::flush;
 enum  optionIndex { UNKNOWN, HELP, BIT_FILE, IP_ADDR, PROG_MODE, LOG_LEVEL};
 const option::Descriptor usage[] =
 {
-  {UNKNOWN, 0,"" , ""    , option::Arg::None, "USAGE: play_waveform [options]\n\n"
+  {UNKNOWN, 0,"" , ""    , option::Arg::None, "USAGE: program [options]\n\n"
                                            "Options:" },
   {HELP,    0,"" , "help", option::Arg::None, "  --help  \tPrint usage and exit." },
   {BIT_FILE, 0,"", "bitFile", option::Arg::Required, "  --bitFile  \tPath to firmware bitfile (required)." },

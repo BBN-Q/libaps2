@@ -110,11 +110,11 @@ Firmware Updates
 -------------------------
 
 BBN releases periodic firmware updates with bug-fixes and enhancements.  These
-can be loaded onto the APS2 modules using the ``program`` program::
+can be loaded onto the APS2 modules using the ``program`` executable::
 
 	./program
 	BBN AP2 Firmware Programming Executable
-	USAGE: play_waveform [options]
+	USAGE: program [options]
 	
 	Options:
 	  --help      Print usage and exit.
@@ -127,16 +127,15 @@ can be loaded onto the APS2 modules using the ``program`` program::
 	  program --bitFile=/path/to/bitfile (all other options will be prompted for)
 	  program --bitFile=/path/to/bitfile --ipAddr=192.168.2.2 --progMode=DRAM 
 
-The program will prompt the user for ip address and programming mode. The APS2
-can boot from multiple locations: volatile DRAM; non-volatile flash or if
-all else fails a master backup in flash.  The DRAM storage takes only a few
-seconds to program and is used from temporary booting for testing purposes.
-It will be lost on a power cycle.  Once you are happy there are no issues with
-the new bitfile you can program it to the flash memory so the module will boot
-from the new firmware on a power cycle.  This process involves erasing,
-writing and verifiying and takes several minutes. The backup firmware should
-only be programmed in the rare cases BBN releases an update to the backup
-image.
+The executable will prompt the user for ip address and programming mode. The
+APS2 can boot from multiple locations: volatile DRAM; non-volatile flash or if
+all else fails a master backup in flash. The DRAM storage takes only a few
+seconds to program and is used for temporary booting for testing purposes. It
+will be lost on a power cycle. Once you are happy there are no issues with the
+new bitfile you can program it to the flash memory so the module will boot
+from the new firmware on a power cycle. This process involves erasing, writing
+and verifiying and takes several minutes. The backup firmware should only be
+programmed in the rare case BBN releases an update to the backup image.
 
 .. rubric:: Footnotes
 
