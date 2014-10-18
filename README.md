@@ -49,6 +49,10 @@ Using gcc on Windows is a rapidly moving target.  Our setup has changed every co
   cmake -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=Debug ../src/
   make
   ```
+  
+Tested on:
+* Windows 7 Professional
+* Windows 8.1
 
 ### Linux
 Use your distribution's package manager to install the dependencies and it should work out of the box.
@@ -58,8 +62,13 @@ Tested on:
 
 ### OS X
 1. Install the command-line developer tools. 
-2. Use [Homebrew](http://brew.sh/) to install hdf5 and cmake. 
-3. Then a standard cmake and make should build. 
+2. Use [Homebrew](http://brew.sh/) to install hdf5 and cmake. For HDF5 you'll need to tap the science formulae and build the C++ bindings:
+
+    ```bash
+    brew tap homebrew/science
+    brew install hdf5 --enable-cxx
+    ```
+3. Then a standard ``cmake ../src`` and ``make`` should build. 
 
 Tested on:
 * OS X 10.9 Mavericks
