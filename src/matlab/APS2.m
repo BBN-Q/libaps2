@@ -102,7 +102,7 @@ classdef APS2 < handle
         end
         
         function set_trigger_source(obj, source)
-            triggerSourceMap = containers.Map({'external', 'ext', 'internal', 'int'}, {0, 0, 1, 1});
+            triggerSourceMap = containers.Map({'external', 'ext', 'internal', 'int', 'software'}, {0, 0, 1, 1, 2});
             calllib('libaps2', 'set_trigger_source', obj.serial, triggerSourceMap(lower(source)));
         end
         
