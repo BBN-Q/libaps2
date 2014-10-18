@@ -140,6 +140,11 @@ programmed in the rare case BBN releases an update to the backup image.
 .. rubric:: Footnotes
 
 .. [#f1] The APS2 use static self-assigned IP addresses and should ideally be
-.. [#behind the same router as the control computer.
+   behind the same router as the control computer.
 
-.. [#f2] There is the potential for conflicts with previously loaded DLL's that are incompatible versions.  For example, if you have loaded another driver into Matlab that was built with a different version of MinGW-w64 or trying to load libaps2 into Julia which was built with a different version of MinGW-w64. There is no easy solution to this problem on the Windows platform.Please contact BBN if you run into this situation.
+.. [#f2] There is the potential for conflicts with previously loaded DLL's
+   that are incompatible versions.  For example, if you have loaded another
+   driver into Matlab that was built with a different version of MinGW-w64
+   or trying to load libaps2 into Julia which was built with a different
+   version of MinGW-w64. There is no easy solution to this problem on the
+   Windows platform. Please contact BBN if you run into this situation.
