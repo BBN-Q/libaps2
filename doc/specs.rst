@@ -36,9 +36,8 @@ Detailed Specifications
 	:figwidth: 60%
 
 	**BBN APS2 front panel** The front panel of the APS has two analog outputs,
-	4 marker outputs, a trigger input, two SATA ports, a 1 GigE port, and a
-	10 MHz reference input. The LEDs display the run state of the sequencer and
-	status of the ethernet communications link, respectively.
+	4 marker outputs, a trigger input, two SATA ports, a 1 GigE port, a
+	10 MHz reference input and two status LEDs.
 
 ========================  ==============================================================
 Analog channels           two 14-bit 1.2 GS/s outputs per module
@@ -65,3 +64,24 @@ the APS2; however, it does not natively support error checking of the sent
 data. The libaps2 driver adds some error-checking and packet resending to UDP,
 but it is recommended not place too many network hops between the host PC and
 the APS2.
+
+Status LED's
+------------------------
+
+The L1 and L2 LEDs provide status indicators for the communication (L1)
+and sequencing (L2) firmware components.
+
+L1:
+
+* dark - no ethernet connection;
+* green blinks - receiving or transmitting an ethernet packet;
+* green breathing - idle;
+* red - fatal communication error. Power cycle the module to restore connectivity. 
+
+L2:
+
+* dark - idle;
+* solid green - playback enabled and outputing sequences;
+* green breathing - playback enabled but no trigger received in the past 100ms;
+* red - fatal cache controller error. Power cycle the module to restore playback
+functionality. 
