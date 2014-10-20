@@ -49,7 +49,7 @@ Trigger input             1 V minimum into 50 Ω, 5 V maximum; triggered on *ris
 Waveform cache            128K samples
 Sequence memory           64M instructions
 Min instruction duration  8 samples
-Max instruction duration  8M samples (~27.7ms at 1.2GS/s)
+Max instruction duration  8M samples (~7ms at 1.2GS/s)
 Max loop repeats          65,536
 ========================  ==============================================================
 
