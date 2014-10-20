@@ -1,9 +1,5 @@
 #include "MACAddr.h"
 
-#ifdef _WIN32
-    #include <iphlpapi.h>
-#endif
-
 MACAddr::MACAddr() : addr(MAC_ADDR_LEN, 0){}
 
 MACAddr::MACAddr(const string & macStr){
