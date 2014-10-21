@@ -66,6 +66,14 @@ int main(int argc, char* argv[])
 		trigInterval = atof(options[TRIG_INTERVAL].arg);
 	}
 
+	string seqFile;
+	if (options[SEQ_FILE]){
+		seqFile = string(options[SEQ_FILE].arg);
+	} else {
+		std::cerr << "A sequence file is required.";
+		return -1;
+	}
+
 	string deviceSerial = get_device_id();
 
 	set_logging_level(logLevel);
@@ -81,7 +89,7 @@ int main(int argc, char* argv[])
 	initAPS(deviceSerial.c_str(), 1);
 
 	//load the sequence file
-	load_sequence_file(deviceSerial.c_str(), "../examples/bigrabi.h5");
+	load_sequence_file(deviceSerial.c_str(), seqFile.c_str());
 
 	//Set the trigger mode
 	set_trigger_source(deviceSerial.c_str(), triggerSource);
