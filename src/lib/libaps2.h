@@ -8,6 +8,8 @@
 #ifndef LIBAPS_H_
 #define LIBAPS_H_
 
+#include "APS2_errno.h"
+
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
 #else
@@ -19,17 +21,11 @@
 extern "C" {
 #endif
 
-enum APSErrorCode {
-	APS_OK,
-	APS_UNKNOWN_ERROR = -1,
-	APS_FILE_ERROR = -2
-};
+EXPORT APS2_STATUS get_numDevices(unsigned int *);
+EXPORT APS2_STATUS get_deviceSerials(const char **);
 
-EXPORT int get_numDevices();
-EXPORT void get_deviceSerials(const char **);
-
-EXPORT int connect_APS(const char *);
-EXPORT int disconnect_APS(const char *);
+EXPORT APS2_STATUS connect_APS(const char *);
+EXPORT APS2_STATUS disconnect_APS(const char *);
 
 EXPORT int reset(const char *, int);
 EXPORT int initAPS(const char *, int);

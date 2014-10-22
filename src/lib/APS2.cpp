@@ -9,26 +9,26 @@ APS2::APS2(string deviceSerial) :  isOpen{false}, deviceSerial_{deviceSerial}, s
 
 APS2::~APS2() = default;
 
-APSEthernet::EthernetError APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
+APS2_STATUS APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
 	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
-		APSEthernet::EthernetError success = ethernetRM_->connect(deviceSerial_);
+		APS2_STATUS success = ethernetRM_->connect(deviceSerial_);
 		// TODO: send a status request to check the connection
 
-		if (success == APSEthernet::SUCCESS) {
+		if (success == APS2_OK) {
 			FILE_LOG(logINFO) << "Opened connection to device: " << deviceSerial_;
 			isOpen = true;
 		}
 		// TODO: restore state information from file
 		return success;
 	}
-	return APSEthernet::SUCCESS;
+	return APS2_OK;
 }
 
-APSEthernet::EthernetError APS2::disconnect() {
+APS2_STATUS APS2::disconnect() {
 	if (isOpen) {
-		APSEthernet::EthernetError success = ethernetRM_->disconnect(deviceSerial_);
-		if (success == APSEthernet::SUCCESS) {
+		APS2_STATUS success = ethernetRM_->disconnect(deviceSerial_);
+		if (success == APS2_OK) {
 			FILE_LOG(logINFO) << "Closed connection to device: " << deviceSerial_;
 			isOpen = false;
 		}
@@ -37,10 +37,10 @@ APSEthernet::EthernetError APS2::disconnect() {
 		// TODO: save state information to file
 		return success;
 	}
-	return APSEthernet::SUCCESS;
+	return APS2_OK;
 }
 
-int APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */) {
+APS2_STATUS APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */) {
 	
 	APSCommand_t command = { .packed=0 };
 	
@@ -60,17 +60,17 @@ int APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */) 
 		try {
 			// poll status to see device reset
 			read_status_registers();
-			return APSEthernet::SUCCESS;
+			return APS2_OK;
 		} catch (std::exception &e) {
 			FILE_LOG(logDEBUG) << "Status timeout; retrying...";
 		}
 		retrycnt++;
 	}
 
-	return APSEthernet::TIMEOUT;
+	return APS2_RESET_TIMEOUT;
 }
 
-int APS2::init(const bool & forceReload, const int & bitFileNum){
+APS2_STATUS APS2::init(const bool & forceReload, const int & bitFileNum){
 	 //TODO: bitfiles will be stored in flash so all we need to do here is the DACs
 
 	get_sampleRate(); // to update state variable
@@ -100,7 +100,7 @@ int APS2::init(const bool & forceReload, const int & bitFileNum){
 		write_memory_map();
 	}
 
-	return 0;
+	return APS2_OK;
 }
 
 int APS2::setup_DACs() {
@@ -209,13 +209,13 @@ int APS2::program_FPGA(const string & bitFile) {
 		try {
 			// poll status to see device reset
 			read_status_registers();
-			return APSEthernet::SUCCESS;
+			return APS2_OK;
 		} catch (std::exception &e) {
 			FILE_LOG(logDEBUG) << "Status timeout; retrying...";
 		}
 		retrycnt++;
 	}
-	return APSEthernet::TIMEOUT;
+	return APS2_RESET_TIMEOUT;
 }
 
 int APS2::get_firmware_version() {

@@ -10,6 +10,7 @@
 #include "headings.h"
 #include "APSEthernet.h"
 #include "Channel.h"
+#include "APS2_errno.h"
 
 class APS2 {
 
@@ -22,11 +23,11 @@ public:
 	APS2(string);
 	~APS2();
 
-	APSEthernet::EthernetError connect(shared_ptr<APSEthernet> &&);
-	APSEthernet::EthernetError disconnect();
+	APS2_STATUS connect(shared_ptr<APSEthernet> &&);
+	APS2_STATUS disconnect();
 
-	int init(const bool & = false, const int & bitFileNum = 0);
-	int reset(const APS_RESET_MODE_STAT & resetMode = APS_RESET_MODE_STAT::SOFT_RESET);
+	APS2_STATUS init(const bool & = false, const int & bitFileNum = 0);
+	APS2_STATUS reset(const APS_RESET_MODE_STAT & resetMode = APS_RESET_MODE_STAT::SOFT_RESET);
 
 	int store_image(const string & bitFile, const int & position = 0);
 	int select_image(const int &);

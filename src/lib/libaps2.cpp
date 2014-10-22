@@ -50,23 +50,34 @@ shared_ptr<APSEthernet> get_interface() {
 extern "C" {
 #endif
 
-int get_numDevices() {
+APS2_STATUS get_numDevices(unsigned int * numDevices) {
+	/*
+	Returns the number of APS2s that respond to a broadcast status request.
+	*/
 	deviceSerials = get_interface()->enumerate();
-	return deviceSerials.size();
+	*numDevices = deviceSerials.size();
+	return APS2_OK;
 }
 
-void get_deviceSerials(const char ** deviceSerialsOut) {
-	//Assumes sufficient memory has been allocated
+APS2_STATUS get_deviceSerials(const char ** deviceSerialsOut) {
+	/*
+	Fill in an array of char* with null-terminated char arrays with the
+	enumerated device ip addresses.
+	Assumes sufficient memory has been allocated
+	*/
 	size_t ct = 0;
 	for (auto & serial : deviceSerials) {
 		deviceSerialsOut[ct] = serial.c_str();
 		ct++;
 	}
+	return APS2_OK;
 }
 
-//Connect to a device specified by serial number string
-//Assumes null-terminated deviceSerial
-int connect_APS(const char * deviceSerial) {
+APS2_STATUS connect_APS(const char * deviceSerial) {
+	/*
+	Connect to a device specified by serial number string
+	Assumes null-terminated deviceSerial
+	*/
 	string serial = string(deviceSerial);
 	// create the APS2 object if it is not already in the map
 	if (APSs.find(serial) == APSs.end()) {
@@ -76,8 +87,8 @@ int connect_APS(const char * deviceSerial) {
 }
 
 //Assumes a null-terminated deviceSerial
-int disconnect_APS(const char * deviceSerial) {
-	int result = APSs[string(deviceSerial)].disconnect();
+APS2_STATUS disconnect_APS(const char * deviceSerial) {
+	APS2_STATUS result = APSs[string(deviceSerial)].disconnect();
 	APSs.erase(string(deviceSerial));
 	return result;
 }
@@ -89,17 +100,7 @@ int reset(const char * deviceSerial, int resetMode) {
 //Initialize an APS unit
 //Assumes null-terminated bitFile
 int initAPS(const char * deviceSerial, int forceReload) {
-	try {
-		return APSs[string(deviceSerial)].init(forceReload);
-	} catch (std::exception& e) {
-		string error = e.what();
-		if (error.compare("Unable to open bitfile.") == 0) {
-			return APS_FILE_ERROR;
-		} else {
-			return APS_UNKNOWN_ERROR;
-		}
-	}
-
+	return APSs[string(deviceSerial)].init(forceReload);
 }
 
 int get_firmware_version(const char * deviceSerial) {
@@ -141,10 +142,10 @@ int load_sequence_file(const char * deviceSerial, const char * seqFile) {
 	try {
 		return APSs[string(deviceSerial)].load_sequence_file(string(seqFile));
 	} catch (...) {
-		return APS_UNKNOWN_ERROR;
+		return APS2_UNKNOWN_ERROR;
 	}
 	// should not reach this point
-	return APS_UNKNOWN_ERROR;
+	return APS2_UNKNOWN_ERROR;
 }
 
 int clear_channel_data(const char * deviceSerial) {
@@ -172,25 +173,25 @@ int set_log(const char * fileNameArr) {
 	string fileName(fileNameArr);
 	if (fileName.compare("stdout") == 0) {
 		Output2FILE::Stream() = stdout;
-		return APS_OK;
+		return APS2_OK;
 	}
 	else if (fileName.compare("stderr") == 0) {
 		Output2FILE::Stream() = stdout;
-		return APS_OK;
+		return APS2_OK;
 	}
 	else {
 		FILE* pFile = fopen(fileName.c_str(), "a");
 		if (!pFile) {
-			return APS_FILE_ERROR;
+			return APS2_FILE_ERROR;
 		}
 		Output2FILE::Stream() = pFile;
-		return APS_OK;
+		return APS2_OK;
 	}
 }
 
 int set_logging_level(int logLevel) {
 	FILELog::ReportingLevel() = TLogLevel(logLevel);
-	return APS_OK;
+	return APS2_OK;
 }
 
 int set_trigger_source(const char * deviceSerial, int triggerSource) {
