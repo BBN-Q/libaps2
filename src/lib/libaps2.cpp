@@ -52,11 +52,23 @@ APS2_STATUS make_errno(std::exception_ptr e){
 	return APS2_UNKNOWN_ERROR;
 }
 
-//It seems Args1 and Args2 should match but I couldn't get the parameter pack tempalte deduction to work
+//It seems Args1 and Args2 should match but I couldn't get the parameter pack template deduction to work
 template<typename R, typename... Args1, typename... Args2>
-APS2_STATUS aps_call(const char * deviceSerial, std::function<R(Args1...)> func, Args2&&... args){
+APS2_STATUS aps2_call(const char * deviceSerial, std::function<R(Args1...)> func, Args2&&... args){
 	try{
 		func(APSs[deviceSerial], std::forward<Args2>(args)...);
+		//Nothing thrown then assume OK
+		return APS2_OK;
+	}
+	catch(...) {
+		return make_errno(std::current_exception());
+	}
+}
+
+template<typename R, typename... Args1, typename... Args2>
+APS2_STATUS aps2_getter(const char * deviceSerial, std::function<R(Args1...)> func, R *resPtr,  Args2&&... args){
+	try{
+		*resPtr = func(APSs[deviceSerial], std::forward<Args2>(args)...);
 		//Nothing thrown then assume OK
 		return APS2_OK;
 	}
@@ -119,13 +131,16 @@ int reset(const char * deviceSerial, int resetMode) {
 //Initialize an APS unit
 //Assumes null-terminated bitFile
 int initAPS(const char * deviceSerial, int forceReload) {
-	aps_call(deviceSerial, std::function<APS2_STATUS(APS2&, const bool&, const int&)>(&APS2::init), bool(forceReload), 0);
+	aps2_call(deviceSerial, std::function<APS2_STATUS(APS2&, const bool&, const int&)>(&APS2::init), bool(forceReload), 0);
 	return 0;
 	// return APSs[string(deviceSerial)].init(forceReload);
 }
 
 int get_firmware_version(const char * deviceSerial) {
-	return APSs[string(deviceSerial)].get_firmware_version();
+	int silly;
+	APS2_STATUS status = aps2_getter(deviceSerial, std::function<int(APS2&)>(&APS2::get_firmware_version), &silly);
+	cout << silly; 
+	return 0;
 }
 
 double get_uptime(const char * deviceSerial) {
