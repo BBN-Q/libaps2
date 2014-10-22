@@ -136,10 +136,10 @@ int main (int argc, char* argv[])
   }
 
   // read SPI setup sequence
-  uint32_t setup[32];
-  read_flash(deviceSerial.c_str(), 0x0, 32, setup);
+  uint32_t setup[36];
+  read_flash(deviceSerial.c_str(), 0x0, 36, setup);
   cout << "Programmed setup SPI sequence:" << endl;
-  for (size_t ct=0; ct < 32; ct++) {
+  for (size_t ct=0; ct < 36; ct++) {
     cout << hexn<8> << setup[ct] << " ";
     if (ct % 4 == 3) cout << endl;
   }

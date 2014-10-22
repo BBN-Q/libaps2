@@ -293,19 +293,19 @@ typedef std::pair<uint16_t, uint8_t> SPI_AddrData_t;
 // PLL setup sequence (modified for 300 MHz FPGA sys_clk and 1.2 GHz DACs)
 static const vector<SPI_AddrData_t> PLL_INIT = {
 	{0x0,  0x99},  // Use SDO, Long instruction mode
-	{0x10, 0x7C},  // Enable PLL , set charge pump to 4.8ma
+	{0x10, 0x7C},  // Enable PLL, set charge pump to 4.8ma
 	{0x11, 0x5},   // Set reference divider R to 5 to divide 125 MHz reference to 25 MHz
 	{0x14, 0x6},   // Set B counter to 6
 	{0x16, 0x5},   // Set P prescaler to 16 and enable B counter (N = P*B = 96 to divide 2400 MHz to 25 MHz)
-	{0x17, 0x4},   // Selects readback of N divider on STATUS bit in Status/Control register
-	{0x18, 0x60},  // Calibrate VCO with 2 divider, set lock detect count to 255, set high range
+	{0x17, 0xAD},  // Status of VCO frequency; active high on STATUS bit in Status/Control register; antibacklash pulse to 1.3ns
+	{0x18, 0x74},  // Calibrate VCO with 8 divider, set lock detect count to 255, set low range
 	{0x1A, 0x2D},  // Selects readback of PLL Lock status on LOCK bit in Status/Control register
-	{0x1B, 0x01},  // REFMON pin control set to REF1 clock
+	{0x1B, 0xA5},  // Enable VCO & REF1 monitors; REFMON pin control set to "Status of selected reference (status of differential reference); active high"
 	{0x1C, 0x7},   // Enable differential reference, enable REF1/REF2 power, disable reference switching
 	{0xF0, 0x00},  // Enable un-inverted 400mV clock on OUT0 (goes to DACA)
 	{0xF1, 0x00},  // Enable un-inverted 400mV clock on OUT1 (goes to DACB)
 	{0xF2, 0x02},  // Disable OUT2
-	{0xF3, 0x08},  // Enable un-inverted 780mV clock on OUT3 (goes to FPGA sys_clk)
+	{0xF3, 0x00},  // Enable un-inverted 400mV clock on OUT3 (goes to FPGA sys_clk)
 	{0xF4, 0x02},  // Disable OUT4
 	{0xF5, 0x00},  // Enable un-inverted 400mV clock on OUT5 (goes to FPGA mem_clk)
 	{0x190, 0x00}, // channel 0: no division
@@ -315,11 +315,21 @@ static const vector<SPI_AddrData_t> PLL_INIT = {
 	{0x196, 0x10}, // channel 2: (2 high, 1 low = 1.2 GHz / 3 = 400 MHz mem_clk)
 	{0x1E0, 0x0},  // Set VCO post divide to 2
 	{0x1E1, 0x2},  // Select VCO as clock source for VCO divider
-	{0x232, 0x1},  // Set bit 0 to 1 to simultaneously update all registers with pending writes.
-	{0x18, 0x71},  // Initiate Calibration.  Must be followed by Update Registers Command
-	{0x232, 0x1},  // Set bit 0 to 1 to simultaneously update all registers with pending writes.
-	{0x18, 0x70},  // Clear calibration flag so that next set generates 0 to 1.
-	{0x232, 0x1},  // Set bit 0 to 1 to simultaneously update all registers with pending writes.
+	{0x232, 0x1},  // Set bit 0 to simultaneously update all registers with pending writes.
+	{0x18, 0x75},  // Initiate Calibration.  Must be followed by Update Registers Command
+	{0x232, 0x1}   // Update registers with pending writes.
+	// {0x18, 0x74},  // Clear calibration flag.
+	// {0x232, 0x1}   // Update registers with pending writes.
+};
+
+static const vector<SPI_AddrData_t> PLL_SET_CAL_FLAG = {
+	{0x18, 0x75},  // Initiate Calibration.  Must be followed by Update Registers Command
+	{0x232, 0x1}  // Set bit 0 to 1 to simultaneously update all registers with pending writes.
+};
+
+static const vector<SPI_AddrData_t> PLL_CLEAR_CAL_FLAG = {
+	{0x18, 0x74},  // Initiate Calibration.  Must be followed by Update Registers Command
+	{0x232, 0x1}  // Set bit 0 to 1 to simultaneously update all registers with pending writes.
 };
 
 // VCXO setup sequence
