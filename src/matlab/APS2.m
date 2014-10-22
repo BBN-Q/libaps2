@@ -74,6 +74,10 @@ classdef APS2 < handle
             calllib('libaps2', 'initAPS', obj.serial, force);
         end
         
+        function val = get_firmware_version(obj)
+           val = calllib('libaps2', 'get_firmware_version', obj.serial); 
+        end
+        
         function run(obj)
             calllib('libaps2', 'run', obj.serial);
         end
