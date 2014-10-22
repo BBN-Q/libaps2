@@ -46,6 +46,25 @@ shared_ptr<APSEthernet> get_interface() {
 	return myEthernetRM;
 }
 
+//Handle exceptions thrown in library calls
+APS2_STATUS make_errno(std::exception_ptr e){
+	FILE_LOG(logERROR) << "Oops!";
+	return APS2_UNKNOWN_ERROR;
+}
+
+//It seems Args1 and Args2 should match but I couldn't get the parameter pack tempalte deduction to work
+template<typename R, typename... Args1, typename... Args2>
+APS2_STATUS aps_call(const char * deviceSerial, std::function<R(Args1...)> func, Args2&&... args){
+	try{
+		func(APSs[deviceSerial], std::forward<Args2>(args)...);
+		//Nothing thrown then assume OK
+		return APS2_OK;
+	}
+	catch(...) {
+		return make_errno(std::current_exception());
+	}
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -100,7 +119,9 @@ int reset(const char * deviceSerial, int resetMode) {
 //Initialize an APS unit
 //Assumes null-terminated bitFile
 int initAPS(const char * deviceSerial, int forceReload) {
-	return APSs[string(deviceSerial)].init(forceReload);
+	aps_call(deviceSerial, std::function<APS2_STATUS(APS2&, const bool&, const int&)>(&APS2::init), bool(forceReload), 0);
+	return 0;
+	// return APSs[string(deviceSerial)].init(forceReload);
 }
 
 int get_firmware_version(const char * deviceSerial) {
