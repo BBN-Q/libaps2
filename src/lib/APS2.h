@@ -23,8 +23,9 @@ public:
 	APS2(string);
 	~APS2();
 
-	APS2_STATUS connect(shared_ptr<APSEthernet> &&);
-	APS2_STATUS disconnect();
+	
+	void connect(shared_ptr<APSEthernet> &&);
+	void disconnect();
 
 	APS2_STATUS init(const bool & = false, const int & bitFileNum = 0);
 	APS2_STATUS reset(const APS_RESET_MODE_STAT & resetMode = APS_RESET_MODE_STAT::SOFT_RESET);

@@ -50,12 +50,6 @@ shared_ptr<APSEthernet> get_interface() {
 	return myEthernetRM;
 }
 
-//Handle exceptions thrown in library calls
-APS2_STATUS make_errno(std::exception_ptr e){
-	FILE_LOG(logERROR) << "Oops!";
-	return APS2_UNKNOWN_ERROR;
-}
-
 template<typename R>
 APS2_STATUS aps2_call(const char * deviceSerial, std::function<R(APS2&)> func){
 	try{
@@ -105,16 +99,26 @@ extern "C" {
 #endif
 
 APS2_STATUS get_error_msg(APS2_STATUS err, char * msg){
+	//TODO: check if error message there
 	std::copy(messages[err].begin(), messages[err].end(), msg);
+	return APS2_OK;
 }
 
 APS2_STATUS get_numDevices(unsigned int * numDevices) {
 	/*
 	Returns the number of APS2s that respond to a broadcast status request.
 	*/
-	deviceSerials = get_interface()->enumerate();
-	*numDevices = deviceSerials.size();
-	return APS2_OK;
+	try{
+		deviceSerials = get_interface()->enumerate();
+		*numDevices = deviceSerials.size();
+		return APS2_OK;
+	}
+	catch(APS2_STATUS status){
+		return status;
+	}
+	catch(...){
+		return APS2_UNKNOWN_ERROR;
+	}
 }
 
 APS2_STATUS get_deviceSerials(const char ** deviceSerialsOut) {
@@ -141,14 +145,27 @@ APS2_STATUS connect_APS(const char * deviceSerial) {
 	if (APSs.find(serial) == APSs.end()) {
 		APSs[serial] = APS2(serial);
 	}
-	return APSs[serial].connect(get_interface());
+	//Can't seem to bind the interface
+	// std::function<void(APS2&)> func = std::bind(&APS2::connect, _1, get_interface());
+	// return aps2_call(deviceSerial, func);
+	try{
+		APSs.at(deviceSerial).connect(get_interface());
+		return APS2_OK;
+	}
+	catch(APS2_STATUS status){
+		return status;
+	}
+	catch(...){
+		return APS2_UNKNOWN_ERROR;
+	}
 }
 
 //Assumes a null-terminated deviceSerial
 APS2_STATUS disconnect_APS(const char * deviceSerial) {
-	APS2_STATUS result = APSs[string(deviceSerial)].disconnect();
+	std::function<void(APS2&)> func = std::bind(&APS2::disconnect, _1);
+	APS2_STATUS status = aps2_call(deviceSerial, func);
 	APSs.erase(string(deviceSerial));
-	return result;
+	return status;
 }
 
 int reset(const char * deviceSerial, int resetMode) {

@@ -9,7 +9,7 @@ APS2::APS2(string deviceSerial) :  isOpen{false}, deviceSerial_{deviceSerial}, s
 
 APS2::~APS2() = default;
 
-APS2_STATUS APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
+void APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
 	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
 		APS2_STATUS success = ethernetRM_->connect(deviceSerial_);
@@ -20,12 +20,10 @@ APS2_STATUS APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
 			isOpen = true;
 		}
 		// TODO: restore state information from file
-		return success;
 	}
-	return APS2_OK;
 }
 
-APS2_STATUS APS2::disconnect() {
+void APS2::disconnect() {
 	if (isOpen) {
 		APS2_STATUS success = ethernetRM_->disconnect(deviceSerial_);
 		if (success == APS2_OK) {
@@ -35,9 +33,7 @@ APS2_STATUS APS2::disconnect() {
 		//Release reference to ethernet RM
 		ethernetRM_.reset();
 		// TODO: save state information to file
-		return success;
 	}
-	return APS2_OK;
 }
 
 APS2_STATUS APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */) {
