@@ -58,7 +58,7 @@ function get_numDevices()
 	return numDevices[1]
 end
 
-function enumerate()
+function enumerate_APS2s()
 	numDevices = get_numDevices()
 	Cserials = Array(Ptr{Uint8}, numDevices)
 	status = ccall((:get_deviceSerials, "libaps2"), APS2_STATUS, (Ptr{Ptr{Uint8}},), Cserials)
