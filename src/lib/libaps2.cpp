@@ -98,9 +98,9 @@ APS2_STATUS aps2_getter(const char * deviceSerial, std::function<R(APS2&)> func,
 extern "C" {
 #endif
 
-APS2_STATUS get_error_msg(APS2_STATUS err, char * msg){
+APS2_STATUS get_error_msg(APS2_STATUS err, const char * msg){
 	//TODO: check if error message there
-	std::copy(messages[err].begin(), messages[err].end(), msg);
+	msg = messages[err].c_str();
 	return APS2_OK;
 }
 
