@@ -21,6 +21,8 @@
 extern "C" {
 #endif
 
+EXPORT APS2_STATUS get_error_msg(APS2_STATUS, char *);
+
 EXPORT APS2_STATUS get_numDevices(unsigned int *);
 EXPORT APS2_STATUS get_deviceSerials(const char **);
 
@@ -28,8 +30,8 @@ EXPORT APS2_STATUS connect_APS(const char *);
 EXPORT APS2_STATUS disconnect_APS(const char *);
 
 EXPORT int reset(const char *, int);
-EXPORT int initAPS(const char *, int);
-EXPORT int get_firmware_version(const char *);
+EXPORT APS2_STATUS initAPS(const char *, int);
+EXPORT APS2_STATUS get_firmware_version(const char *, uint32_t *);
 
 EXPORT double get_uptime(const char *);
 

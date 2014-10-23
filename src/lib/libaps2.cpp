@@ -4,6 +4,10 @@
  */
 
 #include <sstream>
+#include <functional>
+
+using namespace std::placeholders;
+
 #include "headings.h"
 #include "libaps2.h"
 #include "APS2.h"
@@ -52,34 +56,57 @@ APS2_STATUS make_errno(std::exception_ptr e){
 	return APS2_UNKNOWN_ERROR;
 }
 
-//It seems Args1 and Args2 should match but I couldn't get the parameter pack template deduction to work
-template<typename R, typename... Args1, typename... Args2>
-APS2_STATUS aps2_call(const char * deviceSerial, std::function<R(Args1...)> func, Args2&&... args){
+template<typename R>
+APS2_STATUS aps2_call(const char * deviceSerial, std::function<R(APS2&)> func){
 	try{
-		func(APSs[deviceSerial], std::forward<Args2>(args)...);
+		func(APSs.at(deviceSerial));
 		//Nothing thrown then assume OK
 		return APS2_OK;
 	}
+	catch(std::out_of_range e){
+		if(APSs.find(deviceSerial) == APSs.end()){
+			return APS2_UNCONNECTED;
+		} else{
+			return APS2_UNKNOWN_ERROR;
+		}
+	}
+	catch(APS2_STATUS status){
+		return status;
+	}
 	catch(...) {
-		return make_errno(std::current_exception());
+		return APS2_UNKNOWN_ERROR;
 	}
 }
 
-template<typename R, typename... Args1, typename... Args2>
-APS2_STATUS aps2_getter(const char * deviceSerial, std::function<R(Args1...)> func, R *resPtr,  Args2&&... args){
+template<typename R>
+APS2_STATUS aps2_getter(const char * deviceSerial, std::function<R(APS2&)> func, R *resPtr){
 	try{
-		*resPtr = func(APSs[deviceSerial], std::forward<Args2>(args)...);
+		*resPtr = func(APSs.at(deviceSerial));
 		//Nothing thrown then assume OK
 		return APS2_OK;
 	}
+	catch(std::out_of_range e){
+		if(APSs.find(deviceSerial) == APSs.end()){
+			return APS2_UNCONNECTED;
+		} else{
+			return APS2_UNKNOWN_ERROR;
+		}
+	}
+	catch(APS2_STATUS status){
+		return status;
+	}
 	catch(...) {
-		return make_errno(std::current_exception());
+		return APS2_UNKNOWN_ERROR;
 	}
 }
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+APS2_STATUS get_error_msg(APS2_STATUS err, char * msg){
+	std::copy(messages[err].begin(), messages[err].end(), msg);
+}
 
 APS2_STATUS get_numDevices(unsigned int * numDevices) {
 	/*
@@ -130,17 +157,14 @@ int reset(const char * deviceSerial, int resetMode) {
 
 //Initialize an APS unit
 //Assumes null-terminated bitFile
-int initAPS(const char * deviceSerial, int forceReload) {
-	aps2_call(deviceSerial, std::function<APS2_STATUS(APS2&, const bool&, const int&)>(&APS2::init), bool(forceReload), 0);
-	return 0;
-	// return APSs[string(deviceSerial)].init(forceReload);
+APS2_STATUS initAPS(const char * deviceSerial, int forceReload) {
+	std::function<APS2_STATUS(APS2&)> func = std::bind(&APS2::init, _1, bool(forceReload), 0);
+	return aps2_call(deviceSerial, func);
 }
 
-int get_firmware_version(const char * deviceSerial) {
-	int silly;
-	APS2_STATUS status = aps2_getter(deviceSerial, std::function<int(APS2&)>(&APS2::get_firmware_version), &silly);
-	cout << silly; 
-	return 0;
+APS2_STATUS get_firmware_version(const char * deviceSerial, uint32_t * version) {
+	std::function<uint32_t(APS2&)> func = std::bind(&APS2::get_firmware_version, _1);
+	return aps2_getter(deviceSerial, func, version);
 }
 
 double get_uptime(const char * deviceSerial) {
