@@ -84,7 +84,7 @@ int APS2::init(const bool & forceReload, const int & bitFileNum){
 		// reconfigure the PLL and VCX0 from EPROM
 		// run_chip_config();
 		// this won't be necessary if running the chip config above
-		set_sampleRate(1200);
+		samplingRate_ = 1200;
 
 		// sync DAC clock phase with PLL
 		int status = test_PLL_sync();
@@ -656,14 +656,8 @@ int APS2::write_SPI_setup() {
 	vector<uint32_t> msg = build_VCXO_SPI_msg(VCXO_INIT);
 	vector<uint32_t> pll_msg = build_PLL_SPI_msg(PLL_INIT);
 	msg.insert(msg.end(), pll_msg.begin(), pll_msg.end());
-	// //push on calibration
-	// pll_msg = build_PLL_SPI_msg(PLL_SET_CAL_FLAG);
-	// msg.insert(msg.end(), pll_msg.begin(), pll_msg.end());
 	// push on "sleep" for 8*256*100ns = 0.205ms
 	msg.push_back(0x00000800);
-	// clear calibration bit
-	pll_msg = build_PLL_SPI_msg(PLL_CLEAR_CAL_FLAG);
-	msg.insert(msg.end(), pll_msg.begin(), pll_msg.end());
 	// push on "end of message"
 	APSChipConfigCommand_t cmd = {.packed=0};
 	cmd.target = CHIPCONFIG_IO_TARGET_EOL;

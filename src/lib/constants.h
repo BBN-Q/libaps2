@@ -318,8 +318,6 @@ static const vector<SPI_AddrData_t> PLL_INIT = {
 	{0x232, 0x1},  // Set bit 0 to simultaneously update all registers with pending writes.
 	{0x18, 0x75},  // Initiate Calibration.  Must be followed by Update Registers Command
 	{0x232, 0x1}   // Update registers with pending writes.
-	// {0x18, 0x74},  // Clear calibration flag.
-	// {0x232, 0x1}   // Update registers with pending writes.
 };
 
 static const vector<SPI_AddrData_t> PLL_SET_CAL_FLAG = {
