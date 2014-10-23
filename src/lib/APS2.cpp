@@ -218,7 +218,7 @@ int APS2::program_FPGA(const string & bitFile) {
 	return APS2_RESET_TIMEOUT;
 }
 
-int APS2::get_firmware_version() {
+uint32_t APS2::get_firmware_version() {
 	// Reads version information from status registers
 	APSStatusBank_t statusRegs = read_status_registers();
 	uint32_t version = statusRegs.userFirmwareVersion;

@@ -211,7 +211,9 @@ int main (int argc, char* argv[])
       break;
   }
 
-  cout << concol::RED << "Device came up with firmware version: " << hexn<4> << get_firmware_version(deviceSerial.c_str()) << endl;
+  uint32_t newVersion;
+  get_firmware_version(deviceSerial.c_str(), &newVersion);
+  cout << concol::RED << "Device came up with firmware version: " << hexn<4> << newVersion << endl;
 
   disconnect_APS(deviceSerial.c_str());
 
