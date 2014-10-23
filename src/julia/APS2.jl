@@ -12,26 +12,28 @@ const APS2_ERROR_MSG_LEN = 256
 function check_status(status::APS2_STATUS)
 	if status != APS2_OK
 		msg = Array(Uint8, APS2_ERROR_MSG_LEN)
-		ccall((:get_error_msg, "libaps2"), APS2_STATUS, (APS2_STATUS, Ptr{Cchar}), status, msg) 
+		ccall((:get_error_msg, "libaps2"), APS2_STATUS, (APS2_STATUS, Ptr{Uint8}), status, msg) 
 		error("APS2 library call failed with error: $(bytestring(msg))")
 	end
 end
 
 macro aps2_getter(funcName, dataType)
 	funcProto = :($funcName(aps::APS2))
+	funcNameBis = string(funcName)
 	funcBody = quote
 				val = Array($dataType, 1)
-				status = ccall(($funcName, "libaps2"), APS2_STATUS, (Ptr{Cchar}, Ptr{$dataType}), aps.serial, val)
+				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{Cchar}, Ptr{$dataType}), aps.serial, val)
 				check_status(status)
-				return val[0]
+				return val[1]
 			end
 	Expr(:function, esc(funcProto), esc(funcBody))
 end
 
 macro aps2_setter(funcName, dataType)
-	funcProto = :($funcName(aps::APS2), val::$dataType)
+	funcProto = :($funcName(aps::APS2, val::$dataType))
+	funcNameBis = string(funcName)
 	funcBody = quote
-				status = ccall(($funcName, "libaps2"), APS2_STATUS, (Ptr{Cchar}, $dataType), aps.serial, val)
+				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{Cchar}, $dataType), aps.serial, val)
 				check_status(status)
 			end
 	Expr(:function, esc(funcProto), esc(funcBody))
@@ -39,8 +41,9 @@ end
 
 macro aps2_call(funcName, args...)
 	funcProto = :($funcName(aps::APS2))
+	funcNameBis = string(funcName)
 	funcBody = quote
-				status = ccall(($funcName, "libaps2"), APS2_STATUS, (Ptr{Cchar},), aps.serial)
+				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{Cchar},), aps.serial)
 				check_status(status)
 			end
 	for ct in 1:length(args)
@@ -64,14 +67,19 @@ function disconnect!(aps::APS2)
 end
 
 @aps2_call init Cint
+init(aps::APS2, force) = init(aps::APS2, int32(force))
 
 @aps2_call set_logging_level Cint
+
+@aps2_getter get_firmware_version Uint32
 
 @aps2_call run
 @aps2_call stop
 
 @aps2_setter set_channel_offset Float32
 @aps2_getter get_channel_offset Float32
+
+
 
 # function read_memory(aps::APS2, addr, numWords)
 # 	buf = Array(Uint32, numWords)
@@ -85,7 +93,6 @@ end
 # set_channel_offset(aps::APS2, chan, offset) =
 # 	ccall((:set_channel_offset, "libaps2"), Cint, (Ptr{Cchar}, Cint, Float32), aps.serial, chan, offset)
 
-# get_firmware_version(aps::APS2) = library_call(aps, :get_firmware_version, Uint32)
 
 # function run_DAC_BIST(aps::APS2, dac, testVec::Vector{Int16})
 # 	results = Array(Uint32, 8)
