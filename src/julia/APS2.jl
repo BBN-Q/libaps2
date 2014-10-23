@@ -40,16 +40,15 @@ end
 
 macro aps2_call(funcName, args...)
 	funcProto = :($funcName(aps::APS2))
+	argNames = [symbol("arg$ct") for ct in 1:length(args)]
+	for (ct,arg) in enumerate(argNames)
+		push!(funcProto.args, :($arg::$(args[ct]) ) )
+	end
 	funcNameBis = string(funcName)
 	funcBody = quote
-				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{Uint8},), aps.serial)
+				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{Uint8},), aps.serial, $(argNames...))
 				check_status(status)
 			end
-	for ct in 1:length(args)
-		argName = symbol("arg$ct")
-		push!(funcProto.args, :($argName::$(args[ct]) ) )
-		push!(funcBody.args[2].args[2].args, :($argName))
-	end
 	Expr(:function, esc(funcProto), esc(funcBody))
 end
 
