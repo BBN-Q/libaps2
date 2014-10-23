@@ -28,7 +28,7 @@ public:
 	void disconnect();
 
 	APS2_STATUS init(const bool & = false, const int & bitFileNum = 0);
-	APS2_STATUS reset(const APS_RESET_MODE_STAT & resetMode = APS_RESET_MODE_STAT::SOFT_RESET);
+	void reset(const APS_RESET_MODE_STAT & resetMode = APS_RESET_MODE_STAT::SOFT_RESET);
 
 	int store_image(const string & bitFile, const int & position = 0);
 	int select_image(const int &);
@@ -45,8 +45,8 @@ public:
 
 	double get_uptime();
 
-	int set_sampleRate(const int &);
-	int get_sampleRate();
+	void set_sampleRate(const unsigned int &);
+	unsigned int get_sampleRate();
 
 	int set_trigger_source(const TRIGGERSOURCE &);
 	TRIGGERSOURCE get_trigger_source();

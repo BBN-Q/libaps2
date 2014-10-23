@@ -114,10 +114,6 @@ int main (int argc, char* argv[])
 
   connect_APS(deviceSerial.c_str());
 
-  double uptime = get_uptime(deviceSerial.c_str());
-
-  cout << concol::RED << "Uptime for device " << deviceSerial << " is " << uptime << " seconds" << concol::RESET << endl;
-
   cout << "Programmed MAC and IP address at 0x00FF0000 are " << endl;
   cout << "MAC addr: " << hexn<12> << get_mac_addr(deviceSerial.c_str()) << endl;
   cout << "IP addr: " << get_ip_addr(deviceSerial.c_str()) << endl;

@@ -36,7 +36,7 @@ void APS2::disconnect() {
 	}
 }
 
-APS2_STATUS APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */) {
+void APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */) {
 	
 	APSCommand_t command = { .packed=0 };
 	
@@ -56,14 +56,14 @@ APS2_STATUS APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RE
 		try {
 			// poll status to see device reset
 			read_status_registers();
-			return APS2_OK;
+			return;
 		} catch (std::exception &e) {
 			FILE_LOG(logDEBUG) << "Status timeout; retrying...";
 		}
 		retrycnt++;
 	}
 
-	return APS2_RESET_TIMEOUT;
+	throw APS2_RESET_TIMEOUT;
 }
 
 APS2_STATUS APS2::init(const bool & forceReload, const int & bitFileNum){
@@ -224,7 +224,7 @@ uint32_t APS2::get_firmware_version() {
 	return version;
 }
 
-int APS2::set_sampleRate(const int & freq){
+void APS2::set_sampleRate(const unsigned int & freq){
 	if (samplingRate_ != freq){
 		//Set PLL frequency
 		APS2::set_PLL_freq(freq);
@@ -232,15 +232,11 @@ int APS2::set_sampleRate(const int & freq){
 		samplingRate_ = freq;
 
 		//Test the sync
-		return APS2::test_PLL_sync();
-	}
-	else{
-		return 0;
+		// APS2::test_PLL_sync();
 	}
 }
 
-int APS2::get_sampleRate() {
-	//Pass through to FPGA code
+unsigned int APS2::get_sampleRate() {
 	FILE_LOG(logDEBUG2) << "get_sampleRate";
 	samplingRate_ = get_PLL_freq();
 	return samplingRate_;

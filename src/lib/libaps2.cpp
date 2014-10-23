@@ -7,6 +7,9 @@
 #include <functional>
 
 using namespace std::placeholders;
+using std::function;
+using std::bind;
+
 
 #include "headings.h"
 #include "libaps2.h"
@@ -51,7 +54,7 @@ shared_ptr<APSEthernet> get_interface() {
 }
 
 template<typename R>
-APS2_STATUS aps2_call(const char * deviceSerial, std::function<R(APS2&)> func){
+APS2_STATUS aps2_call(const char * deviceSerial, function<R(APS2&)> func){
 	try{
 		func(APSs.at(deviceSerial));
 		//Nothing thrown then assume OK
@@ -73,7 +76,7 @@ APS2_STATUS aps2_call(const char * deviceSerial, std::function<R(APS2&)> func){
 }
 
 template<typename R>
-APS2_STATUS aps2_getter(const char * deviceSerial, std::function<R(APS2&)> func, R *resPtr){
+APS2_STATUS aps2_getter(const char * deviceSerial, function<R(APS2&)> func, R *resPtr){
 	try{
 		*resPtr = func(APSs.at(deviceSerial));
 		//Nothing thrown then assume OK
@@ -138,7 +141,6 @@ APS2_STATUS get_deviceSerials(const char ** deviceSerialsOut) {
 APS2_STATUS connect_APS(const char * deviceSerial) {
 	/*
 	Connect to a device specified by serial number string
-	Assumes null-terminated deviceSerial
 	*/
 	string serial = string(deviceSerial);
 	// create the APS2 object if it is not already in the map
@@ -146,7 +148,7 @@ APS2_STATUS connect_APS(const char * deviceSerial) {
 		APSs[serial] = APS2(serial);
 	}
 	//Can't seem to bind the interface
-	// std::function<void(APS2&)> func = std::bind(&APS2::connect, _1, get_interface());
+	// function<void(APS2&)> func = bind(&APS2::connect, _1, get_interface());
 	// return aps2_call(deviceSerial, func);
 	try{
 		APSs.at(deviceSerial).connect(get_interface());
@@ -160,40 +162,46 @@ APS2_STATUS connect_APS(const char * deviceSerial) {
 	}
 }
 
-//Assumes a null-terminated deviceSerial
 APS2_STATUS disconnect_APS(const char * deviceSerial) {
-	std::function<void(APS2&)> func = std::bind(&APS2::disconnect, _1);
+	/*
+	Tear-down connection to APS specified by serial number string.
+	*/
+	function<void(APS2&)> func = bind(&APS2::disconnect, _1);
 	APS2_STATUS status = aps2_call(deviceSerial, func);
 	APSs.erase(string(deviceSerial));
 	return status;
 }
 
-int reset(const char * deviceSerial, int resetMode) {
-	return APSs[string(deviceSerial)].reset(static_cast<APS_RESET_MODE_STAT>(resetMode));
+APS2_STATUS reset(const char * deviceSerial, int resetMode) {
+	function<void(APS2&)> func = bind(&APS2::reset, _1, static_cast<APS_RESET_MODE_STAT>(resetMode));
+	return aps2_call(deviceSerial, func);
 }
 
 //Initialize an APS unit
 //Assumes null-terminated bitFile
 APS2_STATUS initAPS(const char * deviceSerial, int forceReload) {
-	std::function<APS2_STATUS(APS2&)> func = std::bind(&APS2::init, _1, bool(forceReload), 0);
+	function<APS2_STATUS(APS2&)> func = bind(&APS2::init, _1, bool(forceReload), 0);
 	return aps2_call(deviceSerial, func);
 }
 
 APS2_STATUS get_firmware_version(const char * deviceSerial, uint32_t * version) {
-	std::function<uint32_t(APS2&)> func = std::bind(&APS2::get_firmware_version, _1);
+	function<uint32_t(APS2&)> func = bind(&APS2::get_firmware_version, _1);
 	return aps2_getter(deviceSerial, func, version);
 }
 
-double get_uptime(const char * deviceSerial) {
-	return APSs[string(deviceSerial)].get_uptime();
+APS2_STATUS get_uptime(const char * deviceSerial, double * upTime) {
+	function<double(APS2&)> func = bind(&APS2::get_uptime, _1);
+	return aps2_getter(deviceSerial, func, upTime);
 }
 
-int set_sampleRate(const char * deviceSerial, int freq) {
-	return APSs[string(deviceSerial)].set_sampleRate(freq);
+APS2_STATUS set_sampleRate(const char * deviceSerial, unsigned int freq) {
+	function<void(APS2&)> func = bind(&APS2::set_sampleRate, _1, freq);
+	return aps2_call(deviceSerial, func);
 }
 
-int get_sampleRate(const char * deviceSerial) {
-	return APSs[string(deviceSerial)].get_sampleRate();
+APS2_STATUS get_sampleRate(const char * deviceSerial, unsigned int * freq) {
+	function<unsigned int(APS2&)> func = bind(&APS2::get_sampleRate, _1);
+	return aps2_getter(deviceSerial, func, freq);
 }
 
 //Load the waveform library as floats
