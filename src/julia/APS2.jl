@@ -11,9 +11,8 @@ const APS2_ERROR_MSG_LEN = 256
 
 function check_status(status::APS2_STATUS)
 	if status != APS2_OK
-		msg = Array(Ptr{Uint8},1)
-		ccall((:get_error_msg, "libaps2"), APS2_STATUS, (APS2_STATUS, Ptr{Uint8}), status, msg) 
-		error("APS2 library call failed with error: $(bytestring(msg[1]))")
+		msg = ccall((:get_error_msg, "libaps2"), Ptr{Uint8}, (APS2_STATUS,), status) 
+		error("APS2 library call failed with error: $(bytestring(msg))")
 	end
 end
 
