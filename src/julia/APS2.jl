@@ -22,7 +22,7 @@ macro aps2_getter(funcName, dataType)
 	funcNameBis = string(funcName)
 	funcBody = quote
 				val = Array($dataType, 1)
-				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{Cchar}, Ptr{$dataType}), aps.serial, val)
+				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{Uint8}, Ptr{$dataType}), aps.serial, val)
 				check_status(status)
 				return val[1]
 			end
@@ -33,7 +33,7 @@ macro aps2_setter(funcName, dataType)
 	funcProto = :($funcName(aps::APS2, val::$dataType))
 	funcNameBis = string(funcName)
 	funcBody = quote
-				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{Cchar}, $dataType), aps.serial, val)
+				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{Uint8}, $dataType), aps.serial, val)
 				check_status(status)
 			end
 	Expr(:function, esc(funcProto), esc(funcBody))
@@ -43,7 +43,7 @@ macro aps2_call(funcName, args...)
 	funcProto = :($funcName(aps::APS2))
 	funcNameBis = string(funcName)
 	funcBody = quote
-				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{Cchar},), aps.serial)
+				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{Uint8},), aps.serial)
 				check_status(status)
 			end
 	for ct in 1:length(args)
@@ -53,15 +53,32 @@ macro aps2_call(funcName, args...)
 	end
 	Expr(:function, esc(funcProto), esc(funcBody))
 end
+
+function get_numDevices()
+	numDevices = Array(Cuint,1)
+	status = ccall((:get_numDevices, "libaps2"), APS2_STATUS, (Ptr{Cuint},), numDevices)
+	return numDevices[1]
+end
+
+function enumerate()
+	numDevices = get_numDevices()
+	Cserials = Array(Ptr{Uint8}, numDevices)
+	status = ccall((:get_deviceSerials, "libaps2"), APS2_STATUS, (Ptr{Ptr{Uint8}},), Cserials)
+	serials = Array(ASCIIString, 0)
+	for ct = 1:numDevices
+		push!(serials, bytestring(Cserials[ct]))
+	end
+	return (numDevices, serials)
+end
 	
 function connect!(aps::APS2, serial)
-	status = ccall((:connect_APS, "libaps2"), APS2_STATUS, (Ptr{Cchar},), serial)
+	status = ccall((:connect_APS, "libaps2"), APS2_STATUS, (Ptr{Uint8},), serial)
 	check_status(status)
 	aps.serial = serial
 end
 
 function disconnect!(aps::APS2) 
-	status = ccall((:disconnect_APS, "libaps2"), APS2_STATUS, (Ptr{Cchar},), aps.serial)
+	status = ccall((:disconnect_APS, "libaps2"), APS2_STATUS, (Ptr{Uint8},), aps.serial)
 	check_status(status)
 	aps.serial = ""
 end
@@ -78,6 +95,7 @@ init(aps::APS2, force) = init(aps::APS2, int32(force))
 
 @aps2_setter set_channel_offset Float32
 @aps2_getter get_channel_offset Float32
+
 
 
 
