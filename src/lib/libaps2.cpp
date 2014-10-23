@@ -299,24 +299,30 @@ int trigger(const char* deviceSerial) {
 	return APSs[string(deviceSerial)].trigger();
 }
 
-int set_channel_offset(const char * deviceSerial, int channelNum, float offset) {
-	return APSs[string(deviceSerial)].set_channel_offset(channelNum, offset);
+APS2_STATUS set_channel_offset(const char * deviceSerial, int channelNum, float offset) {
+	function<void(APS2&)> func = bind(&APS2::set_channel_offset, _1, channelNum, offset);
+	return aps2_call(deviceSerial, func);
 }
-int set_channel_scale(const char * deviceSerial, int channelNum, float scale) {
-	return APSs[string(deviceSerial)].set_channel_scale(channelNum, scale);
+APS2_STATUS set_channel_scale(const char * deviceSerial, int channelNum, float scale) {
+	function<void(APS2&)> func = bind(&APS2::set_channel_scale, _1, channelNum, scale);
+	return aps2_call(deviceSerial, func);
 }
-int set_channel_enabled(const char * deviceSerial, int channelNum, int enable) {
-	return APSs[string(deviceSerial)].set_channel_enabled(channelNum, enable);
+APS2_STATUS set_channel_enabled(const char * deviceSerial, int channelNum, int enable) {
+	function<void(APS2&)> func = bind(&APS2::set_channel_enabled, _1, channelNum, enable);
+	return aps2_call(deviceSerial, func);
 }
 
-float get_channel_offset(const char * deviceSerial, int channelNum) {
-	return APSs[string(deviceSerial)].get_channel_offset(channelNum);
+APS2_STATUS get_channel_offset(const char * deviceSerial, int channelNum, float * offset) {
+	function<float(APS2&)> func = bind(&APS2::get_channel_offset, _1, channelNum);
+	return aps2_getter(deviceSerial, func, offset);
 }
-float get_channel_scale(const char * deviceSerial, int channelNum) {
-	return APSs[string(deviceSerial)].get_channel_scale(channelNum);
+APS2_STATUS get_channel_scale(const char * deviceSerial, int channelNum, float * scale) {
+	function<float(APS2&)> func = bind(&APS2::get_channel_offset, _1, channelNum);
+	return aps2_getter(deviceSerial, func, scale);
 }
-int get_channel_enabled(const char * deviceSerial, int channelNum) {
-	return APSs[string(deviceSerial)].get_channel_enabled(channelNum);
+APS2_STATUS get_channel_enabled(const char * deviceSerial, int channelNum, int * enabled) {
+	function<int(APS2&)> func = bind(&APS2::get_channel_offset, _1, channelNum);
+	return aps2_getter(deviceSerial, func, enabled);
 }
 
 int set_run_mode(const char * deviceSerial, int mode) {

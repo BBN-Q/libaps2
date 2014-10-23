@@ -37,12 +37,12 @@ EXPORT APS2_STATUS get_uptime(const char *, double *);
 EXPORT APS2_STATUS set_sampleRate(const char *, unsigned int);
 EXPORT APS2_STATUS get_sampleRate(const char *, unsigned int*);
 
-EXPORT int set_channel_offset(const char *, int, float);
-EXPORT float get_channel_offset(const char *, int);
-EXPORT int set_channel_scale(const char *, int, float);
-EXPORT float get_channel_scale(const char *, int);
-EXPORT int set_channel_enabled(const char *, int, int);
-EXPORT int get_channel_enabled(const char *, int);
+EXPORT APS2_STATUS set_channel_offset(const char *, int, float);
+EXPORT APS2_STATUS get_channel_offset(const char *, int, float *);
+EXPORT APS2_STATUS set_channel_scale(const char *, int, float);
+EXPORT APS2_STATUS get_channel_scale(const char *, int, float *);
+EXPORT APS2_STATUS set_channel_enabled(const char *, int, int);
+EXPORT APS2_STATUS get_channel_enabled(const char *, int, int*);
 
 EXPORT int set_trigger_source(const char *, int);
 EXPORT int get_trigger_source(const char *);

@@ -285,15 +285,15 @@ int APS2::load_sequence_file(const string & seqFile){
 	return 0;
 }
 
-int APS2::set_channel_enabled(const int & dac, const bool & enable){
-	return channels_[dac].set_enabled(enable);
+void APS2::set_channel_enabled(const int & dac, const bool & enable){
+	channels_[dac].set_enabled(enable);
 }
 
 bool APS2::get_channel_enabled(const int & dac) const{
 	return channels_[dac].get_enabled();
 }
 
-int APS2::set_channel_offset(const int & dac, const float & offset){
+void APS2::set_channel_offset(const int & dac, const float & offset){
 	//Update the waveform in driver
 	channels_[dac].set_offset(offset);
 	//Write to device if necessary
@@ -303,20 +303,17 @@ int APS2::set_channel_offset(const int & dac, const float & offset){
 
 	//Update TAZ register
 	set_offset_register(dac, channels_[dac].get_offset());
-
-	return 0;
 }
 
 float APS2::get_channel_offset(const int & dac) const{
 	return channels_[dac].get_offset();
 }
 
-int APS2::set_channel_scale(const int & dac, const float & scale){
+void APS2::set_channel_scale(const int & dac, const float & scale){
 	channels_[dac].set_scale(scale);
 	if (!channels_[dac].waveform_.empty()){
 		write_waveform(dac, channels_[dac].prep_waveform());
 	}
-	return 0;
 }
 
 float APS2::get_channel_scale(const int & dac) const{
