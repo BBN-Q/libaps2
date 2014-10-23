@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-EXPORT APS2_STATUS get_error_msg(APS2_STATUS, const char *);
+EXPORT const char * get_error_msg(APS2_STATUS);
 
 EXPORT APS2_STATUS get_numDevices(unsigned int *);
 EXPORT APS2_STATUS get_deviceSerials(const char **);

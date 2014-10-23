@@ -101,10 +101,13 @@ APS2_STATUS aps2_getter(const char * deviceSerial, function<R(APS2&)> func, R *r
 extern "C" {
 #endif
 
-APS2_STATUS get_error_msg(APS2_STATUS err, const char * msg){
-	//TODO: check if error message there
-	msg = messages[err].c_str();
-	return APS2_OK;
+const char* get_error_msg(APS2_STATUS err){
+	if(messages.count(err)){
+		return messages[err].c_str();
+	}
+	else {
+		return "No error message for this status number.";
+	}
 }
 
 APS2_STATUS get_numDevices(unsigned int * numDevices) {
