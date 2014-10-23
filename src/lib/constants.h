@@ -27,6 +27,11 @@ static const int APS_WRITETIMEOUT = 500;
 
 static const int MAX_PHASE_TEST_CNT = 20;
 
+// SEQUENCER MODES
+typedef enum {EXTERNAL=0, INTERNAL, SOFTWARE} TRIGGER_SOURCE;
+
+typedef enum {RUN_SEQUENCE=0, TRIG_WAVEFORM, CW_WAVEFORM} RUN_MODE;
+
 //Chip config SPI commands for setting up DAC,PLL,VXCO
 //Possible target bytes
 // 0x00 ............Pause commands stream for 100ns times the count in D<23:0>
@@ -274,11 +279,6 @@ static const uint32_t EPROM_SPI_CONFIG_ADDR = 0x0;
 static const uint32_t EPROM_USER_IMAGE_ADDR = 0x00010000;
 static const uint32_t EPROM_BASE_IMAGE_ADDR = 0x01000000;
 static const uint32_t EPROM_MACIP_ADDR      = 0x00FF0000;
-
-// SEQUENCER MODES
-typedef enum {EXTERNAL=0, INTERNAL, SOFTWARE} TRIGGERSOURCE;
-
-typedef enum {RUN_SEQUENCE=0, TRIG_WAVEFORM, CW_WAVEFORM} RUN_MODE;
 
 //APS ethernet type
 static const uint16_t APS_PROTO = 0xBB4E;

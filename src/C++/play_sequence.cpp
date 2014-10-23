@@ -55,9 +55,9 @@ int main(int argc, char* argv[])
 	}
 
 	//Trigger source -- default of internal
-	int triggerSource = 1;
+	TRIGGER_SOURCE triggerSource = INTERNAL;
 	if (options[TRIG_MODE]) {
-		triggerSource = atoi(options[TRIG_MODE].arg);
+		triggerSource = TRIGGER_SOURCE(atoi(options[TRIG_MODE].arg));
 	}
 
 	//Trigger interval -- default of 10ms

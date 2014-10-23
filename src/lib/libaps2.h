@@ -9,6 +9,7 @@
 #define LIBAPS_H_
 
 #include "APS2_errno.h"
+#include "constants.h"
 
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
@@ -44,11 +45,11 @@ EXPORT APS2_STATUS get_channel_scale(const char *, int, float *);
 EXPORT APS2_STATUS set_channel_enabled(const char *, int, int);
 EXPORT APS2_STATUS get_channel_enabled(const char *, int, int*);
 
-EXPORT int set_trigger_source(const char *, int);
-EXPORT int get_trigger_source(const char *);
-EXPORT int set_trigger_interval(const char *, double);
-EXPORT double get_trigger_interval(const char *);
-EXPORT int trigger(const char *);
+EXPORT APS2_STATUS set_trigger_source(const char *, TRIGGER_SOURCE);
+EXPORT APS2_STATUS get_trigger_source(const char *, TRIGGER_SOURCE *);
+EXPORT APS2_STATUS set_trigger_interval(const char *, double);
+EXPORT APS2_STATUS get_trigger_interval(const char *, double *);
+EXPORT APS2_STATUS trigger(const char *);
 
 EXPORT int set_waveform_float(const char *, int, float*, int);
 EXPORT int set_waveform_int(const char *, int, int16_t*, int);

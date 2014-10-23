@@ -327,29 +327,29 @@ int APS2::set_markers(const int & dac, const vector<uint8_t> & data) {
 	return success;
 }
 
-int APS2::set_trigger_source(const TRIGGERSOURCE & triggerSource){
+void APS2::set_trigger_source(const TRIGGER_SOURCE & triggerSource){
 	FILE_LOG(logDEBUG) << "Setting trigger source to " << triggerSource;
 
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
 
 	//Set the trigger source bits
 	regVal = (regVal & ~(3 << TRIGSRC_BIT)) | (static_cast<uint32_t>(triggerSource) << TRIGSRC_BIT);
-	return write_memory(SEQ_CONTROL_ADDR, regVal);
+	write_memory(SEQ_CONTROL_ADDR, regVal);
 }
 
-TRIGGERSOURCE APS2::get_trigger_source() {
+TRIGGER_SOURCE APS2::get_trigger_source() {
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
-	return TRIGGERSOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
+	return TRIGGER_SOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
 }
 
-int APS2::set_trigger_interval(const double & interval){
+void APS2::set_trigger_interval(const double & interval){
 
 	//SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
 	int clockCycles = interval*0.25*samplingRate_*1e6 - 1;
 
 	FILE_LOG(logDEBUG) << "Setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
 
-	return write_memory(TRIGGER_INTERVAL_ADDR, clockCycles);
+	write_memory(TRIGGER_INTERVAL_ADDR, clockCycles);
 }
 
 double APS2::get_trigger_interval() {
@@ -359,14 +359,14 @@ double APS2::get_trigger_interval() {
 	return static_cast<double>(clockCycles + 1)/(0.25*samplingRate_*1e6);
 }
 
-int APS2::trigger(){
+void APS2::trigger(){
 	//Apply a software trigger by toggling the trigger line
 	FILE_LOG(logDEBUG) << "Sending software trigger";
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
 	FILE_LOG(logDEBUG3) << "SEQ_CONTROL register was " << hexn<8> << regVal;
 	regVal ^= (1 << SOFT_TRIG_BIT);
 	FILE_LOG(logDEBUG3) << "Setting SEQ_CONTROL register to " << hexn<8> << regVal;
-	return write_memory(SEQ_CONTROL_ADDR, regVal);
+	write_memory(SEQ_CONTROL_ADDR, regVal);
 }
 
 

@@ -48,11 +48,11 @@ public:
 	void set_sampleRate(const unsigned int &);
 	unsigned int get_sampleRate();
 
-	int set_trigger_source(const TRIGGERSOURCE &);
-	TRIGGERSOURCE get_trigger_source();
-	int set_trigger_interval(const double &);
+	void set_trigger_source(const TRIGGER_SOURCE &);
+	TRIGGER_SOURCE get_trigger_source();
+	void set_trigger_interval(const double &);
 	double get_trigger_interval();
-	int trigger();
+	void trigger();
 
 	void set_channel_enabled(const int &, const bool &);
 	bool get_channel_enabled(const int &) const;

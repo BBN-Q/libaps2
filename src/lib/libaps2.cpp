@@ -282,24 +282,29 @@ int set_logging_level(int logLevel) {
 	return APS2_OK;
 }
 
-int set_trigger_source(const char * deviceSerial, int triggerSource) {
-	return APSs[string(deviceSerial)].set_trigger_source(TRIGGERSOURCE(triggerSource));
+APS2_STATUS set_trigger_source(const char * deviceSerial, TRIGGER_SOURCE triggerSource) {
+	function<void(APS2&)> func = bind(&APS2::set_trigger_source, _1, triggerSource);
+	return aps2_call(deviceSerial, func);	
 }
 
-int get_trigger_source(const char * deviceSerial) {
-	return int(APSs[string(deviceSerial)].get_trigger_source());
+APS2_STATUS get_trigger_source(const char * deviceSerial, TRIGGER_SOURCE * source) {
+	function<TRIGGER_SOURCE(APS2&)> func = bind(&APS2::get_trigger_source, _1);
+	return aps2_getter(deviceSerial, func, source);
 }
 
-int set_trigger_interval(const char * deviceSerial, double interval) {
-	return APSs[string(deviceSerial)].set_trigger_interval(interval);
+APS2_STATUS set_trigger_interval(const char * deviceSerial, double interval) {
+	function<void(APS2&)> func = bind(&APS2::set_trigger_interval, _1, interval);
+	return aps2_call(deviceSerial, func);	
 }
 
-double get_trigger_interval(const char * deviceSerial) {
-	return APSs[string(deviceSerial)].get_trigger_interval();
+APS2_STATUS get_trigger_interval(const char * deviceSerial, double * interval) {
+	function<double(APS2&)> func = bind(&APS2::get_trigger_interval, _1);
+	return aps2_getter(deviceSerial, func, interval);
 }
 
-int trigger(const char* deviceSerial) {
-	return APSs[string(deviceSerial)].trigger();
+APS2_STATUS trigger(const char* deviceSerial) {
+	function<void(APS2&)> func = bind(&APS2::trigger, _1);
+	return aps2_call(deviceSerial, func);	
 }
 
 APS2_STATUS set_channel_offset(const char * deviceSerial, int channelNum, float offset) {
