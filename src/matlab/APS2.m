@@ -240,7 +240,8 @@ classdef APS2 < handle
         end
 
         function set_logging_level(level)
-            aps2_call('set_logging_level', level);
+            status = calllib('libaps2', 'set_logging_level', level);
+            APS2.check_status(status);
         end
 
 
