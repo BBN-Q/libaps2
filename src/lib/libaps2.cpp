@@ -224,19 +224,14 @@ APS2_STATUS set_markers(const char * deviceSerial, int channelNum, uint8_t* data
 	return aps2_call(deviceSerial, func);
 }
 
-int write_sequence(const char * deviceSerial, uint64_t* data, uint32_t numWords) {
-	vector<uint64_t> dataVec(data, data+numWords);
-	return APSs[string(deviceSerial)].write_sequence(dataVec);
+APS2_STATUS write_sequence(const char * deviceSerial, uint64_t* data, uint32_t numWords) {
+	function<void(APS2&)> func = bind(&APS2::write_sequence, _1, vector<uint64_t>(data, data+numWords));
+	return aps2_call(deviceSerial, func);
 }
 
-int load_sequence_file(const char * deviceSerial, const char * seqFile) {
-	try {
-		return APSs[string(deviceSerial)].load_sequence_file(string(seqFile));
-	} catch (...) {
-		return APS2_UNKNOWN_ERROR;
-	}
-	// should not reach this point
-	return APS2_UNKNOWN_ERROR;
+APS2_STATUS load_sequence_file(const char * deviceSerial, const char * seqFile) {
+	function<void(APS2&)> func = bind(&APS2::load_sequence_file, _1, string(seqFile));
+	return aps2_call(deviceSerial, func);
 }
 
 int clear_channel_data(const char * deviceSerial) {

@@ -250,7 +250,7 @@ int APS2::clear_channel_data() {
 	return 0;
 }
 
-int APS2::load_sequence_file(const string & seqFile){
+void APS2::load_sequence_file(const string & seqFile){
 	/*
 	 * Load a sequence file from an H5 file
 	 */
@@ -277,12 +277,10 @@ int APS2::load_sequence_file(const string & seqFile){
 		}
 		//Close the file
 		H5SeqFile.close();
-		return 0;
 	}
 	catch (H5::FileIException & e) {
-		return -1;
+		throw APS2_SEQFILE_FAIL;
 	}
-	return 0;
 }
 
 void APS2::set_channel_enabled(const int & dac, const bool & enable){
@@ -1488,7 +1486,7 @@ void APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
 	write_memory(CACHE_CONTROL_ADDR, 1);
 }
 
-int APS2::write_sequence(const vector<uint64_t> & data) {
+void APS2::write_sequence(const vector<uint64_t> & data) {
 	FILE_LOG(logDEBUG2) << "Loading sequence of length " << data.size();
 
 	// pack into uint32_t vector
@@ -1510,8 +1508,6 @@ int APS2::write_sequence(const vector<uint64_t> & data) {
 
 	// enable cache
 	write_memory(CACHE_CONTROL_ADDR, 1);
-
-	return 0;
 }
 
 int APS2::write_memory_map(const uint32_t & wfA, const uint32_t & wfB, const uint32_t & seq) { /* see header for defaults */

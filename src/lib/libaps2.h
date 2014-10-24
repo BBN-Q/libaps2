@@ -55,11 +55,11 @@ EXPORT APS2_STATUS set_waveform_float(const char *, int, float*, int);
 EXPORT APS2_STATUS set_waveform_int(const char *, int, int16_t*, int);
 EXPORT APS2_STATUS set_markers(const char *, int, uint8_t*, int);
 
-EXPORT int write_sequence(const char *, uint64_t*, uint32_t);
+EXPORT APS2_STATUS write_sequence(const char *, uint64_t*, uint32_t);
 
-EXPORT int set_run_mode(const char *, int);
+EXPORT int set_run_mode(const char*, int);
 
-EXPORT int load_sequence_file(const char *, const char*);
+EXPORT APS2_STATUS load_sequence_file(const char*, const char*);
 
 EXPORT int clear_channel_data(const char *);
 

@@ -72,10 +72,10 @@ public:
 
 	int set_run_mode(const RUN_MODE &);
 
-	int write_sequence(const vector<uint64_t> &);
+	void write_sequence(const vector<uint64_t> &);
 	int clear_channel_data();
 
-	int load_sequence_file(const string &);
+	void load_sequence_file(const string &);
 
 	int run();
 	int stop();
