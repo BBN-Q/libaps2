@@ -24,8 +24,6 @@ classdef APS2 < handle
     
     properties (Constant)
         libpath = '../../build';
-        
-        samplingRate = 1200000000;
     end
     
     methods
