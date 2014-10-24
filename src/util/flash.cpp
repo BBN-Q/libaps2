@@ -74,18 +74,13 @@ int main (int argc, char* argv[])
   concol::concolinit();
   cout << concol::RED << "BBN AP2 Flash Test Executable" << concol::RESET << endl;
 
-
-  int dbgLevel = 4;
-  if (argc >= 2) {
-    dbgLevel = atoi(argv[1]);
-  }
-
-  set_logging_level(dbgLevel);
+  set_logging_level(logDEBUG1);
   set_log("stdout");
 
   cout << concol::RED << "Enumerating devices" << concol::RESET << endl;
 
-  int numDevices = get_numDevices();
+  unsigned numDevices;
+  get_numDevices(&numDevices);
 
   cout << concol::RED << numDevices << " APS device" << (numDevices > 1 ? "s": "")  << " found" << concol::RESET << endl;
 
@@ -97,7 +92,7 @@ int main (int argc, char* argv[])
   const char ** serialBuffer = new const char*[numDevices];
   get_deviceSerials(serialBuffer);
 
-  for (int cnt=0; cnt < numDevices; cnt++) {
+  for (unsigned cnt=0; cnt < numDevices; cnt++) {
   	cout << concol::RED << "Device " << cnt << " serial #: " << serialBuffer[cnt] << concol::RESET << endl;
   }
 
@@ -113,13 +108,11 @@ int main (int argc, char* argv[])
 
   connect_APS(deviceSerial.c_str());
 
-  double uptime = get_uptime(deviceSerial.c_str());
-
-  cout << concol::RED << "Uptime for device " << deviceSerial << " is " << uptime << " seconds" << concol::RESET << endl;
-
   cout << "Programmed MAC and IP address at 0x00FF0000 are " << endl;
   cout << "MAC addr: " << hexn<12> << get_mac_addr(deviceSerial.c_str()) << endl;
-  cout << "IP addr: " << get_ip_addr(deviceSerial.c_str()) << endl;
+  string curIP(" ", 16);
+  get_ip_addr(deviceSerial.c_str(), &curIP[0]);
+  cout << "IP addr: " << curIP << endl;
 
   // write a new MAC address
   uint64_t mac_addr = get_mac_input();

@@ -19,25 +19,18 @@
 
 classdef APS2 < handle
     properties
-        serial
-        libpath = '../../build';
+        serial = ''
     end
     
     properties (Constant)
-        % run mode enum
-        RUN_SEQUENCE = 0
-        TRIG_WAVEFORM = 1
-        CW_WAVEFORM = 2
+        libpath = '../../build';
         
         samplingRate = 1200000000;
     end
     
     methods
         function obj = APS2()
-            if ~libisloaded('libaps2')
-                curPath = fileparts(mfilename('fullpath'));
-                loadlibrary(fullfile(curPath, obj.libpath, 'libaps2.dll'), fullfile(curPath, 'libaps2.matlab.h'));
-            end
+            APS2.load_library();
         end
         
         function delete(obj)
@@ -47,31 +40,36 @@ classdef APS2 < handle
             end
         end
         
-        function [serials] = enumerate(obj)
-            numDevices = calllib('libaps2', 'get_numDevices');
-            serials = cell(1,numDevices);
-            for ct = 1:numDevices
-                serials{ct} = '';
-            end
-            serialPtr = libpointer('stringPtrPtr', serials);
-            serials = calllib('libaps2', 'get_deviceSerials', serialPtr);
+        function aps2_call(obj, func, varargin)
+            status = calllib('libaps2', func, obj.serial, varargin{:});
+            APS2.check_status(status);
+        end
+        
+        function val = aps2_getter(obj, func, varargin)
+            [status, ~, val] = calllib('libaps2', func, obj.serial, varargin{:}, 0);
+            APS2.check_status(status);
         end
         
         function connect(obj, serial)
             obj.serial = serial;
-            calllib('libaps2', 'connect_APS', serial);
+            aps2_call(obj, 'connect_APS');
             obj.init();
         end
         
         function disconnect(obj)
-            calllib('libaps2', 'disconnect_APS', obj.serial);
+            aps2_call(obj, 'disconnect_APS');
+            obj.serial = '';
         end
         
         function init(obj, force)
             if ~exist('force', 'var')
                 force = 0;
             end
-            calllib('libaps2', 'initAPS', obj.serial, force);
+            aps2_call(obj, 'initAPS', force)
+        end
+        
+        function val = get_firmware_version(obj)
+            val = aps2_getter(obj, 'get_firmware_version');
         end
         
         function val = get_firmware_version(obj)
@@ -79,84 +77,85 @@ classdef APS2 < handle
         end
         
         function run(obj)
-            calllib('libaps2', 'run', obj.serial);
+            aps2_call(obj, 'run');
         end
         
         function stop(obj)
-            calllib('libaps2', 'stop', obj.serial);
+            aps2_call(obj, 'stop');
         end
         
-        function val = get_running(obj)
-            val = calllib('libaps2', 'get_running', obj.serial);
+        function val = get_runState(obj)
+            val = aps2_getter(obj, 'get_runState');
         end
         
         % trigger methods
         function val = get_trigger_interval(obj)
-            val = calllib('libaps2', 'get_trigger_interval', obj.serial);
+            val = aps2_getter(obj, 'get_trigger_interval');
         end
         
         function set_trigger_interval(obj, val)
-            calllib('libaps2', 'set_trigger_interval', obj.serial, val);
+            aps2_call(obj, 'set_trigger_interval', val);
         end
         
         function val = get_trigger_source(obj)
-            triggerSourceMap = containers.Map({0, 1}, {'external', 'internal'});
-            val = calllib('libaps2', 'get_trigger_source', obj.serial);
-            val = triggerSourceMap(val);
+            val = aps2_getter(obj, 'get_trigger_source');
         end
         
         function set_trigger_source(obj, source)
-            triggerSourceMap = containers.Map({'external', 'ext', 'internal', 'int', 'software'}, {0, 0, 1, 1, 2});
-            calllib('libaps2', 'set_trigger_source', obj.serial, triggerSourceMap(lower(source)));
+            aps2_call(obj, 'set_trigger_source', source);
         end
         
         function trigger(obj)
-            calllib('libaps2', 'trigger', obj.serial)
+            aps2_call(obj, 'trigger')
         end
 
         % waveform and instruction data methods
         function load_waveform(obj, ch, wf)
             switch(class(wf))
                 case 'int16'
-                    calllib('libaps2', 'set_waveform_int', obj.serial, ch-1, wf, length(wf));
+                    aps2_call(obj, 'set_waveform_int', ch-1, wf, length(wf));
                 case 'double'
-                    calllib('libaps2', 'set_waveform_float', obj.serial, ch-1, wf, length(wf));
+                    aps2_call(obj, 'set_waveform_float', ch-1, wf, length(wf));
                 otherwise
                     error('Unhandled waveform data type');
             end
         end
         
         function load_sequence(obj, filename)
-            calllib('libaps2', 'load_sequence_file', obj.serial, filename);
+            aps2_call(obj, 'load_sequence_file', filename);
         end
         
-        function set_run_mode(obj, mode)
-            calllib('libaps2', 'set_run_mode', obj.serial, mode);
+        function val = get_run_mode(obj)
+            val = aps2_getter(obj, 'get_run_mode');
+        end
+
+        function set_run_mode(obj, runMode)
+            aps2_call(obj, 'set_run_mode', runMode);
         end
 
         % channel methods
         function val = get_channel_offset(obj, channel)
-            val = calllib('libaps2', 'get_channel_offset', obj.serial, channel-1);
+            val = aps2_getter(obj, 'get_channel_offset', channel-1);
         end
         
         function set_channel_offset(obj, channel, offset)
-            calllib('libaps2', 'set_channel_offset', obj.serial, channel-1, offset);
+            aps2_call(obj, 'set_channel_offset', channel-1, offset);
         end
 
         function val = get_channel_scale(obj, channel)
-            val = calllib('libaps2', 'get_channel_scale', obj.serial, channel-1);
+            val = aps2_getter(obj, 'get_channel_scale', channel-1);
         end
         
         function set_channel_scale(obj, channel, scale)
-            calllib('libaps2', 'set_channel_scale', obj.serial, channel-1, scale);
+            aps2_call(obj, 'set_channel_scale', channel-1, scale);
         end
 
         function val = get_channel_enabled(obj, channel)
-            val = calllib('libaps2', 'get_channel_enabled', obj.serial, channel-1);
+            val = aps2_getter(obj, 'get_channel_enabled', channel-1);
         end
         
         function set_channel_enabled(obj, channel, enabled)
-            calllib('libaps2', 'set_channel_enabled', obj.serial, channel-1, enabled);
+            aps2_call(obj, 'set_channel_enabled', channel-1, enabled);
         end
         
         function setAll(obj,settings)
@@ -180,7 +179,7 @@ classdef APS2 < handle
             
             % If we are going to call load_sequence below, we can clear all channel data first
             if (~strcmp(settings.lastseqFile, settings.seqFile) || settings.seqForce)
-				calllib('libaps2', 'clear_channel_data', obj.serial);
+                aps2_call('clear_channel_data')
             end
             
             obj.stop();
@@ -209,13 +208,45 @@ classdef APS2 < handle
         end
         
         % debug methods
-        function set_logging_level(obj, level)
-            calllib('libaps2', 'set_logging_level', level);
-        end
         
         function out = read_register(obj, addr)
             out = calllib('libaps2', 'read_register', obj.serial, addr);
         end
+    end
+    
+    methods (Static)
+        function load_library()
+            if ~libisloaded('libaps2')
+                curPath = fileparts(mfilename('fullpath'));
+                loadlibrary(fullfile(curPath, APS2.libpath, 'libaps2.dll'), fullfile(curPath, 'libaps2.matlab.h'));
+            end
+        end
+
+        function check_status(status)
+            APS2.load_library();
+            assert(strcmp(status, 'APS2_OK'),...
+            'APS2 library call failed with message: %s', calllib('libaps2', 'get_error_msg', status));
+        end
+        
+        function [serials] = enumerate()
+            APS2.load_library();
+            [status, numDevices] = calllib('libaps2', 'get_numDevices', 0);
+            APS2.check_status(status);
+            serials = cell(1,numDevices);
+            for ct = 1:numDevices
+                serials{ct} = '';
+            end
+            serialPtr = libpointer('stringPtrPtr', serials);
+            [status, serials] = calllib('libaps2', 'get_deviceSerials', serialPtr);
+            APS2.check_status(status)
+        end
+
+        function set_logging_level(level)
+            aps2_call('set_logging_level', level);
+        end
+
+
+        
     end
     
 end

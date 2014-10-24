@@ -16,7 +16,8 @@ string get_device_id() {
   */
   cout << concol::RED << "Enumerating devices" << concol::RESET << endl;
 
-  int numDevices = get_numDevices();
+  unsigned numDevices;
+  get_numDevices(&numDevices);
 
   cout << concol::RED << numDevices << " APS device" << (numDevices > 1 ? "s": "")  << " found" << concol::RESET << endl;
 
@@ -26,7 +27,7 @@ string get_device_id() {
   const char ** serialBuffer = new const char*[numDevices];
   get_deviceSerials(serialBuffer);
 
-  for (int cnt=0; cnt < numDevices; cnt++) {
+  for (unsigned cnt=0; cnt < numDevices; cnt++) {
     cout << concol::RED << "Device " << cnt << " serial #: " << serialBuffer[cnt] << concol::RESET << endl;
   }
 

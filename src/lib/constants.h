@@ -17,7 +17,7 @@ static const int  MAX_APS_CHANNELS = 2;
 
 static const int  APS_WAVEFORM_UNIT_LENGTH = 4;
 
-static const int MAX_WF_LENGTH = 65536;
+static const int MAX_WF_LENGTH = 131072;
 static const int MAX_WF_AMP = 8191;
 static const int WF_MODULUS = 4;
 static const size_t MAX_LL_LENGTH = (1 << 24);
@@ -274,13 +274,6 @@ static const uint32_t EPROM_SPI_CONFIG_ADDR = 0x0;
 static const uint32_t EPROM_USER_IMAGE_ADDR = 0x00010000;
 static const uint32_t EPROM_BASE_IMAGE_ADDR = 0x01000000;
 static const uint32_t EPROM_MACIP_ADDR      = 0x00FF0000;
-
-// SEQUENCER MODES
-typedef enum {EXTERNAL=0, INTERNAL, SOFTWARE} TRIGGERSOURCE;
-
-typedef enum {LED_PLL_SYNC=1, LED_RUNNING} LED_MODE;
-
-typedef enum {RUN_SEQUENCE=0, TRIG_WAVEFORM, CW_WAVEFORM} RUN_MODE;
 
 //APS ethernet type
 static const uint16_t APS_PROTO = 0xBB4E;

@@ -8,6 +8,10 @@
 #ifndef LIBAPS_H_
 #define LIBAPS_H_
 
+#include "APS2_errno.h"
+#include "APS2_enums.h"
+#include "logger.h"
+
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
 #else
@@ -19,62 +23,56 @@
 extern "C" {
 #endif
 
-enum APSErrorCode {
-	APS_OK,
-	APS_UNKNOWN_ERROR = -1,
-	APS_FILE_ERROR = -2
-};
+EXPORT const char * get_error_msg(APS2_STATUS);
 
-EXPORT int get_numDevices();
-EXPORT void get_deviceSerials(const char **);
+EXPORT APS2_STATUS get_numDevices(unsigned int *);
+EXPORT APS2_STATUS get_deviceSerials(const char **);
 
-EXPORT int connect_APS(const char *);
-EXPORT int disconnect_APS(const char *);
+EXPORT APS2_STATUS connect_APS(const char *);
+EXPORT APS2_STATUS disconnect_APS(const char *);
 
-EXPORT int reset(const char *, int);
-EXPORT int initAPS(const char *, int);
-EXPORT int get_firmware_version(const char *);
+EXPORT APS2_STATUS reset(const char *, int);
+EXPORT APS2_STATUS initAPS(const char *, int);
+EXPORT APS2_STATUS get_firmware_version(const char *, uint32_t *);
+EXPORT APS2_STATUS get_uptime(const char *, double *);
 
-EXPORT double get_uptime(const char *);
+EXPORT APS2_STATUS set_sampleRate(const char *, unsigned int);
+EXPORT APS2_STATUS get_sampleRate(const char *, unsigned int*);
 
-EXPORT int set_sampleRate(const char *, int);
-EXPORT int get_sampleRate(const char *);
+EXPORT APS2_STATUS set_channel_offset(const char *, int, float);
+EXPORT APS2_STATUS get_channel_offset(const char *, int, float *);
+EXPORT APS2_STATUS set_channel_scale(const char *, int, float);
+EXPORT APS2_STATUS get_channel_scale(const char *, int, float *);
+EXPORT APS2_STATUS set_channel_enabled(const char *, int, int);
+EXPORT APS2_STATUS get_channel_enabled(const char *, int, int*);
 
-EXPORT int set_channel_offset(const char *, int, float);
-EXPORT float get_channel_offset(const char *, int);
-EXPORT int set_channel_scale(const char *, int, float);
-EXPORT float get_channel_scale(const char *, int);
-EXPORT int set_channel_enabled(const char *, int, int);
-EXPORT int get_channel_enabled(const char *, int);
+EXPORT APS2_STATUS set_trigger_source(const char *, TRIGGER_SOURCE);
+EXPORT APS2_STATUS get_trigger_source(const char *, TRIGGER_SOURCE *);
+EXPORT APS2_STATUS set_trigger_interval(const char *, double);
+EXPORT APS2_STATUS get_trigger_interval(const char *, double *);
+EXPORT APS2_STATUS trigger(const char *);
 
-EXPORT int set_trigger_source(const char *, int);
-EXPORT int get_trigger_source(const char *);
-EXPORT int set_trigger_interval(const char *, double);
-EXPORT double get_trigger_interval(const char *);
-EXPORT int trigger(const char *);
+EXPORT APS2_STATUS set_waveform_float(const char *, int, float*, int);
+EXPORT APS2_STATUS set_waveform_int(const char *, int, int16_t*, int);
+EXPORT APS2_STATUS set_markers(const char *, int, uint8_t*, int);
 
-EXPORT int set_waveform_float(const char *, int, float*, int);
-EXPORT int set_waveform_int(const char *, int, int16_t*, int);
-EXPORT int set_markers(const char *, int, uint8_t*, int);
+EXPORT APS2_STATUS write_sequence(const char *, uint64_t*, uint32_t);
 
-EXPORT int write_sequence(const char *, uint64_t*, uint32_t);
+EXPORT APS2_STATUS set_run_mode(const char*, RUN_MODE);
 
-EXPORT int set_run_mode(const char *, int);
+EXPORT APS2_STATUS load_sequence_file(const char*, const char*);
 
-EXPORT int load_sequence_file(const char *, const char*);
+EXPORT APS2_STATUS clear_channel_data(const char *);
 
-EXPORT int clear_channel_data(const char *);
+EXPORT APS2_STATUS run(const char *);
+EXPORT APS2_STATUS stop(const char *);
+EXPORT APS2_STATUS get_runState(const char *, RUN_STATE *);
 
-EXPORT int run(const char *);
-EXPORT int stop(const char *);
+EXPORT APS2_STATUS set_log(const char *);
+EXPORT APS2_STATUS set_logging_level(TLogLevel);
 
-EXPORT int get_running(const char *);
-
-EXPORT int set_log(const char *);
-EXPORT int set_logging_level(int);
-
-EXPORT const char * get_ip_addr(const char *);
-EXPORT int set_ip_addr(const char *, const char *);
+EXPORT APS2_STATUS get_ip_addr(const char *, char *);
+EXPORT APS2_STATUS set_ip_addr(const char *, const char *);
 
 /* private API methods */
 

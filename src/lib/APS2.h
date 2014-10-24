@@ -10,6 +10,8 @@
 #include "headings.h"
 #include "APSEthernet.h"
 #include "Channel.h"
+#include "APS2_errno.h"
+#include "APS2_enums.h"
 
 class APS2 {
 
@@ -22,16 +24,17 @@ public:
 	APS2(string);
 	~APS2();
 
-	APSEthernet::EthernetError connect(shared_ptr<APSEthernet> &&);
-	APSEthernet::EthernetError disconnect();
+	
+	void connect(shared_ptr<APSEthernet> &&);
+	void disconnect();
 
-	int init(const bool & = false, const int & bitFileNum = 0);
-	int reset(const APS_RESET_MODE_STAT & resetMode = APS_RESET_MODE_STAT::SOFT_RESET);
+	APS2_STATUS init(const bool & = false, const int & bitFileNum = 0);
+	void reset(const APS_RESET_MODE_STAT & resetMode = APS_RESET_MODE_STAT::SOFT_RESET);
 
 	int store_image(const string & bitFile, const int & position = 0);
 	int select_image(const int &);
 	int program_FPGA(const string &);
-	int get_firmware_version();
+	uint32_t get_firmware_version();
 
 	int setup_VCXO() const;
 	int setup_PLL() const;
@@ -43,45 +46,46 @@ public:
 
 	double get_uptime();
 
-	int set_sampleRate(const int &);
-	int get_sampleRate();
+	void set_sampleRate(const unsigned int &);
+	unsigned int get_sampleRate();
 
-	int set_trigger_source(const TRIGGERSOURCE &);
-	TRIGGERSOURCE get_trigger_source();
-	int set_trigger_interval(const double &);
+	void set_trigger_source(const TRIGGER_SOURCE &);
+	TRIGGER_SOURCE get_trigger_source();
+	void set_trigger_interval(const double &);
 	double get_trigger_interval();
-	int trigger();
+	void trigger();
 
-	int set_channel_enabled(const int &, const bool &);
+	void set_channel_enabled(const int &, const bool &);
 	bool get_channel_enabled(const int &) const;
-	int set_channel_offset(const int &, const float &);
+	void set_channel_offset(const int &, const float &);
 	float get_channel_offset(const int &) const;
-	int set_channel_scale(const int &, const float &);
+	void set_channel_scale(const int &, const float &);
 	float get_channel_scale(const int &) const;
 	int set_offset_register(const int &, const float &);
 
 	template <typename T>
-	int set_waveform(const int & dac, const vector<T> & data){
+	void set_waveform(const int & dac, const vector<T> & data){
 		channels_[dac].set_waveform(data);
-		return write_waveform(dac, channels_[dac].prep_waveform());
+		write_waveform(dac, channels_[dac].prep_waveform());
 	}
 
-	int set_markers(const int &, const vector<uint8_t> &);
+	void set_markers(const int &, const vector<uint8_t> &);
 
 	int set_run_mode(const RUN_MODE &);
 
-	int write_sequence(const vector<uint64_t> &);
-	int clear_channel_data();
+	void write_sequence(const vector<uint64_t> &);
+	void clear_channel_data();
 
-	int load_sequence_file(const string &);
+	void load_sequence_file(const string &);
 
-	int run();
-	int stop();
+	void run();
+	void stop();
+	RUN_STATE get_runState();
 
 	//Whether the APS connection is open
 	bool isOpen;
 
-	bool running;
+	RUN_STATE runState;
 
 	//Pretty printers
 	static string print_status_bank(const APSStatusBank_t & status);
@@ -163,7 +167,7 @@ private:
 	int set_bit(const uint32_t &, std::initializer_list<int>);
 	int clear_bit(const uint32_t &, std::initializer_list<int>);
 
-	int write_waveform(const int &, const vector<int16_t> &);
+	void write_waveform(const int &, const vector<int16_t> &);
 
 	int write_memory_map(const uint32_t & wfA = WFA_OFFSET, const uint32_t & wfB = WFB_OFFSET, const uint32_t & seq = SEQ_OFFSET);
 

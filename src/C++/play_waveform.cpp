@@ -54,16 +54,16 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < parse.nonOptionsCount(); ++i)
 	 cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
-	//Debug level
-	int logLevel = 2;
+	//Logging level
+	TLogLevel logLevel = logINFO;
 	if (options[LOG_LEVEL]) {
-		logLevel = atoi(options[LOG_LEVEL].arg);
+		logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
 	}
 
 	//Trigger source -- default of internal
-	int triggerSource = 1;
+	TRIGGER_SOURCE triggerSource = INTERNAL;
 	if (options[TRIG_MODE]) {
-		triggerSource = atoi(options[TRIG_MODE].arg);
+		triggerSource = TRIGGER_SOURCE(atoi(options[TRIG_MODE].arg));
 	}
 
 	//Trigger interval -- default of 10ms
@@ -100,7 +100,8 @@ int main(int argc, char* argv[])
 
 	connect_APS(deviceSerial.c_str());
 
-	double uptime = get_uptime(deviceSerial.c_str());
+	double uptime;
+	get_uptime(deviceSerial.c_str(), &uptime);
 
 	cout << concol::RED << "Uptime for device " << deviceSerial << " is " << uptime << " seconds" << concol::RESET << endl;
 
@@ -118,7 +119,7 @@ int main(int argc, char* argv[])
 	set_trigger_interval(deviceSerial.c_str(), trigInterval);
 
 	//Set to triggered waveform mode
-	set_run_mode(deviceSerial.c_str(), 1);
+	set_run_mode(deviceSerial.c_str(), TRIG_WAVEFORM);
 
 	run(deviceSerial.c_str());
 

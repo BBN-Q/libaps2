@@ -62,9 +62,8 @@ void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::end
 
 /* PUBLIC methods */
 
-APSEthernet::EthernetError APSEthernet::init() {
+void APSEthernet::init() {
     reset_maps();
-    return SUCCESS;
 }
 
 set<string> APSEthernet::enumerate() {
@@ -96,7 +95,7 @@ void APSEthernet::reset_maps() {
     msgQueues_.clear();
 }
 
-APSEthernet::EthernetError APSEthernet::connect(string serial) {
+APS2_STATUS APSEthernet::connect(string serial) {
 
     mLock_.lock();
 	msgQueues_[serial] = queue<APSEthernetPacket>();
@@ -105,22 +104,22 @@ APSEthernet::EthernetError APSEthernet::connect(string serial) {
         devInfo_[serial].endpoint = udp::endpoint(asio::ip::address_v4::from_string(serial), APS_PROTO);
         devInfo_[serial].macAddr = MACAddr("FF:FF:FF:FF:FF:FF");
     }
-	return SUCCESS;
+    return APS2_OK;   
 }
 
-APSEthernet::EthernetError APSEthernet::disconnect(string serial) {
+APS2_STATUS APSEthernet::disconnect(string serial) {
     mLock_.lock();
 	msgQueues_.erase(serial);
     mLock_.unlock();
-	return SUCCESS;
+	return APS2_OK;
 }
 
-APSEthernet::EthernetError APSEthernet::send(string serial, APSEthernetPacket msg, bool checkResponse) {
+int APSEthernet::send(string serial, APSEthernetPacket msg, bool checkResponse) {
     msg.header.dest = devInfo_[serial].macAddr;
     return send_chunk(serial, vector<APSEthernetPacket>(1, msg), !checkResponse);
 }
 
-APSEthernet::EthernetError APSEthernet::send(string serial, vector<APSEthernetPacket> msg, unsigned ackEvery /* see header for default */) {
+int APSEthernet::send(string serial, vector<APSEthernetPacket> msg, unsigned ackEvery /* see header for default */) {
     //Fill out the destination  MAC address
     FILE_LOG(logDEBUG3) << "Sending " << msg.size() << " packets to " << serial;
     auto iter = msg.begin();
@@ -158,7 +157,7 @@ APSEthernet::EthernetError APSEthernet::send(string serial, vector<APSEthernetPa
         }
         
         auto result = send_chunk(serial, buffer, noACK);
-        if (result != SUCCESS){
+        if (result != 0){
             return result;
         }
         std::advance(iter, chunkSize);
@@ -167,10 +166,10 @@ APSEthernet::EthernetError APSEthernet::send(string serial, vector<APSEthernetPa
             FILE_LOG(logDEBUG) << "Write " << 100*std::distance(msg.begin(), iter)/msg.size() << "% complete";
         }
     }
-    return SUCCESS;
+    return 0;
 }
 
-APSEthernet::EthernetError APSEthernet::send_chunk(string serial, vector<APSEthernetPacket> chunk, bool noACK){
+int APSEthernet::send_chunk(string serial, vector<APSEthernetPacket> chunk, bool noACK){
 
     unsigned seqNum, retryct = 0;
 
@@ -197,9 +196,9 @@ APSEthernet::EthernetError APSEthernet::send_chunk(string serial, vector<APSEthe
     }
 
     if (retryct == 3) {
-        return TIMEOUT;
+        return -1;
     }
-    return SUCCESS;
+    return 0;
 }
 
 

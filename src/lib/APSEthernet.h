@@ -4,6 +4,7 @@
 #include "headings.h"
 #include "MACAddr.h"
 #include "APSEthernetPacket.h"
+#include "APS2_errno.h"
 
 #include "asio.hpp"
 
@@ -18,26 +19,16 @@ struct EthernetDevInfo {
 class APSEthernet {
 public:
 
-	enum EthernetError {
-		SUCCESS = 0,
-		NOT_IMPLEMENTED = -1,
-		INVALID_NETWORK_DEVICE = -2,
-		INVALID_PCAP_FILTER = -3,
-		INVALID_APS_ID = -4,
-		TIMEOUT = -5,
-		INVALID_SPI_TARGET
-	};
-
 	APSEthernet& operator=(APSEthernet &rhs)  { return rhs; };
 
 	APSEthernet();
 	~APSEthernet();
-	EthernetError init();
+	void init();
 	set<string> enumerate();
-	EthernetError connect(string serial);
-	EthernetError disconnect(string serial);
-	EthernetError send(string serial, APSEthernetPacket msg, bool checkResponse=true);
-	EthernetError send(string serial, vector<APSEthernetPacket> msg, unsigned ackEvery=1);
+	APS2_STATUS connect(string serial);
+	APS2_STATUS disconnect(string serial);
+	int send(string serial, APSEthernetPacket msg, bool checkResponse=true);
+	int send(string serial, vector<APSEthernetPacket> msg, unsigned ackEvery=1);
 	vector<APSEthernetPacket> receive(string serial, size_t numPackets = 1, size_t timeoutMS = 10000);
 
 private:
@@ -55,7 +46,7 @@ private:
 	void setup_receive();
 	void sort_packet(const vector<uint8_t> &, const udp::endpoint &);
 
-	EthernetError send_chunk(string, vector<APSEthernetPacket>, bool);
+	int send_chunk(string, vector<APSEthernetPacket>, bool);
 
 	asio::io_service ios_;
 	udp::socket socket_;

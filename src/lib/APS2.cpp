@@ -9,38 +9,34 @@ APS2::APS2(string deviceSerial) :  isOpen{false}, deviceSerial_{deviceSerial}, s
 
 APS2::~APS2() = default;
 
-APSEthernet::EthernetError APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
+void APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
 	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
-		APSEthernet::EthernetError success = ethernetRM_->connect(deviceSerial_);
+		APS2_STATUS success = ethernetRM_->connect(deviceSerial_);
 		// TODO: send a status request to check the connection
 
-		if (success == APSEthernet::SUCCESS) {
+		if (success == APS2_OK) {
 			FILE_LOG(logINFO) << "Opened connection to device: " << deviceSerial_;
 			isOpen = true;
 		}
 		// TODO: restore state information from file
-		return success;
 	}
-	return APSEthernet::SUCCESS;
 }
 
-APSEthernet::EthernetError APS2::disconnect() {
+void APS2::disconnect() {
 	if (isOpen) {
-		APSEthernet::EthernetError success = ethernetRM_->disconnect(deviceSerial_);
-		if (success == APSEthernet::SUCCESS) {
+		APS2_STATUS success = ethernetRM_->disconnect(deviceSerial_);
+		if (success == APS2_OK) {
 			FILE_LOG(logINFO) << "Closed connection to device: " << deviceSerial_;
 			isOpen = false;
 		}
 		//Release reference to ethernet RM
 		ethernetRM_.reset();
 		// TODO: save state information to file
-		return success;
 	}
-	return APSEthernet::SUCCESS;
 }
 
-int APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */) {
+void APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */) {
 	
 	APSCommand_t command = { .packed=0 };
 	
@@ -60,17 +56,17 @@ int APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */) 
 		try {
 			// poll status to see device reset
 			read_status_registers();
-			return APSEthernet::SUCCESS;
+			return;
 		} catch (std::exception &e) {
 			FILE_LOG(logDEBUG) << "Status timeout; retrying...";
 		}
 		retrycnt++;
 	}
 
-	return APSEthernet::TIMEOUT;
+	throw APS2_RESET_TIMEOUT;
 }
 
-int APS2::init(const bool & forceReload, const int & bitFileNum){
+APS2_STATUS APS2::init(const bool & forceReload, const int & bitFileNum){
 	 //TODO: bitfiles will be stored in flash so all we need to do here is the DACs
 
 	get_sampleRate(); // to update state variable
@@ -100,7 +96,7 @@ int APS2::init(const bool & forceReload, const int & bitFileNum){
 		write_memory_map();
 	}
 
-	return 0;
+	return APS2_OK;
 }
 
 int APS2::setup_DACs() {
@@ -209,16 +205,16 @@ int APS2::program_FPGA(const string & bitFile) {
 		try {
 			// poll status to see device reset
 			read_status_registers();
-			return APSEthernet::SUCCESS;
+			return APS2_OK;
 		} catch (std::exception &e) {
 			FILE_LOG(logDEBUG) << "Status timeout; retrying...";
 		}
 		retrycnt++;
 	}
-	return APSEthernet::TIMEOUT;
+	return APS2_RESET_TIMEOUT;
 }
 
-int APS2::get_firmware_version() {
+uint32_t APS2::get_firmware_version() {
 	// Reads version information from status registers
 	APSStatusBank_t statusRegs = read_status_registers();
 	uint32_t version = statusRegs.userFirmwareVersion;
@@ -228,7 +224,7 @@ int APS2::get_firmware_version() {
 	return version;
 }
 
-int APS2::set_sampleRate(const int & freq){
+void APS2::set_sampleRate(const unsigned int & freq){
 	if (samplingRate_ != freq){
 		//Set PLL frequency
 		APS2::set_PLL_freq(freq);
@@ -236,29 +232,24 @@ int APS2::set_sampleRate(const int & freq){
 		samplingRate_ = freq;
 
 		//Test the sync
-		return APS2::test_PLL_sync();
-	}
-	else{
-		return 0;
+		// APS2::test_PLL_sync();
 	}
 }
 
-int APS2::get_sampleRate() {
-	//Pass through to FPGA code
+unsigned int APS2::get_sampleRate() {
 	FILE_LOG(logDEBUG2) << "get_sampleRate";
 	samplingRate_ = get_PLL_freq();
 	return samplingRate_;
 }
 
-int APS2::clear_channel_data() {
+void APS2::clear_channel_data() {
 	FILE_LOG(logINFO) << "Clearing all channel data for APS2 " << deviceSerial_;
 	for (auto & ch : channels_) {
 		ch.clear_data();
 	}
-	return 0;
 }
 
-int APS2::load_sequence_file(const string & seqFile){
+void APS2::load_sequence_file(const string & seqFile){
 	/*
 	 * Load a sequence file from an H5 file
 	 */
@@ -285,23 +276,21 @@ int APS2::load_sequence_file(const string & seqFile){
 		}
 		//Close the file
 		H5SeqFile.close();
-		return 0;
 	}
 	catch (H5::FileIException & e) {
-		return -1;
+		throw APS2_SEQFILE_FAIL;
 	}
-	return 0;
 }
 
-int APS2::set_channel_enabled(const int & dac, const bool & enable){
-	return channels_[dac].set_enabled(enable);
+void APS2::set_channel_enabled(const int & dac, const bool & enable){
+	channels_[dac].set_enabled(enable);
 }
 
 bool APS2::get_channel_enabled(const int & dac) const{
 	return channels_[dac].get_enabled();
 }
 
-int APS2::set_channel_offset(const int & dac, const float & offset){
+void APS2::set_channel_offset(const int & dac, const float & offset){
 	//Update the waveform in driver
 	channels_[dac].set_offset(offset);
 	//Write to device if necessary
@@ -311,56 +300,52 @@ int APS2::set_channel_offset(const int & dac, const float & offset){
 
 	//Update TAZ register
 	set_offset_register(dac, channels_[dac].get_offset());
-
-	return 0;
 }
 
 float APS2::get_channel_offset(const int & dac) const{
 	return channels_[dac].get_offset();
 }
 
-int APS2::set_channel_scale(const int & dac, const float & scale){
+void APS2::set_channel_scale(const int & dac, const float & scale){
 	channels_[dac].set_scale(scale);
 	if (!channels_[dac].waveform_.empty()){
 		write_waveform(dac, channels_[dac].prep_waveform());
 	}
-	return 0;
 }
 
 float APS2::get_channel_scale(const int & dac) const{
 	return channels_[dac].get_scale();
 }
 
-int APS2::set_markers(const int & dac, const vector<uint8_t> & data) {
-	auto success = channels_[dac].set_markers(data);
+void APS2::set_markers(const int & dac, const vector<uint8_t> & data) {
+	channels_[dac].set_markers(data);
 	// write the waveform data again to add packed marker data
-	success |= write_waveform(dac, channels_[dac].prep_waveform());
-	return success;
+	write_waveform(dac, channels_[dac].prep_waveform());
 }
 
-int APS2::set_trigger_source(const TRIGGERSOURCE & triggerSource){
+void APS2::set_trigger_source(const TRIGGER_SOURCE & triggerSource){
 	FILE_LOG(logDEBUG) << "Setting trigger source to " << triggerSource;
 
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
 
 	//Set the trigger source bits
 	regVal = (regVal & ~(3 << TRIGSRC_BIT)) | (static_cast<uint32_t>(triggerSource) << TRIGSRC_BIT);
-	return write_memory(SEQ_CONTROL_ADDR, regVal);
+	write_memory(SEQ_CONTROL_ADDR, regVal);
 }
 
-TRIGGERSOURCE APS2::get_trigger_source() {
+TRIGGER_SOURCE APS2::get_trigger_source() {
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
-	return TRIGGERSOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
+	return TRIGGER_SOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
 }
 
-int APS2::set_trigger_interval(const double & interval){
+void APS2::set_trigger_interval(const double & interval){
 
 	//SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
 	int clockCycles = interval*0.25*samplingRate_*1e6 - 1;
 
 	FILE_LOG(logDEBUG) << "Setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
 
-	return write_memory(TRIGGER_INTERVAL_ADDR, clockCycles);
+	write_memory(TRIGGER_INTERVAL_ADDR, clockCycles);
 }
 
 double APS2::get_trigger_interval() {
@@ -370,28 +355,28 @@ double APS2::get_trigger_interval() {
 	return static_cast<double>(clockCycles + 1)/(0.25*samplingRate_*1e6);
 }
 
-int APS2::trigger(){
+void APS2::trigger(){
 	//Apply a software trigger by toggling the trigger line
 	FILE_LOG(logDEBUG) << "Sending software trigger";
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
 	FILE_LOG(logDEBUG3) << "SEQ_CONTROL register was " << hexn<8> << regVal;
 	regVal ^= (1 << SOFT_TRIG_BIT);
 	FILE_LOG(logDEBUG3) << "Setting SEQ_CONTROL register to " << hexn<8> << regVal;
-	return write_memory(SEQ_CONTROL_ADDR, regVal);
+	write_memory(SEQ_CONTROL_ADDR, regVal);
 }
 
-
-int APS2::run() {
+void APS2::run() {
 	FILE_LOG(logDEBUG1) << "Releasing pulse sequencer state machine...";
 	set_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
-	return 0;
 }
 
-int APS2::stop() {
+void APS2::stop() {
 	//Put the state machine back in reset
 	clear_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+}
 
-	return 0;
+RUN_STATE APS2::get_runState(){
+	return runState;
 }
 
 int APS2::set_run_mode(const RUN_MODE & mode) {
@@ -1481,7 +1466,7 @@ int APS2::clear_bit(const uint32_t & addr, std::initializer_list<int> bits) {
 	return write_memory(addr, curReg);
 }
 
-int APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
+void APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
 	/*Write waveform data to FPGA memory
 	 * ch = channel (0-1)
 	 * wfData = bits 0-13: signed 14-bit waveform data, bits 14-15: marker data
@@ -1501,11 +1486,9 @@ int APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
 
 	// enable cache
 	write_memory(CACHE_CONTROL_ADDR, 1);
-
-	return 0;
 }
 
-int APS2::write_sequence(const vector<uint64_t> & data) {
+void APS2::write_sequence(const vector<uint64_t> & data) {
 	FILE_LOG(logDEBUG2) << "Loading sequence of length " << data.size();
 
 	// pack into uint32_t vector
@@ -1527,8 +1510,6 @@ int APS2::write_sequence(const vector<uint64_t> & data) {
 
 	// enable cache
 	write_memory(CACHE_CONTROL_ADDR, 1);
-
-	return 0;
 }
 
 int APS2::write_memory_map(const uint32_t & wfA, const uint32_t & wfB, const uint32_t & seq) { /* see header for defaults */
