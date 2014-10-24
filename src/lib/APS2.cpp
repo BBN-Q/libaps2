@@ -320,11 +320,10 @@ float APS2::get_channel_scale(const int & dac) const{
 	return channels_[dac].get_scale();
 }
 
-int APS2::set_markers(const int & dac, const vector<uint8_t> & data) {
-	auto success = channels_[dac].set_markers(data);
+void APS2::set_markers(const int & dac, const vector<uint8_t> & data) {
+	channels_[dac].set_markers(data);
 	// write the waveform data again to add packed marker data
-	success |= write_waveform(dac, channels_[dac].prep_waveform());
-	return success;
+	write_waveform(dac, channels_[dac].prep_waveform());
 }
 
 void APS2::set_trigger_source(const TRIGGER_SOURCE & triggerSource){
@@ -1467,7 +1466,7 @@ int APS2::clear_bit(const uint32_t & addr, std::initializer_list<int> bits) {
 	return write_memory(addr, curReg);
 }
 
-int APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
+void APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
 	/*Write waveform data to FPGA memory
 	 * ch = channel (0-1)
 	 * wfData = bits 0-13: signed 14-bit waveform data, bits 14-15: marker data
@@ -1487,8 +1486,6 @@ int APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
 
 	// enable cache
 	write_memory(CACHE_CONTROL_ADDR, 1);
-
-	return 0;
 }
 
 int APS2::write_sequence(const vector<uint64_t> & data) {

@@ -63,12 +63,12 @@ public:
 	int set_offset_register(const int &, const float &);
 
 	template <typename T>
-	int set_waveform(const int & dac, const vector<T> & data){
+	void set_waveform(const int & dac, const vector<T> & data){
 		channels_[dac].set_waveform(data);
-		return write_waveform(dac, channels_[dac].prep_waveform());
+		write_waveform(dac, channels_[dac].prep_waveform());
 	}
 
-	int set_markers(const int &, const vector<uint8_t> &);
+	void set_markers(const int &, const vector<uint8_t> &);
 
 	int set_run_mode(const RUN_MODE &);
 
@@ -165,7 +165,7 @@ private:
 	int set_bit(const uint32_t &, std::initializer_list<int>);
 	int clear_bit(const uint32_t &, std::initializer_list<int>);
 
-	int write_waveform(const int &, const vector<int16_t> &);
+	void write_waveform(const int &, const vector<int16_t> &);
 
 	int write_memory_map(const uint32_t & wfA = WFA_OFFSET, const uint32_t & wfB = WFB_OFFSET, const uint32_t & seq = SEQ_OFFSET);
 

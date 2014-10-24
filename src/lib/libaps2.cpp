@@ -208,17 +208,20 @@ APS2_STATUS get_sampleRate(const char * deviceSerial, unsigned int * freq) {
 }
 
 //Load the waveform library as floats
-int set_waveform_float(const char * deviceSerial, int channelNum, float* data, int numPts) {
-	return APSs[string(deviceSerial)].set_waveform( channelNum, vector<float>(data, data+numPts));
+APS2_STATUS set_waveform_float(const char * deviceSerial, int channelNum, float* data, int numPts) {
+	function<void(APS2&)> func = bind(static_cast<void(APS2::*)(const int&, const vector<float>&)>(&APS2::set_waveform), _1, channelNum, vector<float>(data, data+numPts));
+	return aps2_call(deviceSerial, func);
 }
 
 //Load the waveform library as int16
-int set_waveform_int(const char * deviceSerial, int channelNum, int16_t* data, int numPts) {
-	return APSs[string(deviceSerial)].set_waveform(channelNum, vector<int16_t>(data, data+numPts));
+APS2_STATUS set_waveform_int(const char * deviceSerial, int channelNum, int16_t* data, int numPts) {
+	function<void(APS2&)> func = bind(static_cast<void(APS2::*)(const int&, const vector<int16_t>&)>(&APS2::set_waveform), _1, channelNum, vector<int16_t>(data, data+numPts));
+	return aps2_call(deviceSerial, func);
 }
 
-int set_markers(const char * deviceSerial, int channelNum, uint8_t* data, int numPts) {
-	return APSs[string(deviceSerial)].set_markers(channelNum, vector<uint8_t>(data, data+numPts));
+APS2_STATUS set_markers(const char * deviceSerial, int channelNum, uint8_t* data, int numPts) {
+	function<void(APS2&)> func = bind(&APS2::set_markers, _1, channelNum, vector<uint8_t>(data, data+numPts));
+	return aps2_call(deviceSerial, func);
 }
 
 int write_sequence(const char * deviceSerial, uint64_t* data, uint32_t numWords) {
