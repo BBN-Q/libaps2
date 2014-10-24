@@ -19,7 +19,7 @@
 
 classdef APS2 < handle
     properties
-        serial
+        serial = ''
     end
     
     properties (Constant)
