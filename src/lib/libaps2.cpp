@@ -238,20 +238,23 @@ int clear_channel_data(const char * deviceSerial) {
 	return APSs[string(deviceSerial)].clear_channel_data();
 }
 
-int run(const char * deviceSerial) {
-	return APSs[string(deviceSerial)].run();
+APS2_STATUS run(const char * deviceSerial) {
+	function<void(APS2&)> func = bind(&APS2::run, _1);
+	return aps2_call(deviceSerial, func);
 }
 
-int stop(const char * deviceSerial) {
-	return APSs[string(deviceSerial)].stop();
+APS2_STATUS stop(const char * deviceSerial) {
+	function<void(APS2&)> func = bind(&APS2::stop, _1);
+	return aps2_call(deviceSerial, func);
 }
 
-int get_running(const char * deviceSerial) {
-	return APSs[string(deviceSerial)].running;
+APS2_STATUS get_runState(const char * deviceSerial, RUN_STATE* state) {
+	function<RUN_STATE(APS2&)> func = bind(&APS2::get_runState, _1);
+	return aps2_getter(deviceSerial, func, state);
 }
 
 //Expects a null-terminated character array
-int set_log(const char * fileNameArr) {
+APS2_STATUS set_log(const char * fileNameArr) {
 
 	//Close the current file
 	if (Output2FILE::Stream()) fclose(Output2FILE::Stream());
@@ -268,14 +271,14 @@ int set_log(const char * fileNameArr) {
 	else {
 		FILE* pFile = fopen(fileName.c_str(), "a");
 		if (!pFile) {
-			return APS2_FILE_ERROR;
+			return APS2_FILELOG_ERROR;
 		}
 		Output2FILE::Stream() = pFile;
 		return APS2_OK;
 	}
 }
 
-int set_logging_level(int logLevel) {
+APS2_STATUS set_logging_level(TLogLevel logLevel) {
 	FILELog::ReportingLevel() = TLogLevel(logLevel);
 	return APS2_OK;
 }

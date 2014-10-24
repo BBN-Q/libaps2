@@ -366,18 +366,18 @@ void APS2::trigger(){
 	write_memory(SEQ_CONTROL_ADDR, regVal);
 }
 
-
-int APS2::run() {
+void APS2::run() {
 	FILE_LOG(logDEBUG1) << "Releasing pulse sequencer state machine...";
 	set_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
-	return 0;
 }
 
-int APS2::stop() {
+void APS2::stop() {
 	//Put the state machine back in reset
 	clear_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+}
 
-	return 0;
+RUN_STATE APS2::get_runState(){
+	return runState;
 }
 
 int APS2::set_run_mode(const RUN_MODE & mode) {

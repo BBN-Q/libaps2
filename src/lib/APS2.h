@@ -77,13 +77,14 @@ public:
 
 	void load_sequence_file(const string &);
 
-	int run();
-	int stop();
+	void run();
+	void stop();
+	RUN_STATE get_runState();
 
 	//Whether the APS connection is open
 	bool isOpen;
 
-	bool running;
+	RUN_STATE runState;
 
 	//Pretty printers
 	static string print_status_bank(const APSStatusBank_t & status);

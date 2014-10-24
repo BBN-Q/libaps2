@@ -159,11 +159,10 @@ int main (int argc, char* argv[])
     return -1;
   }
 
-
-  //Debug level
-  int logLevel = 3;
+  //Logging level
+  TLogLevel logLevel = logDEBUG1;
   if (options[LOG_LEVEL]) {
-    logLevel = atoi(options[LOG_LEVEL].arg);
+    logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
   }
   set_log("stdout");
   set_logging_level(logLevel);

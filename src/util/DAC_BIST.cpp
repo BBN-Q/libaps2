@@ -20,7 +20,7 @@ int main(int argc, char const *argv[])
 	//Poll for which device to test
 	string deviceSerial = get_device_id();
 
-	set_logging_level(4);
+	set_logging_level(logDEBUG1);
 
 	connect_APS(deviceSerial.c_str());
 

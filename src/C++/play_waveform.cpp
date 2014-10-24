@@ -54,10 +54,10 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < parse.nonOptionsCount(); ++i)
 	 cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
-	//Debug level
-	int logLevel = 2;
+	//Logging level
+	TLogLevel logLevel = logINFO;
 	if (options[LOG_LEVEL]) {
-		logLevel = atoi(options[LOG_LEVEL].arg);
+		logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
 	}
 
 	//Trigger source -- default of internal

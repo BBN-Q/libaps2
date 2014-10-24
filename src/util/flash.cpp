@@ -74,13 +74,7 @@ int main (int argc, char* argv[])
   concol::concolinit();
   cout << concol::RED << "BBN AP2 Flash Test Executable" << concol::RESET << endl;
 
-
-  int dbgLevel = 4;
-  if (argc >= 2) {
-    dbgLevel = atoi(argv[1]);
-  }
-
-  set_logging_level(dbgLevel);
+  set_logging_level(logDEBUG1);
   set_log("stdout");
 
   cout << concol::RED << "Enumerating devices" << concol::RESET << endl;

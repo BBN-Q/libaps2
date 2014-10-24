@@ -10,6 +10,7 @@
 
 #include "APS2_errno.h"
 #include "constants.h"
+#include "logger.h"
 
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
@@ -63,13 +64,12 @@ EXPORT APS2_STATUS load_sequence_file(const char*, const char*);
 
 EXPORT int clear_channel_data(const char *);
 
-EXPORT int run(const char *);
-EXPORT int stop(const char *);
+EXPORT APS2_STATUS run(const char *);
+EXPORT APS2_STATUS stop(const char *);
+EXPORT APS2_STATUS get_runState(const char *, RUN_STATE *);
 
-EXPORT int get_running(const char *);
-
-EXPORT int set_log(const char *);
-EXPORT int set_logging_level(int);
+EXPORT APS2_STATUS set_log(const char *);
+EXPORT APS2_STATUS set_logging_level(TLogLevel);
 
 EXPORT const char * get_ip_addr(const char *);
 EXPORT int set_ip_addr(const char *, const char *);

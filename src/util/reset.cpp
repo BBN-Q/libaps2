@@ -30,12 +30,12 @@ int main (int argc, char* argv[])
   cout << concol::RED << "BBN AP2 Test Executable" << concol::RESET << endl;
 
 
-  int dbgLevel = 4;
-  if (argc >= 2) {
-    dbgLevel = atoi(argv[1]);
-  }
-
-  set_logging_level(dbgLevel);
+  //Logging level
+  TLogLevel logLevel = logDEBUG1;
+  // if (options[LOG_LEVEL]) {
+  //   logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
+  // }
+  set_logging_level(logLevel);
   set_log("stdout");
 
   cout << concol::RED << "Enumerating devices" << concol::RESET << endl;
