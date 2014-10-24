@@ -9,7 +9,7 @@
 #define LIBAPS_H_
 
 #include "APS2_errno.h"
-#include "constants.h"
+#include "APS2_enums.h"
 #include "logger.h"
 
 #ifdef _WIN32
@@ -58,11 +58,11 @@ EXPORT APS2_STATUS set_markers(const char *, int, uint8_t*, int);
 
 EXPORT APS2_STATUS write_sequence(const char *, uint64_t*, uint32_t);
 
-EXPORT int set_run_mode(const char*, int);
+EXPORT APS2_STATUS set_run_mode(const char*, RUN_MODE);
 
 EXPORT APS2_STATUS load_sequence_file(const char*, const char*);
 
-EXPORT int clear_channel_data(const char *);
+EXPORT APS2_STATUS clear_channel_data(const char *);
 
 EXPORT APS2_STATUS run(const char *);
 EXPORT APS2_STATUS stop(const char *);
@@ -71,8 +71,8 @@ EXPORT APS2_STATUS get_runState(const char *, RUN_STATE *);
 EXPORT APS2_STATUS set_log(const char *);
 EXPORT APS2_STATUS set_logging_level(TLogLevel);
 
-EXPORT const char * get_ip_addr(const char *);
-EXPORT int set_ip_addr(const char *, const char *);
+EXPORT APS2_STATUS get_ip_addr(const char *, char *);
+EXPORT APS2_STATUS set_ip_addr(const char *, const char *);
 
 /* private API methods */
 

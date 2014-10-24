@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 	set_trigger_interval(deviceSerial.c_str(), trigInterval);
 
 	//Set to triggered waveform mode
-	set_run_mode(deviceSerial.c_str(), 1);
+	set_run_mode(deviceSerial.c_str(), TRIG_WAVEFORM);
 
 	run(deviceSerial.c_str());
 

@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
 	set_trigger_interval(deviceSerial.c_str(), trigInterval);
 
 	//Set to sequence mode
-	set_run_mode(deviceSerial.c_str(), 0);
+	set_run_mode(deviceSerial.c_str(), RUN_SEQUENCE);
 
 	run(deviceSerial.c_str());
 

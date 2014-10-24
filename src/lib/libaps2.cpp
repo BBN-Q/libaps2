@@ -234,8 +234,9 @@ APS2_STATUS load_sequence_file(const char * deviceSerial, const char * seqFile) 
 	return aps2_call(deviceSerial, func);
 }
 
-int clear_channel_data(const char * deviceSerial) {
-	return APSs[string(deviceSerial)].clear_channel_data();
+APS2_STATUS clear_channel_data(const char * deviceSerial) {
+	function<void(APS2&)> func = bind(&APS2::clear_channel_data, _1);
+	return aps2_call(deviceSerial, func);
 }
 
 APS2_STATUS run(const char * deviceSerial) {
@@ -334,8 +335,9 @@ APS2_STATUS get_channel_enabled(const char * deviceSerial, int channelNum, int *
 	return aps2_getter(deviceSerial, func, enabled);
 }
 
-int set_run_mode(const char * deviceSerial, int mode) {
-	return APSs[string(deviceSerial)].set_run_mode(RUN_MODE(mode));
+APS2_STATUS set_run_mode(const char * deviceSerial, RUN_MODE mode) {
+	function<void(APS2&)> func = bind(&APS2::set_run_mode, _1, mode);
+	return aps2_call(deviceSerial, func);
 }
 
 int write_memory(const char * deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
@@ -363,25 +365,38 @@ int write_flash(const char * deviceSerial, uint32_t addr, uint32_t* data, uint32
 	vector<uint32_t> writeData(data, data+numWords);
 	return APSs[string(deviceSerial)].write_flash(addr, writeData);
 }
+
 int read_flash(const char * deviceSerial, uint32_t addr, uint32_t numWords, uint32_t* data) {
 	auto readData = APSs[string(deviceSerial)].read_flash(addr, numWords);
 	std::copy(readData.begin(), readData.end(), data);
 	return 0;
 }
+
 uint64_t get_mac_addr(const char * deviceSerial) {
 	return APSs[string(deviceSerial)].get_mac_addr();
 }
 int set_mac_addr(const char * deviceSerial, uint64_t mac) {
 	return APSs[string(deviceSerial)].set_mac_addr(mac);
 }
-const char * get_ip_addr(const char * deviceSerial) {
-	uint32_t ip_addr = APSs[string(deviceSerial)].get_ip_addr();
-	return asio::ip::address_v4(ip_addr).to_string().c_str();
+
+APS2_STATUS get_ip_addr(const char * deviceSerial, char * ipAddrPtr) {
+	try{
+		uint32_t ipAddr = APSs[string(deviceSerial)].get_ip_addr();
+		string ipAddrStr = asio::ip::address_v4(ipAddr).to_string();
+		ipAddrStr.copy(ipAddrPtr, ipAddrStr.size(), 0);
+		return APS2_OK;
+	}
+	catch(...) {
+		return APS2_UNKNOWN_ERROR;
+	}
 }
-int set_ip_addr(const char * deviceSerial, const char * ip_addr_str) {
-	uint32_t ip_addr = asio::ip::address_v4::from_string(ip_addr_str).to_ulong();
-	return APSs[string(deviceSerial)].set_ip_addr(ip_addr);
+
+APS2_STATUS set_ip_addr(const char * deviceSerial, const char * ipAddrStr) {
+	uint32_t ipAddr = asio::ip::address_v4::from_string(ipAddrStr).to_ulong();
+	function<void(APS2&)> func = bind(&APS2::set_ip_addr, _1, ipAddr);
+	return aps2_call(deviceSerial, func);
 }
+
 int write_SPI_setup(const char * deviceSerial) {
 	return APSs[string(deviceSerial)].write_SPI_setup();
 }

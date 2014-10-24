@@ -110,7 +110,9 @@ int main (int argc, char* argv[])
 
   cout << "Programmed MAC and IP address at 0x00FF0000 are " << endl;
   cout << "MAC addr: " << hexn<12> << get_mac_addr(deviceSerial.c_str()) << endl;
-  cout << "IP addr: " << get_ip_addr(deviceSerial.c_str()) << endl;
+  string curIP(" ", 16);
+  get_ip_addr(deviceSerial.c_str(), &curIP[0]);
+  cout << "IP addr: " << curIP << endl;
 
   // write a new MAC address
   uint64_t mac_addr = get_mac_input();

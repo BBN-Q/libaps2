@@ -242,12 +242,11 @@ unsigned int APS2::get_sampleRate() {
 	return samplingRate_;
 }
 
-int APS2::clear_channel_data() {
+void APS2::clear_channel_data() {
 	FILE_LOG(logINFO) << "Clearing all channel data for APS2 " << deviceSerial_;
 	for (auto & ch : channels_) {
 		ch.clear_data();
 	}
-	return 0;
 }
 
 void APS2::load_sequence_file(const string & seqFile){

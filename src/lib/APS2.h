@@ -11,6 +11,7 @@
 #include "APSEthernet.h"
 #include "Channel.h"
 #include "APS2_errno.h"
+#include "APS2_enums.h"
 
 class APS2 {
 
@@ -73,7 +74,7 @@ public:
 	int set_run_mode(const RUN_MODE &);
 
 	void write_sequence(const vector<uint64_t> &);
-	int clear_channel_data();
+	void clear_channel_data();
 
 	void load_sequence_file(const string &);
 
