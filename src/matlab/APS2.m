@@ -90,7 +90,7 @@ classdef APS2 < handle
         end
         
         function set_trigger_interval(obj, val)
-            ap2_call(obj, 'set_trigger_interval', val);
+            aps2_call(obj, 'set_trigger_interval', val);
         end
         
         function val = get_trigger_source(obj)
@@ -98,7 +98,7 @@ classdef APS2 < handle
         end
         
         function set_trigger_source(obj, source)
-            val = ap2_call(obj, 'set_trigger_source', source);
+            aps2_call(obj, 'set_trigger_source', source);
         end
         
         function trigger(obj)
@@ -131,7 +131,7 @@ classdef APS2 < handle
 
         % channel methods
         function val = get_channel_offset(obj, channel)
-            val = aps2_getter(obj, 'get_channel_offset', channel-1)
+            val = aps2_getter(obj, 'get_channel_offset', channel-1);
         end
         
         function set_channel_offset(obj, channel, offset)
