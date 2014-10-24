@@ -29,15 +29,14 @@ classdef APS2 < handle
         TRIG_WAVEFORM = 1
         CW_WAVEFORM = 2
         
+        APS2_OK = 0
+        
         samplingRate = 1200000000;
     end
     
     methods
         function obj = APS2()
-            if ~libisloaded('libaps2')
-                curPath = fileparts(mfilename('fullpath'));
-                loadlibrary(fullfile(curPath, obj.libpath, 'libaps2.dll'), fullfile(curPath, 'libaps2.matlab.h'));
-            end
+            APS2.load_library();
         end
         
         function delete(obj)
@@ -47,15 +46,16 @@ classdef APS2 < handle
             end
         end
         
-        function [serials] = enumerate(obj)
-            numDevices = calllib('libaps2', 'get_numDevices');
-            serials = cell(1,numDevices);
-            for ct = 1:numDevices
-                serials{ct} = '';
-            end
-            serialPtr = libpointer('stringPtrPtr', serials);
-            serials = calllib('libaps2', 'get_deviceSerials', serialPtr);
+        function aps2_call(obj, func, varargin)
+            status = calllib('libaps2', func, obj.serial, varargin{:});
+            check_status(status);
         end
+        
+        function val = aps2_getter(obj, func)
+            [status, ~, val] = calllib('libaps2', func, obj.serial, 0);
+            check_status(status);
+        end
+        
         
         function connect(obj, serial)
             obj.serial = serial;
@@ -212,6 +212,36 @@ classdef APS2 < handle
         function out = read_register(obj, addr)
             out = calllib('libaps2', 'read_register', obj.serial, addr);
         end
+    end
+    
+    methods (Static)
+        function load_library()
+            if ~libisloaded('libaps2')
+                curPath = fileparts(mfilename('fullpath'));
+                loadlibrary(fullfile(curPath, obj.libpath, 'libaps2.dll'), fullfile(curPath, 'libaps2.matlab.h'));
+            end
+        end
+
+        function check_status(status)
+            APS2.load_libaray();
+            assert(strcmp(status, 'APS2_OK'),...
+            'APS2 library call failed with message: %s', calllib('libaps2', 'get_error_msg', status));
+        end
+        
+        function [serials] = enumerate()
+            APS2.load_libary();
+            [status, numDevices] = calllib('libaps2', 'get_numDevices', 0);
+            APS2.check_status(status);
+            serials = cell(1,numDevices);
+            for ct = 1:numDevices
+                serials{ct} = '';
+            end
+            serialPtr = libpointer('stringPtrPtr', serials);
+            [status, serials] = calllib('libaps2', 'get_deviceSerials', serialPtr);
+            APS2.check_status(status)
+        end
+
+        
     end
     
 end
