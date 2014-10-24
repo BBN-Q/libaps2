@@ -204,9 +204,6 @@ classdef APS2 < handle
         end
         
         % debug methods
-        function set_logging_level(obj, level)
-            aps2_call('set_logging_level', level);
-        end
         
         function out = read_register(obj, addr)
             out = calllib('libaps2', 'read_register', obj.serial, addr);
@@ -239,6 +236,11 @@ classdef APS2 < handle
             [status, serials] = calllib('libaps2', 'get_deviceSerials', serialPtr);
             APS2.check_status(status)
         end
+
+        function set_logging_level(level)
+            aps2_call('set_logging_level', level);
+        end
+
 
         
     end
