@@ -73,9 +73,8 @@ and sequencing (L2) firmware components.
 
 L1:
 
-* dark - no ethernet connection;
+* green breathing - no ethernet connection;
 * green blinks - receiving or transmitting an ethernet packet;
-* green breathing - idle;
 * red - fatal communication error. Power cycle the module to restore connectivity. 
 
 L2:
