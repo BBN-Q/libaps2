@@ -148,7 +148,7 @@ private:
 	int setup_PLL();
 	int set_PLL_freq(const int &);
 	int test_PLL_sync();
-	int read_PLL_status();
+	void check_clocks_status();
 	int get_PLL_freq();
 	int enable_DAC_clock(const int &);
 	int disable_DAC_clock(const int &);

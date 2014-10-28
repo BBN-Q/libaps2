@@ -71,16 +71,16 @@ APS2_STATUS APS2::init(const bool & forceReload, const int & bitFileNum){
 
 	get_sampleRate(); // to update state variable
 
-	if (forceReload || !read_PLL_status()) {
-		FILE_LOG(logINFO) << "Resetting instrument";
-		FILE_LOG(logINFO) << "Found force: " << forceReload << " bitFile version: " << myhex << get_firmware_version() << " PLL status: " << read_PLL_status();
+	check_clocks_status();
+
+	if (forceReload) {
+		FILE_LOG(logINFO) << "Initializing APS2";
 
 		// send hard reset to APS2
 		// reset(RECONFIG_EPROM);
 		// reconfigure the PLL and VCX0 from EPROM
 		// run_chip_config();
 		// this won't be necessary if running the chip config above
-		samplingRate_ = 1200;
 
 		// sync DAC clock phase with PLL
 		int status = test_PLL_sync();
@@ -938,23 +938,31 @@ int APS2::test_PLL_sync() {
 	return 0;
 }
 
-
-int APS2::read_PLL_status() {
+void APS2::check_clocks_status() {
 	/*
-	 * Helper function to read the status of FPGA PLLs
+	 * Reads the locked status of the clock distribution PLL and the FPGA MMCM's (SYS_CLK, CFG_CLK and MEM_CLK)
 	 */
+	FILE_LOG(logDEBUG1) << "Entering APS2::check_clocks_status";
 
-	const vector<int> pllLockBits = {PLL_CHA_LOCK_BIT, PLL_CHB_LOCK_BIT, PLL_SYS_LOCK_BIT};	
-	uint32_t pllRegister = read_memory(PLL_STATUS_ADDR, 1)[0];
+	APSStatusBank_t statusRegs = read_status_registers();
 
-	//Check each of the clocks in series
-	int pllStatus = 1;
-	for(int tmpBit : pllLockBits){
-		pllStatus &= ((pllRegister >> tmpBit) & 0x1);
-		FILE_LOG(logDEBUG2) << "FPGA PLL status: " << ((pllRegister >> tmpBit) & 0x1) << " (bit " << tmpBit << " of " << myhex << pllRegister << " )";
-	}
-	FILE_LOG(logDEBUG1) << "APS2::read_PLL_status = " << pllStatus;
-	return pllStatus;
+	//First check the clock distribution PLL (the bottom three bits should be high)
+	FILE_LOG(logDEBUG1) << "PLL status: " << hexn<8> << statusRegs.pllStatus;
+ 	if ((statusRegs.pllStatus & 0x3) != 0x3){
+ 		throw APS2_PLL_LOST_LOCK;
+ 	}
+
+ 	//Now check the FPGA clocks
+ 	if (statusRegs.userFirmwareVersion >= 0x212) {
+		FILE_LOG(logDEBUG1) << "User status: " << hexn<8> << statusRegs.userStatus;
+	 	bool clocksGood = true;
+	 	for (auto bit : {MMCM_SYS_LOCK_BIT, MMCM_CFG_LOCK_BIT, MIG_C0_LOCK_BIT, MIG_C0_CAL_BIT, MIG_C1_LOCK_BIT, MIG_C1_CAL_BIT}) {
+	 		clocksGood &= (statusRegs.userStatus >> bit) & 0x1;
+	 	}
+	 	if (!clocksGood) {
+	 		throw APS2_MMCM_LOST_LOCK;
+	 	}
+	 }
 }
 
 int APS2::get_PLL_freq() {
@@ -1338,7 +1346,6 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	// Step 0: save the current state of SD and control clock divider
 	auto ccd = read_reg(DAC_CONTROLLERCLOCK_ADDR);
 	auto sd = read_reg(DAC_SD_ADDR);
-	FILE_LOG(logDEBUG1) << "Read SD = " << (sd >> 4);
 
 	// Step 1: set the reset bit (Reg 0, bit 5)
 	regVal = read_reg(0);

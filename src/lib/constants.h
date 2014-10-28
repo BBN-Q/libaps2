@@ -255,10 +255,12 @@ static const int IO_CHB_RST_BIT = 11;
 static const int DAC_BIST_CHA_RST_BIT = 12;
 static const int DAC_BIST_CHB_RST_BIT = 13;
 
-// TODO: implement these in logic?
-static const int PLL_SYS_LOCK_BIT = 0;
-static const int PLL_CHA_LOCK_BIT = 1;
-static const int PLL_CHB_LOCK_BIT = 2;
+static const int MMCM_SYS_LOCK_BIT = 31;
+static const int MMCM_CFG_LOCK_BIT = 30;
+static const int MIG_C0_LOCK_BIT = 24;
+static const int MIG_C0_CAL_BIT = 25;
+static const int MIG_C1_LOCK_BIT = 26;
+static const int MIG_C1_CAL_BIT = 27;
 
 //DAC SPI Addresses
 static const uint8_t DAC_SYNC_ADDR = 0x0;
