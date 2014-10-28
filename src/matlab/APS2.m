@@ -70,10 +70,6 @@ classdef APS2 < handle
             val = aps2_getter(obj, 'get_firmware_version');
         end
         
-        function val = get_firmware_version(obj)
-           val = calllib('libaps2', 'get_firmware_version', obj.serial); 
-        end
-        
         function run(obj)
             aps2_call(obj, 'run');
         end
@@ -240,6 +236,7 @@ classdef APS2 < handle
         end
 
         function set_logging_level(level)
+            APS2.load_library();
             status = calllib('libaps2', 'set_logging_level', level);
             APS2.check_status(status);
         end
