@@ -43,11 +43,15 @@ void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::end
         //If so add the device info to the set
         if (packetData.size() == 84) {
             devInfo_[senderIP].endpoint = sender;
-            //Turn the byte array into a packet to extract the MAC address
-            //Not strictly necessary as we could just use the broadcast MAC address
+            //Turn the byte array into a packet to extract the MAC address and firmware version
+            //MAC not strictly necessary as we could just use the broadcast MAC address
             APSEthernetPacket packet = APSEthernetPacket(packetData);
             devInfo_[senderIP].macAddr = packet.header.src;
-            FILE_LOG(logDEBUG1) << "Added device with IP " << senderIP << " and MAC addresss " << devInfo_[senderIP].macAddr.to_string();
+            APSStatusBank_t statusRegs;
+            std::copy(packet.payload.begin(), packet.payload.end(), statusRegs.array);
+            FILE_LOG(logDEBUG1) << "Added device with IP " << senderIP <<
+                " ; MAC addresss " << devInfo_[senderIP].macAddr.to_string() <<
+                " ; firmware version " << hexn<4> << statusRegs.userFirmwareVersion;
         } 
     }
     else {
