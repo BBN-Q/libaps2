@@ -55,44 +55,44 @@ shared_ptr<APSEthernet> get_interface() {
 
 template<typename F>
 APS2_STATUS aps2_call(const char * deviceSerial, F func){
-	try{
+	try {
 		func(APSs.at(deviceSerial));
 		//Nothing thrown then assume OK
 		return APS2_OK;
 	}
-	catch(std::out_of_range e){
-		if(APSs.find(deviceSerial) == APSs.end()){
+	catch (std::out_of_range e) {
+		if (APSs.find(deviceSerial) == APSs.end()) {
 			return APS2_UNCONNECTED;
-		} else{
+		} else {
 			return APS2_UNKNOWN_ERROR;
 		}
 	}
-	catch(APS2_STATUS status){
+	catch (APS2_STATUS status) {
 		return status;
 	}
-	catch(...) {
+	catch (...) {
 		return APS2_UNKNOWN_ERROR;
 	}
 }
 
 template<typename R, typename F>
 APS2_STATUS aps2_getter(const char * deviceSerial, F func, R *resPtr){
-	try{
+	try {
 		*resPtr = func(APSs.at(deviceSerial));
 		//Nothing thrown then assume OK
 		return APS2_OK;
 	}
-	catch(std::out_of_range e){
-		if(APSs.find(deviceSerial) == APSs.end()){
+	catch (std::out_of_range e) {
+		if (APSs.find(deviceSerial) == APSs.end()) {
 			return APS2_UNCONNECTED;
-		} else{
+		} else {
 			return APS2_UNKNOWN_ERROR;
 		}
 	}
-	catch(APS2_STATUS status){
+	catch (APS2_STATUS status) {
 		return status;
 	}
-	catch(...) {
+	catch (...) {
 		return APS2_UNKNOWN_ERROR;
 	}
 }
@@ -101,8 +101,8 @@ APS2_STATUS aps2_getter(const char * deviceSerial, F func, R *resPtr){
 extern "C" {
 #endif
 
-const char* get_error_msg(APS2_STATUS err){
-	if(messages.count(err)){
+const char* get_error_msg(APS2_STATUS err) {
+	if (messages.count(err)) {
 		return messages[err].c_str();
 	}
 	else {
@@ -114,15 +114,15 @@ APS2_STATUS get_numDevices(unsigned int * numDevices) {
 	/*
 	Returns the number of APS2s that respond to a broadcast status request.
 	*/
-	try{
+	try {
 		deviceSerials = get_interface()->enumerate();
 		*numDevices = deviceSerials.size();
 		return APS2_OK;
 	}
-	catch(APS2_STATUS status){
+	catch (APS2_STATUS status) {
 		return status;
 	}
-	catch(...){
+	catch (...) {
 		return APS2_UNKNOWN_ERROR;
 	}
 }
@@ -153,14 +153,14 @@ APS2_STATUS connect_APS(const char * deviceSerial) {
 	//Can't seem to bind the interface
 	// function<void(APS2&)> func = bind(&APS2::connect, _1, get_interface());
 	// return aps2_call(deviceSerial, func);
-	try{
+	try {
 		APSs.at(deviceSerial).connect(get_interface());
 		return APS2_OK;
 	}
-	catch(APS2_STATUS status){
+	catch (APS2_STATUS status) {
 		return status;
 	}
-	catch(...){
+	catch (...) {
 		return APS2_UNKNOWN_ERROR;
 	}
 }
@@ -380,13 +380,13 @@ int set_mac_addr(const char * deviceSerial, uint64_t mac) {
 }
 
 APS2_STATUS get_ip_addr(const char * deviceSerial, char * ipAddrPtr) {
-	try{
+	try {
 		uint32_t ipAddr = APSs[string(deviceSerial)].get_ip_addr();
 		string ipAddrStr = asio::ip::address_v4(ipAddr).to_string();
 		ipAddrStr.copy(ipAddrPtr, ipAddrStr.size(), 0);
 		return APS2_OK;
 	}
-	catch(...) {
+	catch (...) {
 		return APS2_UNKNOWN_ERROR;
 	}
 }
