@@ -1,26 +1,36 @@
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 
-#include "headings.h"
+#include "concol.h"
 #include "libaps2.h"
-#include "constants.h"
+#include "../C++/helpers.h"
+#include "../C++/optionparser.h"
 
-#include <concol.h>
+using std::cout;
+using std::endl;
 
-using namespace std;
+enum  optionIndex { UNKNOWN, HELP, IP_ADDR, MAC_ADDR, SPI, LOG_LEVEL};
+const option::Descriptor usage[] =
+{
+  {UNKNOWN, 0,"" , ""    , option::Arg::None, "USAGE: flash [options]\n\n"
+                                           "Options:" },
+  {HELP,    0,"" , "help", option::Arg::None, "  --help  \tPrint usage and exit." },
+  {IP_ADDR, 0,"", "IP", option::Arg::None, "  --IP  \tProgram a new IP address." },
+  {MAC_ADDR, 0,"", "MAC", option::Arg::Required, "  --MAC  \tProgram a new MAC address." },
+  {SPI,  0,"", "SPI", option::Arg::Numeric, "  --SPI  \tWrite the SPI startup sequence." },
+  {LOG_LEVEL,  0,"", "logLevel", option::Arg::Numeric, "  --logLevel  \t(optional) Logging level level to print to console (optional; default=2/INFO)." },
+  {UNKNOWN, 0,"" ,  ""   , option::Arg::None, "\nExamples:\n"
+                                           "  flash --IP\n"
+                                           "  flash --SPI\n" },
+  {0,0,0,0,0,0}
+};
 
-int get_device_id() {
-  cout << "Choose device ID [0]: ";
-  string input = "";
-  getline(cin, input);
-
-  if (input.length() == 0) {
-    return 0;
-  }
-  int device_id;
-  stringstream mystream(input);
-
-  mystream >> device_id;
-  return device_id;
+// N-wide hex output with 0x
+template <unsigned int N>
+std::ostream& hexn(std::ostream& out)
+{
+    return out << "0x" << std::hex << std::setw(N) << std::setfill('0');
 }
 
 uint64_t get_mac_input() {
@@ -31,7 +41,7 @@ uint64_t get_mac_input() {
   if (input.length() == 0) {
     return 0;
   }
-  stringstream mystream(input);
+  std::stringstream mystream(input);
   uint64_t mac_addr;
   mystream >> std::hex >> mac_addr;
 
@@ -46,135 +56,85 @@ string get_ip_input() {
   return input;
 }
 
-bool spi_prompt() {
-  cout << "Do you want to program the SPI startup sequence? [y/N]: ";
-  string input = "";
-  getline(cin, input);
-  if (input.length() == 0) {
-    return false;
-  }
-  stringstream mystream(input);
-  char response;
-  mystream >> response;
-  switch (response) {
-    case 'y':
-    case 'Y':
-      return true;
-      break;
-    case 'n':
-    case 'N':
-    default:
-      return false;
-  }
-}
-
-int main (int argc, char* argv[])
+int main(int argc, char* argv[])
 {
+  argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
+  option::Stats  stats(usage, argc, argv);
+  option::Option *options = new option::Option[stats.options_max];
+  option::Option *buffer = new option::Option[stats.buffer_max];
+  option::Parser parse(usage, argc, argv, options, buffer);
+
+  if (parse.error())
+   return -1;
+
+  if (options[HELP] || argc == 0) {
+    option::printUsage(std::cout, usage);
+    return 0;
+  }
+
+  for (option::Option* opt = options[UNKNOWN]; opt; opt = opt->next())
+   std::cout << "Unknown option: " << opt->name << "\n";
+
+  for (int i = 0; i < parse.nonOptionsCount(); ++i)
+   std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
   concol::concolinit();
   cout << concol::RED << "BBN AP2 Flash Test Executable" << concol::RESET << endl;
 
-  set_logging_level(logDEBUG1);
+  //Logging level
+  TLogLevel logLevel = logINFO;
+  if (options[LOG_LEVEL]) {
+    logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
+  }
   set_log("stdout");
+  set_logging_level(logLevel);
 
-  cout << concol::RED << "Enumerating devices" << concol::RESET << endl;
-
-  unsigned numDevices;
-  get_numDevices(&numDevices);
-
-  cout << concol::RED << numDevices << " APS device" << (numDevices > 1 ? "s": "")  << " found" << concol::RESET << endl;
-
-  if (numDevices < 1)
-  	return 0;
-
-  cout << concol::RED << "Attempting to get serials" << concol::RESET << endl;
-
-  const char ** serialBuffer = new const char*[numDevices];
-  get_deviceSerials(serialBuffer);
-
-  for (unsigned cnt=0; cnt < numDevices; cnt++) {
-  	cout << concol::RED << "Device " << cnt << " serial #: " << serialBuffer[cnt] << concol::RESET << endl;
-  }
-
-  string deviceSerial;
-
-  if (numDevices == 1) {
-    deviceSerial = string(serialBuffer[0]);
-  } else {
-    deviceSerial = string(serialBuffer[get_device_id()]);
-  }
-
-  cout << concol::RED << "Connecting to device serial #: " << deviceSerial << concol::RESET << endl;
+  string deviceSerial = get_device_id();
 
   connect_APS(deviceSerial.c_str());
 
-  cout << "Programmed MAC and IP address at 0x00FF0000 are " << endl;
-  cout << "MAC addr: " << hexn<12> << get_mac_addr(deviceSerial.c_str()) << endl;
-  string curIP(" ", 16);
-  get_ip_addr(deviceSerial.c_str(), &curIP[0]);
-  cout << "IP addr: " << curIP << endl;
+  if (options[MAC_ADDR] || options[IP_ADDR]) {
+    cout << "Programmed MAC and IP address at 0x00FF0000 are " << endl;
+    cout << "MAC addr: " << hexn<12> << get_mac_addr(deviceSerial.c_str()) << endl;
+    string curIP(" ", 16);
+    get_ip_addr(deviceSerial.c_str(), &curIP[0]);
+    cout << "IP addr: " << curIP << endl;
+  }
 
   // write a new MAC address
-  uint64_t mac_addr = get_mac_input();
-  if (mac_addr != 0) {
-    cout << concol::RED << "Writing new MAC address" << concol::RESET << endl;
-    set_mac_addr(deviceSerial.c_str(), mac_addr);
+  if (options[MAC_ADDR]) {
+    uint64_t mac_addr = get_mac_input();
+    if (mac_addr != 0) {
+      cout << concol::RED << "Writing new MAC address" << concol::RESET << endl;
+      set_mac_addr(deviceSerial.c_str(), mac_addr);
+    }
   }
 
   // write a new IP address
-  string ip_addr = get_ip_input();
-  if (ip_addr != "") {
-    cout << concol::RED << "Writing new IP address" << concol::RESET << endl;
-    set_ip_addr(deviceSerial.c_str(), ip_addr.c_str());
+  if (options[IP_ADDR]) {
+    string ip_addr = get_ip_input();
+    if (ip_addr != "") {
+      cout << concol::RED << "Writing new IP address" << concol::RESET << endl;
+      set_ip_addr(deviceSerial.c_str(), ip_addr.c_str());
+    }
   }
 
   // read SPI setup sequence
-  uint32_t setup[36];
-  read_flash(deviceSerial.c_str(), 0x0, 36, setup);
-  cout << "Programmed setup SPI sequence:" << endl;
-  for (size_t ct=0; ct < 36; ct++) {
-    cout << hexn<8> << setup[ct] << " ";
-    if (ct % 4 == 3) cout << endl;
-  }
+  if (options[SPI]) {
+    uint32_t setup[36];
+    read_flash(deviceSerial.c_str(), 0x0, 36, setup);
+    cout << "Programmed setup SPI sequence:" << endl;
+    for (size_t ct=0; ct < 36; ct++) {
+      cout << hexn<8> << setup[ct] << " ";
+      if (ct % 4 == 3) cout << endl;
+    }
 
-  // write new SPI setup sequence
-  if (spi_prompt()) {
+    // write new SPI setup sequence
     cout << concol::RED << "Writing SPI startup sequence" << concol::RESET << endl;
     write_SPI_setup(deviceSerial.c_str());
   }
-  /*
-  cout << concol::RED << "Reading flash addr 0x00FA0000" << concol::RESET << endl;
-  uint32_t buffer[4] = {0, 0, 0, 0};
-  read_flash(deviceSerial.c_str(), 0x00FA0000, 4, buffer);
-  cout << "Received " << hexn<8> << buffer[0] << " " << hexn<8> << buffer[1];
-  cout << " " << hexn<8> << buffer[2] << " " << hexn<8> << buffer[3] << endl;
-
-  cout << concol::RED << "Erasing/writing flash addr 0x00FA0000 (128 words)" << concol::RESET << endl;
-  vector<uint32_t> testData;
-  for (size_t ct=0; ct<128; ct++){
-    testData.push_back(0x00FA0000 + static_cast<uint32_t>(ct));
-  }
-  write_flash(deviceSerial.c_str(), 0x00FA0000, testData.data(), testData.size());
-
-  cout << concol::RED << "Reading flash addr 0x00FA0000" << concol::RESET << endl;
-  read_flash(deviceSerial.c_str(), 0x00FA0000, 4, buffer);
-  cout << "Received " << hexn<8> << buffer[0] << " " << hexn<8> << buffer[1];
-  cout << " " << hexn<8> << buffer[2] << " " << hexn<8> << buffer[3] << endl;
-
-  cout << concol::RED << "Erasing/writing flash addr 0x00FA0000 (2 words)" << concol::RESET << endl;
-  buffer[0] = 0xBADD1234;
-  buffer[1] = 0x1234F00F;
-  write_flash(deviceSerial.c_str(), 0x00FA0000, buffer, 2);
-
-  cout << concol::RED << "Reading flash addr 0x00FA0000" << concol::RESET << endl;
-  read_flash(deviceSerial.c_str(), 0x00FA0000, 4, buffer);
-  cout << "Received " << hexn<8> << buffer[0] << " " << hexn<8> << buffer[1];
-  cout << " " << hexn<8> << buffer[2] << " " << hexn<8> << buffer[3] << endl;
-  */
 
   disconnect_APS(deviceSerial.c_str());
-
-  delete[] serialBuffer;
 
   cout << concol::RED << "Finished!" << concol::RESET << endl;
 
