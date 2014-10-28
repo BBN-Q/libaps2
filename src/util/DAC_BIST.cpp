@@ -23,6 +23,7 @@ int main(int argc, char const *argv[])
 	set_logging_level(logDEBUG1);
 
 	connect_APS(deviceSerial.c_str());
+	stop(deviceSerial.c_str());
 
 	// force initialize device
 	initAPS(deviceSerial.c_str(), 1);
