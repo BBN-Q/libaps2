@@ -56,6 +56,29 @@ string get_ip_input() {
   return input;
 }
 
+bool spi_prompt() {
+  cout << "Do you want to program the SPI startup sequence? [y/N]: ";
+  string input = "";
+  getline(cin, input);
+  if (input.length() == 0) {
+    return false;
+  }
+  std::stringstream mystream(input);
+  char response;
+  mystream >> response;
+  switch (response) {
+    case 'y':
+    case 'Y':
+      return true;
+      break;
+    case 'n':
+    case 'N':
+    default:
+      return false;
+  }
+}
+
+
 int main(int argc, char* argv[])
 {
   argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
@@ -67,10 +90,12 @@ int main(int argc, char* argv[])
   if (parse.error())
    return -1;
 
-  if (options[HELP] || argc == 0) {
+  if (options[HELP]) {
     option::printUsage(std::cout, usage);
     return 0;
   }
+
+  bool interactiveMode = (argc == 0) ? true : false;
 
   for (option::Option* opt = options[UNKNOWN]; opt; opt = opt->next())
    std::cout << "Unknown option: " << opt->name << "\n";
@@ -93,16 +118,16 @@ int main(int argc, char* argv[])
 
   connect_APS(deviceSerial.c_str());
 
-  if (options[MAC_ADDR] || options[IP_ADDR]) {
+  if (options[MAC_ADDR] || options[IP_ADDR] || interactiveMode) {
     cout << "Programmed MAC and IP address at 0x00FF0000 are " << endl;
     cout << "MAC addr: " << hexn<12> << get_mac_addr(deviceSerial.c_str()) << endl;
-    string curIP(" ", 16);
-    get_ip_addr(deviceSerial.c_str(), &curIP[0]);
+    char curIP[16];
+    get_ip_addr(deviceSerial.c_str(), curIP);
     cout << "IP addr: " << curIP << endl;
   }
 
   // write a new MAC address
-  if (options[MAC_ADDR]) {
+  if (options[MAC_ADDR] || interactiveMode) {
     uint64_t mac_addr = get_mac_input();
     if (mac_addr != 0) {
       cout << concol::RED << "Writing new MAC address" << concol::RESET << endl;
@@ -111,7 +136,7 @@ int main(int argc, char* argv[])
   }
 
   // write a new IP address
-  if (options[IP_ADDR]) {
+  if (options[IP_ADDR] || interactiveMode) {
     string ip_addr = get_ip_input();
     if (ip_addr != "") {
       cout << concol::RED << "Writing new IP address" << concol::RESET << endl;
@@ -120,18 +145,24 @@ int main(int argc, char* argv[])
   }
 
   // read SPI setup sequence
-  if (options[SPI]) {
+  if (options[SPI] || interactiveMode) {
     uint32_t setup[36];
-    read_flash(deviceSerial.c_str(), 0x0, 36, setup);
+    read_flash(deviceSerial.c_str(), 0x0, 32, setup);
     cout << "Programmed setup SPI sequence:" << endl;
-    for (size_t ct=0; ct < 36; ct++) {
+    for (size_t ct=0; ct < 32; ct++) {
       cout << hexn<8> << setup[ct] << " ";
       if (ct % 4 == 3) cout << endl;
     }
 
-    // write new SPI setup sequence
-    cout << concol::RED << "Writing SPI startup sequence" << concol::RESET << endl;
-    write_SPI_setup(deviceSerial.c_str());
+    bool runSPI = true;
+    if (interactiveMode){
+      runSPI = spi_prompt();
+    }
+    if (runSPI) {
+      // write new SPI setup sequence
+      cout << concol::RED << "Writing SPI startup sequence" << concol::RESET << endl;
+      write_SPI_setup(deviceSerial.c_str());
+    }
   }
 
   disconnect_APS(deviceSerial.c_str());
