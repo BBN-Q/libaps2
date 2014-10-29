@@ -59,6 +59,8 @@ int main(int argc, char* argv[])
 	if (options[TRIG_MODE]) {
 		triggerSource = TRIGGER_SOURCE(atoi(options[TRIG_MODE].arg));
 	}
+	set_logging_level(logLevel);
+	set_log("stdout");
 
 	//Trigger interval -- default of 10ms
 	double trigInterval = 10e-3;
@@ -75,9 +77,10 @@ int main(int argc, char* argv[])
 	}
 
 	string deviceSerial = get_device_id();
-
-	set_logging_level(logLevel);
-	set_log("stdout");
+	if (deviceSerial.empty()){
+		cout << concol::RED << "No APS2 devices connected! Exiting..." << concol::RESET << endl;
+		return 0;
+	}
 
 	connect_APS(deviceSerial.c_str());
 

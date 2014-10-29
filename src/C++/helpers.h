@@ -22,7 +22,7 @@ string get_device_id() {
   cout << concol::RED << numDevices << " APS device" << (numDevices > 1 ? "s": "")  << " found" << concol::RESET << endl;
 
   if (numDevices < 1)
-    return 0;
+    return "";
   
   const char ** serialBuffer = new const char*[numDevices];
   get_deviceSerials(serialBuffer);

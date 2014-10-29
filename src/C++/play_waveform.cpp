@@ -71,6 +71,8 @@ int main(int argc, char* argv[])
 	if (options[TRIG_INTERVAL]) {
 		trigInterval = atof(options[TRIG_INTERVAL].arg);
 	}
+	set_logging_level(logLevel);
+	set_log("stdout");
 
 	//Load the waveform files 
 	vector<int16_t> wfA, wfB;
@@ -94,9 +96,10 @@ int main(int argc, char* argv[])
 	wfB.resize(longestLength, 0);
 
 	string deviceSerial = get_device_id();
-
-	set_logging_level(logLevel);
-	set_log("stdout");
+	if (deviceSerial.empty()){
+		cout << concol::RED << "No APS2 devices connected! Exiting..." << concol::RESET << endl;
+		return 0;
+	}
 
 	connect_APS(deviceSerial.c_str());
 

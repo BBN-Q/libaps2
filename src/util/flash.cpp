@@ -115,7 +115,11 @@ int main(int argc, char* argv[])
   set_logging_level(logLevel);
 
   string deviceSerial = get_device_id();
-
+  if (deviceSerial.empty()){
+    cout << concol::RED << "No APS2 devices connected! Exiting..." << concol::RESET << endl;
+    return 0;
+  }
+  
   connect_APS(deviceSerial.c_str());
 
   if (options[MAC_ADDR] || options[IP_ADDR] || interactiveMode) {
