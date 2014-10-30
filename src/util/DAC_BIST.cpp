@@ -49,9 +49,7 @@ void print_results(const vector<uint32_t> & results) {
 int main(int argc, char const *argv[])
 {
 
-	cout << endl;
-	cout << concol::BOLDMAGENTA << "APS2 Analog Data integrity Test" << concol::RESET << endl;
-	cout << endl;
+	print_title("BBN APS2 Analog Data integrity Test");
 
 	//Poll for which device to test
 	string deviceSerial = get_device_id();

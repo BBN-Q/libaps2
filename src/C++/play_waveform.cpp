@@ -34,6 +34,9 @@ const option::Descriptor usage[] =
 
 int main(int argc, char* argv[])
 {
+
+	print_title("BBN APS2 Waveform Player");
+
 	argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
 	option::Stats  stats(usage, argc, argv);
 	option::Option *options = new option::Option[stats.options_max];
@@ -81,13 +84,13 @@ int main(int argc, char* argv[])
 		ifs.open(std::string(options[WFA_FILE].arg));
 		std::copy(std::istream_iterator<int16_t>(ifs), std::istream_iterator<int16_t>(), std::back_inserter(wfA) );
 		ifs.close();
-		cout << "Loaded " << wfA.size() << " samples for waveform A." << endl;
+		cout << concol::MAGENTA << "Loaded " << wfA.size() << " samples for waveform A." << concol::RESET << endl;
 	}
 
 	if (options[WFB_FILE]) {
 		ifs.open(std::string(options[WFB_FILE].arg));
 		std::copy(std::istream_iterator<int16_t>(ifs), std::istream_iterator<int16_t>(), std::back_inserter(wfB) );
-		cout << "Loaded " << wfB.size() << " samples for waveform B." << endl;
+		cout << concol::MAGENTA << "Loaded " << wfB.size() << " samples for waveform B." << concol::RESET << endl;
 	}
 
 	//Pad the waveforms so they are the same size

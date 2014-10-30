@@ -54,3 +54,11 @@ string get_device_id() {
   return deviceSerial;
 
 }
+
+
+void print_title(const string & title){
+  concol::concolinit();
+  cout << endl;
+  cout << concol::BOLDMAGENTA << title << concol::RESET << endl;
+  cout << endl;
+}

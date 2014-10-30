@@ -79,9 +79,7 @@ void run_test(string deviceSerial, string memArea, uint32_t memStartAddr, uint32
 
 int main(int argc, char const *argv[])
 {
-	cout << endl;
-	cout << concol::BOLDMAGENTA << "APS2 Communications Test" << concol::RESET << endl;
-	cout << endl;
+	print_title("BBN APS2 Communications Test");
 
 	//Poll for which device to test
 	string deviceSerial = get_device_id();

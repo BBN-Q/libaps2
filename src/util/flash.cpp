@@ -17,8 +17,8 @@ const option::Descriptor usage[] =
                                            "Options:" },
   {HELP,    0,"" , "help", option::Arg::None, "  --help  \tPrint usage and exit." },
   {IP_ADDR, 0,"", "IP", option::Arg::None, "  --IP  \tProgram a new IP address." },
-  {MAC_ADDR, 0,"", "MAC", option::Arg::Required, "  --MAC  \tProgram a new MAC address." },
-  {SPI,  0,"", "SPI", option::Arg::Numeric, "  --SPI  \tWrite the SPI startup sequence." },
+  {MAC_ADDR, 0,"", "MAC", option::Arg::None, "  --MAC  \tProgram a new MAC address." },
+  {SPI,  0,"", "SPI", option::Arg::None, "  --SPI  \tWrite the SPI startup sequence." },
   {LOG_LEVEL,  0,"", "logLevel", option::Arg::Numeric, "  --logLevel  \t(optional) Logging level level to print to console (optional; default=2/INFO)." },
   {UNKNOWN, 0,"" ,  ""   , option::Arg::None, "\nExamples:\n"
                                            "  flash --IP\n"
@@ -34,7 +34,7 @@ std::ostream& hexn(std::ostream& out)
 }
 
 uint64_t get_mac_input() {
-  cout << "New MAC address [ENTER to skip]: ";
+  cout << concol::YELLOW << "New MAC address [ENTER to skip]: " << concol::RESET;
   string input = "";
   getline(cin, input);
 
@@ -50,14 +50,14 @@ uint64_t get_mac_input() {
 }
 
 string get_ip_input() {
-  cout << "New IP address [ENTER to skip]: ";
+  cout << concol::YELLOW << "New IP address [ENTER to skip]: " << concol::RESET;
   string input = "";
   getline(cin, input);
   return input;
 }
 
 bool spi_prompt() {
-  cout << "Do you want to program the SPI startup sequence? [y/N]: ";
+  cout << concol::YELLOW << "Do you want to program the SPI startup sequence? [y/N]: " << concol::RESET;
   string input = "";
   getline(cin, input);
   if (input.length() == 0) {
@@ -81,6 +81,9 @@ bool spi_prompt() {
 
 int main(int argc, char* argv[])
 {
+
+  print_title("BBN APS2 Flash Writing Utility");
+
   argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
   option::Stats  stats(usage, argc, argv);
   option::Option *options = new option::Option[stats.options_max];
@@ -103,9 +106,6 @@ int main(int argc, char* argv[])
   for (int i = 0; i < parse.nonOptionsCount(); ++i)
    std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
-  concol::concolinit();
-  cout << concol::RED << "BBN AP2 Flash Test Executable" << concol::RESET << endl;
-
   //Logging level
   TLogLevel logLevel = logINFO;
   if (options[LOG_LEVEL]) {
@@ -123,18 +123,18 @@ int main(int argc, char* argv[])
   connect_APS(deviceSerial.c_str());
 
   if (options[MAC_ADDR] || options[IP_ADDR] || interactiveMode) {
-    cout << "Programmed MAC and IP address at 0x00FF0000 are " << endl;
-    cout << "MAC addr: " << hexn<12> << get_mac_addr(deviceSerial.c_str()) << endl;
+    cout << concol::CYAN << "Programmed MAC and IP address at 0x00FF0000 are " << concol::RESET << endl;
+    cout << concol::CYAN << "MAC addr: " << hexn<12> << get_mac_addr(deviceSerial.c_str()) << concol::RESET << endl;
     char curIP[16];
     get_ip_addr(deviceSerial.c_str(), curIP);
-    cout << "IP addr: " << curIP << endl;
+    cout << concol::CYAN << "IP addr: " << curIP << concol::RESET << endl;
   }
 
   // write a new MAC address
   if (options[MAC_ADDR] || interactiveMode) {
     uint64_t mac_addr = get_mac_input();
     if (mac_addr != 0) {
-      cout << concol::RED << "Writing new MAC address" << concol::RESET << endl;
+      cout << concol::CYAN << "Writing new MAC address" << concol::RESET << endl;
       set_mac_addr(deviceSerial.c_str(), mac_addr);
     }
   }
@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
   if (options[IP_ADDR] || interactiveMode) {
     string ip_addr = get_ip_input();
     if (ip_addr != "") {
-      cout << concol::RED << "Writing new IP address" << concol::RESET << endl;
+      cout << concol::CYAN << "Writing new IP address" << concol::RESET << endl;
       set_ip_addr(deviceSerial.c_str(), ip_addr.c_str());
     }
   }
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
   if (options[SPI] || interactiveMode) {
     uint32_t setup[36];
     read_flash(deviceSerial.c_str(), 0x0, 32, setup);
-    cout << "Programmed setup SPI sequence:" << endl;
+    cout << concol::CYAN << "Programmed setup SPI sequence:" << concol::RESET << endl;
     for (size_t ct=0; ct < 32; ct++) {
       cout << hexn<8> << setup[ct] << " ";
       if (ct % 4 == 3) cout << endl;
@@ -164,14 +164,14 @@ int main(int argc, char* argv[])
     }
     if (runSPI) {
       // write new SPI setup sequence
-      cout << concol::RED << "Writing SPI startup sequence" << concol::RESET << endl;
+      cout << concol::CYAN << "Writing SPI startup sequence" << concol::RESET << endl;
       write_SPI_setup(deviceSerial.c_str());
     }
   }
 
   disconnect_APS(deviceSerial.c_str());
 
-  cout << concol::RED << "Finished!" << concol::RESET << endl;
+  cout << concol::CYAN << "Finished!" << concol::RESET << endl;
 
   return 0;
 }

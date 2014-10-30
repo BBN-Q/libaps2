@@ -28,6 +28,9 @@ const option::Descriptor usage[] =
 
 int main(int argc, char* argv[])
 {
+
+	print_title("BBN APS2 Sequence Player");
+
 	argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
 	option::Stats  stats(usage, argc, argv);
 	option::Option *options = new option::Option[stats.options_max];
