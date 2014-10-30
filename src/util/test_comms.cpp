@@ -47,8 +47,9 @@ int main(int argc, char const *argv[])
 	std::default_random_engine generator;
 	std::uniform_int_distribution<uint32_t> wordDistribution;
 
-	vector<uint32_t> testVec;
-	for (size_t ct=0; ct < (128*1048576/4); ct++){
+	size_t testLength = 1048576; //test size in 32 bit words
+	vector<uint32_t> testVec(testLength);
+	for (size_t ct=0; ct < (testLength); ct++){
 		testVec.push_back(wordDistribution(generator));
 	}
 
@@ -57,24 +58,27 @@ int main(int argc, char const *argv[])
 	uint32_t startAddr = addrDistribution(generator);
 	startAddr &= ~(0x3); //align address to 32 bit word
 
+	cout << endl << endl;
 	cout << concol::RED << "Testing sequence memory:" << concol::RESET << endl;
-	cout << concol::RED << "writing 128MB starting at " << hexn<8> << startAddr << " ..... ";
+	cout << concol::RED << "writing " << 4*testLength/1048576 << " MB starting at " << hexn<8> << startAddr << " ..... ";
+	cout.flush();
 	auto start = std::chrono::steady_clock::now();
 	write_memory(deviceSerial.c_str(), startAddr, testVec.data(), testVec.size());
 	auto stop = std::chrono::steady_clock::now();
-	cout << " took " << std::chrono::duration_cast<std::chrono::seconds>(stop-start).count() << " seconds." << concol::RESET << endl;
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop-start).count();
+	cout << " at " << 4.0*testLength/duration << " MB/s." << concol::RESET << endl;
 
 	//Check a few 256 count entries for correctness
-	addrDistribution = std::uniform_int_distribution<uint32_t>(0, 0x20000000U-1024);
+	addrDistribution = std::uniform_int_distribution<uint32_t>(startAddr, startAddr+4*testLength-1024);
 	for (size_t ct=0; ct < 10; ct++){
 		vector<uint32_t> checkVec(256);
 		uint32_t checkAddr = addrDistribution(generator);
-		checkAddr &= !(0x3); //align address to 32 bit word
-		cout << concol::RED << "reading 1024 bytes starting at " << hexn<8> << checkAddr << " ..... " << concol::RESET;
+		checkAddr &= ~(0x3); //align address to 32 bit word
+		cout << concol::RED << "reading 1 kB starting at " << hexn<8> << checkAddr << " ..... " << concol::RESET;
 		read_memory(deviceSerial.c_str(), checkAddr, checkVec.data(), 256);
 		bool passed = true;
 		for (auto val : checkVec){
-			if (val != testVec[checkAddr/4]) {
+			if (val != testVec[(checkAddr-startAddr)/4]) {
 				passed &= false;
 			}
 			checkAddr += 4;
