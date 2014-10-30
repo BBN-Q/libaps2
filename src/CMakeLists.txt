@@ -61,9 +61,10 @@ ADD_EXECUTABLE(play_sequence
 )
 TARGET_LINK_LIBRARIES(play_sequence aps2)
 
-ADD_EXECUTABLE(waveforms
-	./C++/waveforms.cpp
+ADD_EXECUTABLE(test_comms
+	./util/test_comms.cpp
 )
+TARGET_LINK_LIBRARIES(test_comms aps2)
 
 ADD_EXECUTABLE(flash
 	./util/flash.cpp
@@ -82,7 +83,6 @@ ADD_EXECUTABLE(DAC_BIST
 )
 
 TARGET_LINK_LIBRARIES(flash aps2)
-TARGET_LINK_LIBRARIES(waveforms aps2)
 TARGET_LINK_LIBRARIES(reset aps2)
 TARGET_LINK_LIBRARIES(program aps2)
 TARGET_LINK_LIBRARIES(DAC_BIST aps2)

@@ -6,6 +6,7 @@ Runs the DAC BIST test to confirm analog output data integrity.
 #include <random>
 #include <functional>
 
+#include "concol.h"
 #include "libaps2.h"
 #include "../C++/helpers.h"
 
