@@ -14,12 +14,12 @@ string get_device_id() {
   /*
   Helper funciton than enumerates and asks for which APS to talk to.
   */
-  cout << concol::RED << "Enumerating devices" << concol::RESET << endl;
+  cout << concol::CYAN << "Enumerating devices" << concol::RESET << endl;
 
   unsigned numDevices;
   get_numDevices(&numDevices);
 
-  cout << concol::RED << numDevices << " APS device" << (numDevices > 1 ? "s": "")  << " found" << concol::RESET << endl;
+  cout << concol::CYAN << numDevices << " APS device" << (numDevices > 1 ? "s": "")  << " found" << concol::RESET << endl;
 
   if (numDevices < 1)
     return "";
@@ -28,7 +28,7 @@ string get_device_id() {
   get_deviceSerials(serialBuffer);
 
   for (unsigned cnt=0; cnt < numDevices; cnt++) {
-    cout << concol::RED << "Device " << cnt << " serial #: " << serialBuffer[cnt] << concol::RESET << endl;
+    cout << concol::CYAN << "Device " << cnt << " serial #: " << serialBuffer[cnt] << concol::RESET << endl;
   }
 
   string deviceSerial;
@@ -38,7 +38,7 @@ string get_device_id() {
   }
   else {
 
-    cout << "Choose device ID [0]: ";
+    cout << concol::YELLOW << "Choose device ID [0]: " << concol::RESET << endl;
     string input = "";
     getline(cin, input);
 

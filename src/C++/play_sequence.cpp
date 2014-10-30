@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
 	double uptime;
 	get_uptime(deviceSerial.c_str(), &uptime);
 
-	cout << concol::RED << "Uptime for device " << deviceSerial << " is " << uptime << " seconds" << concol::RESET << endl;
+	cout << concol::CYAN << "Uptime for device " << deviceSerial << " is " << uptime << " seconds" << concol::RESET << endl;
 
 	// force initialize device
 	initAPS(deviceSerial.c_str(), 1);
@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
 
 	//For software trigger, trigger on key stroke
 	if (triggerSource == 2) {
-		cout << "Press t-Return to trigger or q-Return to exit" << endl;
+		cout << concol::YELLOW << "Press t-Return to trigger or q-Return to exit" << concol::RESET << endl;
 		while(true) {
 			char keyStroke = cin.get();
 			if (keyStroke == 't') {
@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	else {
-		cout << "Press any key to stop";
+		cout << concol::YELLOW << "Press any key to stop" << concol::RESET;
 		cin.get();
 	}
 

@@ -1,5 +1,9 @@
 /*
-Runs the DAC BIST test to confirm analog output data integrity. 
+Tests the analog output data integrity in three different domains. 
+
+FPGA: before serialization on the FPGA
+LVDS: arriving at DAC
+SYNC: on output clock on DAC
 */
 
 #include <iostream>
@@ -15,8 +19,39 @@ using std::endl;
 using std::string;
 using std::vector;
 
+void print_results(const vector<uint32_t> & results) {
+
+		auto print_pass_fail = [](const bool & result){
+			if (result) {
+				cout << concol::GREEN << "pass" << concol::RESET;
+			}
+			else {
+				cout << concol::RED << "fail" << concol::RESET;
+			}
+		};
+
+		cout << "FPGA: ";
+		print_pass_fail(results[2] == results[0]);
+		cout << " / ";
+		print_pass_fail(results[3] == results[1]);
+
+		cout << " LVDS: ";
+		print_pass_fail(results[4] == results[0]);
+		cout << " / ";
+		print_pass_fail(results[5] == results[1]);
+
+		cout << " SYNC: ";
+		print_pass_fail(results[6] == results[4]);
+		cout << " / ";
+		print_pass_fail(results[7] == results[5]);
+}
+
 int main(int argc, char const *argv[])
 {
+
+	cout << endl;
+	cout << concol::BOLDMAGENTA << "APS2 Analog Data integrity Test" << concol::RESET << endl;
+	cout << endl;
 
 	//Poll for which device to test
 	string deviceSerial = get_device_id();
@@ -42,17 +77,11 @@ int main(int argc, char const *argv[])
 
 	vector<int16_t> testVec;
 	vector<uint32_t> results(8);
-	string FPGAPhase1;
-	string FPGAPhase2;
-	string LVDSPhase1;
-	string LVDSPhase2;
-	string SYNCPhase1;
-	string SYNCPhase2;
 
 	//Loop through DACs
 	for (int dac = 0; dac < 2; ++dac)
 	{
-		cout << "DAC " << dac << endl;
+		cout << concol::CYAN << "DAC " << dac << concol::RESET << endl;
 
 		for (int bit = 0; bit < 14; ++bit)
 		{
@@ -64,15 +93,8 @@ int main(int argc, char const *argv[])
 			}
 			run_DAC_BIST(deviceSerial.c_str(), dac, testVec.data(), testVec.size(), results.data());
 
-			FPGAPhase1 = results[2] == results[0] ? "pass" : "fail";
-			FPGAPhase2 = results[3] == results[1] ? "pass" : "fail";
-			LVDSPhase1 = results[4] == results[0] ? "pass" : "fail";
-			LVDSPhase2 = results[5] == results[1] ? "pass" : "fail";
-			SYNCPhase1 = results[6] == results[4] ? "pass" : "fail";
-			SYNCPhase2 = results[7] == results[5] ? "pass" : "fail";
-
-			cout << "FPGA: " << FPGAPhase1 << " / " << FPGAPhase2 << " LVDS: " << LVDSPhase1 << " / " << LVDSPhase2 << " SYNC: " << SYNCPhase1 << " / " << SYNCPhase2 << endl;
-
+			print_results(results);
+			cout << endl;
 		}
 		cout << endl;
 		cout << "Testing random waveform... ";
@@ -83,16 +105,10 @@ int main(int argc, char const *argv[])
 		}
 		run_DAC_BIST(deviceSerial.c_str(), dac, testVec.data(), testVec.size(), results.data());
 
-		FPGAPhase1 = results[2] == results[0] ? "pass" : "fail";
-		FPGAPhase2 = results[3] == results[1] ? "pass" : "fail";
-		LVDSPhase1 = results[4] == results[0] ? "pass" : "fail";
-		LVDSPhase2 = results[5] == results[1] ? "pass" : "fail";
-		SYNCPhase1 = results[6] == results[4] ? "pass" : "fail";
-		SYNCPhase2 = results[7] == results[5] ? "pass" : "fail";
+		print_results(results);
 
-		cout << "FPGA: " << FPGAPhase1 << " / " << FPGAPhase2 << " LVDS: " << LVDSPhase1 << " / " << LVDSPhase2 << " SYNC: " << SYNCPhase1 << " / " << SYNCPhase2 << endl;
 		cout << endl;
-		cout << endl;
+
 	}
 
 	disconnect_APS(deviceSerial.c_str());

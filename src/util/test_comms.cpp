@@ -41,9 +41,9 @@ void run_test(string deviceSerial, string memArea, uint32_t memStartAddr, uint32
 	uint32_t testStartAddr = addrDistribution(generator);
 	testStartAddr &= ~(0x3); //align address to 32 bit word
 
-	cout << endl << endl;
-	cout << concol::RED << "Testing " << memArea << " memory:" << concol::RESET << endl;
-	cout << concol::RED << "writing " << testLength/1024 << " kB starting at " << hexn<8> << testStartAddr << " ..... ";
+	cout << endl;
+	cout << concol::CYAN << "Testing " << memArea << " memory:" << concol::RESET << endl;
+	cout << "writing " << testLength/1024 << " kB starting at " << hexn<8> << testStartAddr << " ..... ";
 	cout.flush();
 	auto start = std::chrono::steady_clock::now();
 	write_memory(deviceSerial.c_str(), testStartAddr, testVec.data(), testVec.size());
@@ -57,7 +57,7 @@ void run_test(string deviceSerial, string memArea, uint32_t memStartAddr, uint32
 		vector<uint32_t> checkVec(256);
 		uint32_t checkAddr = addrDistribution(generator);
 		checkAddr &= ~(0x3); //align address to 32 bit word
-		cout << concol::RED << "reading 1 kB starting at " << hexn<8> << checkAddr << " ..... " << concol::RESET;
+		cout << "reading 1 kB starting at " << hexn<8> << checkAddr << " ..... ";
 		read_memory(deviceSerial.c_str(), checkAddr, checkVec.data(), 256);
 		bool passed = true;
 		for (auto val : checkVec){
@@ -79,6 +79,9 @@ void run_test(string deviceSerial, string memArea, uint32_t memStartAddr, uint32
 
 int main(int argc, char const *argv[])
 {
+	cout << endl;
+	cout << concol::BOLDMAGENTA << "APS2 Communications Test" << concol::RESET << endl;
+	cout << endl;
 
 	//Poll for which device to test
 	string deviceSerial = get_device_id();
