@@ -70,6 +70,14 @@ classdef APS2 < handle
             val = aps2_getter(obj, 'get_firmware_version');
         end
         
+        function val = get_uptime(obj)
+            val = aps2_getter(obj, 'get_uptime');
+        end
+
+        function val = get_fpga_temperature(obj)
+            val = aps2_getter(obj, 'get_fpga_temperature');
+        end
+
         function run(obj)
             aps2_call(obj, 'run');
         end

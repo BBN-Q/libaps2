@@ -29,8 +29,10 @@ typedef enum APS2_STATUS {
 	APS2_UNCONNECTED = -3,
 	APS2_RESET_TIMEOUT =-4,
 	APS2_FILELOG_ERROR = -5,
-	APS2_SEQFILE_FAIL = -6
-} APS2_STATUS;
+	APS2_SEQFILE_FAIL = -6,
+	APS2_PLL_LOST_LOCK = -7,
+	APS2_MMCM_LOST_LOCK = -8,
+};
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +48,10 @@ EXPORT APS2_STATUS disconnect_APS(const char *);
 
 EXPORT APS2_STATUS reset(const char *, int);
 EXPORT APS2_STATUS initAPS(const char *, int);
+
 EXPORT APS2_STATUS get_firmware_version(const char *, unsigned int *);
 EXPORT APS2_STATUS get_uptime(const char *, double *);
+EXPORT APS2_STATUS get_fpga_temperature(const char *, double *);
 
 EXPORT APS2_STATUS set_sampleRate(const char *, unsigned int);
 EXPORT APS2_STATUS get_sampleRate(const char *, unsigned int*);
