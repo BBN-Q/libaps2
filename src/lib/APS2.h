@@ -34,7 +34,6 @@ public:
 	int store_image(const string & bitFile, const int & position = 0);
 	int select_image(const int &);
 	int program_FPGA(const string &);
-	uint32_t get_firmware_version();
 
 	int setup_VCXO() const;
 	int setup_PLL() const;
@@ -44,7 +43,9 @@ public:
 	APSStatusBank_t read_status_registers();
 	uint32_t read_status_register(const STATUS_REGISTERS &);
 
+	uint32_t get_firmware_version();
 	double get_uptime();
+	double get_fpga_temperature();
 
 	void set_sampleRate(const unsigned int &);
 	unsigned int get_sampleRate();

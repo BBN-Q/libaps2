@@ -14,7 +14,6 @@ enum APS2_STATUS {
 	APS2_SEQFILE_FAIL = -6,
 	APS2_PLL_LOST_LOCK = -7,
 	APS2_MMCM_LOST_LOCK = -8,
-
 };
 
 static std::map<APS2_STATUS, std::string> messages = {

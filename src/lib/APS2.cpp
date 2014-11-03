@@ -121,6 +121,16 @@ APSStatusBank_t APS2::read_status_registers(){
 	return statusRegs;
 }
 
+uint32_t APS2::get_firmware_version() {
+	// Reads version information from status registers
+	APSStatusBank_t statusRegs = read_status_registers();
+	uint32_t version = statusRegs.userFirmwareVersion;
+
+	FILE_LOG(logDEBUG) << "Firmware version on FPGA is " << myhex << version;
+	
+	return version;
+}
+
 double APS2::get_uptime(){
 	/*
 	* Return the board uptime in seconds.
@@ -128,8 +138,25 @@ double APS2::get_uptime(){
 	//Read the status registers
 	APSStatusBank_t statusRegs = read_status_registers();
 	//Put together the seconds and nanoseconds parts
-	double intPart;
+	double intPart; //dummy integer part
 	return static_cast<double>(statusRegs.uptimeSeconds) + modf(static_cast<double>(statusRegs.uptimeNanoSeconds)/1e9, &intPart);
+}
+
+double APS2::get_fpga_temperature(){
+	/*
+	* Return the FGPA die temperature in C.
+	*/ 
+	//Read the status registers
+	APSStatusBank_t statusRegs = read_status_registers();
+
+	//Temperature is return in bottom 12bits of user status and needs to be converted from the 12bit ADC value
+	double temp = static_cast<double>((statusRegs.userStatus & 0xfff))*503.975/4096 - 273.15;
+
+	//Don't return a stupid number of digits
+	//It seems the scale goes from 0-504K with 12bits = 0.12 degrees precision at best
+	temp = round(10*temp)/10;
+
+	return temp;
 }
 
 int APS2::store_image(const string & bitFile, const int & position) { /* see header for position default = 0 */
@@ -212,16 +239,6 @@ int APS2::program_FPGA(const string & bitFile) {
 		retrycnt++;
 	}
 	return APS2_RESET_TIMEOUT;
-}
-
-uint32_t APS2::get_firmware_version() {
-	// Reads version information from status registers
-	APSStatusBank_t statusRegs = read_status_registers();
-	uint32_t version = statusRegs.userFirmwareVersion;
-
-	FILE_LOG(logDEBUG) << "Firmware version on FPGA is " << myhex << version;
-	
-	return version;
 }
 
 void APS2::set_sampleRate(const unsigned int & freq){

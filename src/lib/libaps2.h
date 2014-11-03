@@ -33,8 +33,10 @@ EXPORT APS2_STATUS disconnect_APS(const char *);
 
 EXPORT APS2_STATUS reset(const char *, int);
 EXPORT APS2_STATUS initAPS(const char *, int);
+
 EXPORT APS2_STATUS get_firmware_version(const char *, uint32_t *);
 EXPORT APS2_STATUS get_uptime(const char *, double *);
+EXPORT APS2_STATUS get_fpga_temperature(const char *, double *);
 
 EXPORT APS2_STATUS set_sampleRate(const char *, unsigned int);
 EXPORT APS2_STATUS get_sampleRate(const char *, unsigned int*);

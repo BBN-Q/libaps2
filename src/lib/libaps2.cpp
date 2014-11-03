@@ -197,6 +197,11 @@ APS2_STATUS get_uptime(const char * deviceSerial, double * upTime) {
 	return aps2_getter(deviceSerial, func, upTime);
 }
 
+APS2_STATUS get_fpga_temperature(const char * deviceSerial, double * temp) {
+	auto func = bind(&APS2::get_fpga_temperature, _1);
+	return aps2_getter(deviceSerial, func, temp);
+}
+
 APS2_STATUS set_sampleRate(const char * deviceSerial, unsigned int freq) {
 	auto func = bind(&APS2::set_sampleRate, _1, freq);
 	return aps2_call(deviceSerial, func);
