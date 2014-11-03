@@ -7,7 +7,14 @@ push!(DL_LOAD_PATH, joinpath(dirname(@__FILE__), "../../build/"))
 typealias APS2_STATUS Cint
 
 const APS2_OK = 0
-const APS2_ERROR_MSG_LEN = 256
+
+const EXTERNAL = 0 
+const INTERNAL = 1
+const SOFTWARE = 2 
+
+const RUN_SEQUENCE = 0
+const TRIG_WAVEFORM = 1
+const CW_WAVEFORM = 2
 
 function check_status(status::APS2_STATUS)
 	if status != APS2_OK
@@ -88,57 +95,37 @@ init(aps::APS2, force) = init(aps::APS2, int32(force))
 
 @aps2_getter get_firmware_version Uint32
 @aps2_getter get_uptime Float64
+@aps2_getter get_fpga_temperature Float64
 
 @aps2_call run
 @aps2_call stop
 
+@aps2_setter set_run_mode Cint
+
 @aps2_setter set_channel_offset Float32
 @aps2_getter get_channel_offset Float32
 
+@aps2_setter set_channel_scale Float32
+@aps2_getter get_channel_scale Float32
 
+@aps2_setter set_channel_enabled Cint
+@aps2_getter get_channel_enabled Cint
 
+@aps2_setter set_trigger_source Cint
+@aps2_getter get_trigger_source Cint
+@aps2_setter set_trigger_interval Float64
+@aps2_getter get_trigger_interval Float64
+@aps2_call trigger
 
-# function read_memory(aps::APS2, addr, numWords)
-# 	buf = Array(Uint32, numWords)
-# 	ccall((:read_memory, "libaps2"), Cint, (Ptr{Cchar}, Uint32, Ptr{Uint32}, Uint32), aps.serial, addr, buf, numWords)
-# 	buf
-# end
+function read_memory(aps::APS2, addr, numWords)
+	buf = Array(Uint32, numWords)
+	ccall((:read_memory, "libaps2"), Cint, (Ptr{Cchar}, Uint32, Ptr{Uint32}, Uint32), aps.serial, addr, buf, numWords)
+	buf
+end
 
-# write_memory(aps::APS2, addr, data::Vector{Uint32}) =
-# 	ccall((:write_memory, "libaps2"), Cint, (Ptr{Cchar}, Uint32, Ptr{Uint32}, Uint32), aps.serial, addr, data, length(data))
+write_memory(aps::APS2, addr, data::Vector{Uint32}) =
+	ccall((:write_memory, "libaps2"), Cint, (Ptr{Cchar}, Uint32, Ptr{Uint32}, Uint32), aps.serial, addr, data, length(data))
 
-# set_channel_offset(aps::APS2, chan, offset) =
-# 	ccall((:set_channel_offset, "libaps2"), Cint, (Ptr{Cchar}, Cint, Float32), aps.serial, chan, offset)
-
-
-# function run_DAC_BIST(aps::APS2, dac, testVec::Vector{Int16})
-# 	results = Array(Uint32, 8)
-# 	passed = ccall((:run_DAC_BIST, "libaps2"),
-# 						Cint, (Ptr{Cchar}, Cint, Ptr{Int16}, Cuint, Ptr{Uint32}),
-# 						aps.serial, dac, testVec, length(testVec), results)
-# 	return passed, results
-# end
-
-# function test_BIST_bits(aps::APS2, dac)
-
-# 	passedVec = Array(Int, 14)
-# 	for bit = 0:13
-# 		print("Testing bit $bit: ")
-# 		testVec = (int16(rand(Bool, 100)) .<< bit) * (bit == 13 ? -1 : 1)
-# 		passedVec[bit+1], bistVals = run_DAC_BIST(aps, dac, testVec)
-# 		FPGAPhase1 = bistVals[3] == bistVals[1] ? "pass" : "fail"
-# 		FPGAPhase2 = bistVals[4] == bistVals[2] ? "pass" : "fail"
-# 		LVDSPhase1 = bistVals[5] == bistVals[1] ? "pass" : "fail"
-# 		LVDSPhase2 = bistVals[6] == bistVals[2] ? "pass" : "fail"
-# 		SYNCPhase1 = bistVals[7] == bistVals[7] ? "pass" : "fail"
-# 		SYNCPhase2 = bistVals[8] == bistVals[8] ? "pass" : "fail"
-# 		println("FPGA: $FPGAPhase1 / $FPGAPhase2; LVDS: $LVDSPhase1 / $LVDSPhase2; SYNC: $SYNCPhase1 / $SYNCPhase2")
-# 	end
-
-# 	return passedVec
-# end
-
-# set_DAC_SD(aps::APS2, dac, sd) = ccall((:set_DAC_SD, "libaps2"), Cint, (Ptr{Cchar}, Cint, Cchar), aps.serial, dac, sd)
 
 function create_test_waveform()
 	#Create a test pattern with the follow pattens separated by 10ns of zero:
