@@ -72,7 +72,7 @@ public:
 
 	void set_markers(const int &, const vector<uint8_t> &);
 
-	int set_run_mode(const RUN_MODE &);
+	void set_run_mode(const RUN_MODE &);
 
 	void write_sequence(const vector<uint64_t> &);
 	void clear_channel_data();

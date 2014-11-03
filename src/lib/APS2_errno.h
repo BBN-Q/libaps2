@@ -14,6 +14,7 @@ enum APS2_STATUS {
 	APS2_SEQFILE_FAIL = -6,
 	APS2_PLL_LOST_LOCK = -7,
 	APS2_MMCM_LOST_LOCK = -8,
+	APS2_UNKNOWN_RUN_MODE = -9
 };
 
 static std::map<APS2_STATUS, std::string> messages = {
@@ -22,6 +23,7 @@ static std::map<APS2_STATUS, std::string> messages = {
 	{APS2_FILELOG_ERROR, "Unable to open log file."},
 	{APS2_PLL_LOST_LOCK, "The PLL chip has lost its lock.  Try power cycling the module."},
 	{APS2_MMCM_LOST_LOCK, "The FPGA MMCM has lost its lock.  Try resetting the module."},
+	{APS2_UNKNOWN_RUN_MODE, "Unknown APS2 run mode.  Available options are RUN_SEQUENCE, TRIG_WAVEFORM, CW_WAVEFORM"},
 };
 
 

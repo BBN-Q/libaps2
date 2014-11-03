@@ -179,15 +179,12 @@ Getter calls return the value in the appropriate pointer.
 
 	Changes the APS2 run mode to sequence (RUN_SEQUENCE, the default),
 	triggered  waveform (TRIG_WAVEFORM) or continuous loop waveform
-	(CW_WAVEFORM) **IMPORTANT CAVEAT** The APS2 does not "remember" its
-	current playback mode. In particular, uploading new sequence or waveform
-	data will cause the APS2 to return to 'sequence' mode. To use 'waveform'
-	mode, call `set_run_mode` only after calling `set_waveform_float` or
-	`set_waveform_int`.
-
-`APS2_STATUS get_run_mode(const char* deviceIP, RUN_MODE* mode)`
-
-	Returns the current run mode.
+	(CW_WAVEFORM) **IMPORTANT NOTE** The run mode is not a state and the APS2
+	does not "remember" its current playback mode.  The waveform modes simply
+	load a simple sequence to play a single waveform. In particular, uploading
+	new sequence or waveform data will cause the APS2 to return to 'sequence'
+	mode. To use 'waveform' mode, call `set_run_mode` only after calling
+	`set_waveform_float` or `set_waveform_int`.
 
 `APS2_STATUS run(const char* deviceIP)`
 

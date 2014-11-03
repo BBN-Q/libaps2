@@ -396,7 +396,7 @@ RUN_STATE APS2::get_runState(){
 	return runState;
 }
 
-int APS2::set_run_mode(const RUN_MODE & mode) {
+void APS2::set_run_mode(const RUN_MODE & mode) {
 	FILE_LOG(logDEBUG) << "Setting run mode to " << mode;
 
 	vector<uint64_t> instructions = WF_SEQ;
@@ -418,10 +418,8 @@ int APS2::set_run_mode(const RUN_MODE & mode) {
 			break;
 		default:
 			// unknown mode
-			return -1;
+			throw APS2_UNKNOWN_RUN_MODE;
 	}
-
-	return 0;
 }
 
 // FPGA memory read/write
