@@ -22,7 +22,7 @@ typedef enum {STOPPED=0, PLAYING} RUN_STATE;
 
 typedef enum {logERROR, logWARNING, logINFO, logDEBUG, logDEBUG1, logDEBUG2, logDEBUG3, logDEBUG4} TLogLevel;
 
-typedef enum APS2_STATUS {
+typedef enum {
 	APS2_OK,
 	APS2_UNKNOWN_ERROR = -1,
 	APS2_NO_DEVICE_FOUND = -2,
@@ -32,7 +32,7 @@ typedef enum APS2_STATUS {
 	APS2_SEQFILE_FAIL = -6,
 	APS2_PLL_LOST_LOCK = -7,
 	APS2_MMCM_LOST_LOCK = -8,
-};
+} APS2_STATUS;
 
 #ifdef __cplusplus
 extern "C" {
