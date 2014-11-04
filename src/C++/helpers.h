@@ -38,7 +38,7 @@ string get_device_id() {
   }
   else {
 
-    cout << concol::YELLOW << "Choose device ID [0]: " << concol::RESET << endl;
+    cout << concol::YELLOW << "Choose device ID [0]: " << concol::RESET;
     string input = "";
     getline(cin, input);
 
