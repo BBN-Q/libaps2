@@ -39,6 +39,45 @@ We include these DLL's with the Windows releases and they need be in the same
 folder as the driver to ensure they can by dynamically loaded with the libaps2
 driver [#f2]_.
 
+File List
+~~~~~~~~~~~~~
+
+The releases follow a directory structure that corresponds to the git
+repository.
+
+* `examples` - Example sequence and waveform files
+	- `wfA.dat` and `wfB.dat` - test waveform patterns for play_waveform.cpp as signed integers one sample per line:
+		+ a full scale ramp;
+		+ gaussian pulses from 256 samples down to 8 samples with 10ns gaps;
+		+ square wave from 256 down to 8 samples with 10ns gaps;
+		+ wfB.dat is negative wfA.dat.
+	- `ramsey_unslipped.h5` - an 10 sequence Ramsey pattern with 40ns gausssian shaped pulses in a ``40ns delay - X90 - variable delay - X90m pattern`` with the delay stepping from 44 to 104 samples.  All four markers are mirrored and act as blanking pulses around the analog pulses. 
+	- `ramsey_slipped.h5`` - a similar Ramsey pattern but with the markers slipped by one sample to show the marker resolution and jitter.
+* `src` - the source code
+	- `src/lib` - the shared library. ``libaps2.h`` contains the public API definitions.
+	- `src/matlab` - Matlab bindings to libaps2
+	- `src/julia` - Julia bindings to libaps2
+	- `src/util` - test and utility command line programs. See below for description. 
+	- `src/C++` - C++ command line programs to play waveforms and sequences.
+	- `src/wireshark` - lua dissector for sniffing APS2 packets.
+* `build` - compiled shared library and executable programs
+	- Shared library 
+		+ `libaps2.dll` - the main shared library
+		+ load time dependencies for libaps2: `libgcc_s_seh-1.dll, libhdf5-0.dll, libhdf5_cpp-0.dll, libstdc++-6.dll, libwinpthread-1.dll, libszip-0.dll, zlib1.dll`
+	- Command line programs
+		+ `play_waveform.exe` - command line program to play a single waveform on the analog channels.
+		+ `play_sequence.exe` - command line program to play a HDF5 sequence file.
+	- Command line utilities
+		+ `program.exe` - update the firmwave.  See `Firmware Updates`_.
+		+ `flash.exe` - update IP and MAC addresses and the boot chip configuration sequence.
+		+ `reset.exe` - reset an APS2.
+	- Self-test programs
+		+ `test_comms.exe` - tests the ethernet communications writing and reading
+		+ `test_DACs.exe` - tests the analog output data integrity with a checksum at three points: leaving the FPGA; arriving at the DAC; leaving the DAC.
+
+Writing Sequences
+~~~~~~~~~~~~~~~~~~
+
 The BBN APS2 has advanced sequencing capabilities. Fully taking advantage of
 these capabilities may require use of higher-level languages which can be
 'compiled down' into sequence instructions. BBN has produced one such
