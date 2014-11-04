@@ -12,10 +12,11 @@ a free slot of a powered-off system, then connecting a SATA cable from the new
 APS module to the trigger module.
 
 Each module in an APS2 system acts as an independent network endpoint. The
-modules communicate with a host computer via a UDP interface over 1GigE. To
-ensure high-bandwidth throughput, it is important that the APS2 and the host
-computer not be separated by too many network hops. If possible, locate the
-host and APS2 on a common switch or router [#f1]_.
+modules communicate with a host computer via a UDP interface over 1GigE.  The
+APS2 will not negotiate down to 100Mb or 10Mb so ensure you have an appropriate
+switch and patch cable. To ensure high-bandwidth throughput, it is important
+that the APS2 and the host computer not be separated by too many network hops.
+If possible, locate the host and APS2 on a common switch or router [#f1]_.
 
 While the APS can run in a standalone configuration, we recommend running with
 a 10 MHz (+7 dBm) external reference (square wave or sine wave). This
