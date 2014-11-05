@@ -99,7 +99,7 @@ void APSEthernet::reset_maps() {
     msgQueues_.clear();
 }
 
-APS2_STATUS APSEthernet::connect(string serial) {
+void APSEthernet::connect(string serial) {
 
     mLock_.lock();
 	msgQueues_[serial] = queue<APSEthernetPacket>();
@@ -108,14 +108,12 @@ APS2_STATUS APSEthernet::connect(string serial) {
         devInfo_[serial].endpoint = udp::endpoint(asio::ip::address_v4::from_string(serial), APS_PROTO);
         devInfo_[serial].macAddr = MACAddr("FF:FF:FF:FF:FF:FF");
     }
-    return APS2_OK;   
 }
 
-APS2_STATUS APSEthernet::disconnect(string serial) {
+void APSEthernet::disconnect(string serial) {
     mLock_.lock();
 	msgQueues_.erase(serial);
     mLock_.unlock();
-	return APS2_OK;
 }
 
 int APSEthernet::send(string serial, APSEthernetPacket msg, bool checkResponse) {

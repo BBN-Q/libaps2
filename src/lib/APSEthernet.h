@@ -25,8 +25,8 @@ public:
 	~APSEthernet();
 	void init();
 	set<string> enumerate();
-	APS2_STATUS connect(string serial);
-	APS2_STATUS disconnect(string serial);
+	void connect(string serial);
+	void disconnect(string serial);
 	int send(string serial, APSEthernetPacket msg, bool checkResponse=true);
 	int send(string serial, vector<APSEthernetPacket> msg, unsigned ackEvery=1);
 	vector<APSEthernetPacket> receive(string serial, size_t numPackets = 1, size_t timeoutMS = 10000);

@@ -12,24 +12,27 @@ APS2::~APS2() = default;
 void APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
 	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
-		APS2_STATUS success = ethernetRM_->connect(deviceSerial_);
-		// TODO: send a status request to check the connection
-
-		if (success == APS2_OK) {
-			FILE_LOG(logINFO) << "Opened connection to device: " << deviceSerial_;
-			isOpen = true;
+		ethernetRM_->connect(deviceSerial_);
+		try{
+			read_status_registers();
 		}
+		catch(...){
+			disconnect()
+			throw APS2_FAILED_TO_CONNECT;
+		}
+
+		FILE_LOG(logINFO) << "Opened connection to device: " << deviceSerial_;
+
 		// TODO: restore state information from file
 	}
 }
 
 void APS2::disconnect() {
 	if (isOpen) {
-		APS2_STATUS success = ethernetRM_->disconnect(deviceSerial_);
-		if (success == APS2_OK) {
-			FILE_LOG(logINFO) << "Closed connection to device: " << deviceSerial_;
-			isOpen = false;
-		}
+		ethernetRM_->disconnect(deviceSerial_);
+	
+		FILE_LOG(logINFO) << "Closed connection to device: " << deviceSerial_;
+	
 		//Release reference to ethernet RM
 		ethernetRM_.reset();
 		// TODO: save state information to file
