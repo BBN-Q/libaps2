@@ -9,6 +9,13 @@ methods require a device serial (an IP address) as the first argument. In
 MATLAB and Julia, the serial is stored in a device object and helper functions
 inject it as necessary.
 
+Before calling a device specific API the device must be connected by calling
+``connect_APS``. This sets up the ethernet interface.  Unloading the shared
+library without disconnecting all APS2s may cause a crash as the library
+unloading order is uncontrolled. In addition, after every APS2 reset
+``initAPS`` must be called once to properly setup the DAC timing and cache-
+controller.
+
 Enums
 ------------------
 
@@ -61,10 +68,11 @@ Getter calls return the value in the appropriate pointer.
 
 `APS2_STATUS initAPS(const char* deviceIP, int force)`
 
-	This method initializes the APS2 at the given IP address, which synchronizes
-	and calibrates the DAC clock timing. If `force` = 0, the driver will attempt
-	to determine if this procedure has already been run and return immediately. To
-	force the driver to run the initialization procedure, call with `force` = 1.
+	This method initializes the APS2 at the given IP address. This involves
+	synchronizing and calibrating the DAC clock timing and setting up the
+	cache-controller. If `force` = 0, the driver will attempt to determine if
+	this procedure has already been run and return immediately. To force the
+	driver to run the initialization procedure, call with `force` = 1.
 
 `APS2_STATUS get_firmware_version(const char* deviceIP, uint32_t* version)`
 
