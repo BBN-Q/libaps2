@@ -17,7 +17,7 @@ void APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
 			read_status_registers();
 		}
 		catch(...){
-			disconnect()
+			disconnect();
 			throw APS2_FAILED_TO_CONNECT;
 		}
 
