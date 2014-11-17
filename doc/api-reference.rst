@@ -13,7 +13,7 @@ Before calling a device specific API the device must be connected by calling
 ``connect_APS``. This sets up the ethernet interface.  Unloading the shared
 library without disconnecting all APS2s may cause a crash as the library
 unloading order is uncontrolled. In addition, after every APS2 reset
-``initAPS`` must be called once to properly setup the DAC timing and cache-
+``init_APS`` must be called once to properly setup the DAC timing and cache-
 controller.
 
 Enums
@@ -66,7 +66,7 @@ Getter calls return the value in the appropriate pointer.
 	used to do a hard reset from non-volatile flash memory (`resetMode` = 0)
 	or a soft reset from volatile DRAM (`resetMode` = 1) reset.
 
-`APS2_STATUS initAPS(const char* deviceIP, int force)`
+`APS2_STATUS init_APS(const char* deviceIP, int force)`
 
 	This method initializes the APS2 at the given IP address. This involves
 	synchronizing and calibrating the DAC clock timing and setting up the

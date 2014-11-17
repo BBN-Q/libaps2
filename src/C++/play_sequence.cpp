@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
 	cout << concol::CYAN << "Uptime for device " << deviceSerial << " is " << uptime << " seconds" << concol::RESET << endl;
 
 	// force initialize device
-	initAPS(deviceSerial.c_str(), 1);
+	init_APS(deviceSerial.c_str(), 1);
 
 	//load the sequence file
 	load_sequence_file(deviceSerial.c_str(), seqFile.c_str());

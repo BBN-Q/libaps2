@@ -53,7 +53,7 @@ int main (int argc, char* argv[])
   cout << concol::RED << "Uptime for device " << deviceSerial << " is " << uptime << " seconds" << concol::RESET << endl;
 
   // force initialize device
-  initAPS(deviceSerial.c_str(), 1);
+  init_APS(deviceSerial.c_str(), 1);
 
   // check that memory map was written
   uint32_t testInt;

@@ -69,7 +69,7 @@ int main (int argc, char* argv[])
   cout << concol::RED << "Uptime for device " << deviceSerial << " is " << uptime << " seconds" << concol::RESET << endl;
 
   // force initialize device
-  initAPS(deviceSerial.c_str(), 1);
+  init_APS(deviceSerial.c_str(), 1);
 
   // // bail here while testing
   disconnect_APS(deviceSerial.c_str());
@@ -178,9 +178,9 @@ int main (int argc, char* argv[])
   
   cout << concol::RED << "Finished!" << concol::RESET << endl;
   /*
-  rc = initAPS(0, const_cast<char *>("../dummyBitfile.bit"), 0);
+  rc = init_APS(0, const_cast<char *>("../dummyBitfile.bit"), 0);
 
-  cout << concol::RED << "initAPS(0) returned " << rc << concol::RESET << endl;
+  cout << concol::RED << "init_APS(0) returned " << rc << concol::RESET << endl;
   
 
   cout << "Set sample rate " << endl;

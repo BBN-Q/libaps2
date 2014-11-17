@@ -64,7 +64,7 @@ int main(int argc, char const *argv[])
 	stop(deviceSerial.c_str());
 
 	// force initialize device
-	initAPS(deviceSerial.c_str(), 1);
+	init_APS(deviceSerial.c_str(), 1);
 
 	//Generate random bit values
 	std::default_random_engine generator;

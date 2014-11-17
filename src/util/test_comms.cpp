@@ -94,7 +94,7 @@ int main(int argc, char const *argv[])
 	stop(deviceSerial.c_str());
 
 	// force initialize device
-	initAPS(deviceSerial.c_str(), 1);
+	init_APS(deviceSerial.c_str(), 1);
 
 	run_test(deviceSerial, "sequence", 0, 0x1FFFFFFFu, 4*(1<<20));
 	run_test(deviceSerial, "waveform", 0x20000000u, 0x3FFFFFFFu, 4*(1<<20));

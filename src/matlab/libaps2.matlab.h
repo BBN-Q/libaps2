@@ -47,7 +47,7 @@ EXPORT APS2_STATUS connect_APS(const char*);
 EXPORT APS2_STATUS disconnect_APS(const char*);
 
 EXPORT APS2_STATUS reset(const char*, int);
-EXPORT APS2_STATUS initAPS(const char*, int);
+EXPORT APS2_STATUS init_APS(const char*, int);
 
 EXPORT APS2_STATUS get_firmware_version(const char*, unsigned int*);
 EXPORT APS2_STATUS get_uptime(const char*, double*);

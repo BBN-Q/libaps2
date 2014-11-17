@@ -63,7 +63,7 @@ classdef APS2 < handle
             if ~exist('force', 'var')
                 force = 0;
             end
-            aps2_call(obj, 'initAPS', force)
+            aps2_call(obj, 'init_APS', force)
         end
         
         function val = get_firmware_version(obj)

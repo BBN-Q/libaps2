@@ -182,7 +182,7 @@ APS2_STATUS reset(const char* deviceSerial, int resetMode) {
 
 //Initialize an APS unit
 //Assumes null-terminated bitFile
-APS2_STATUS initAPS(const char* deviceSerial, int forceReload) {
+APS2_STATUS init_APS(const char* deviceSerial, int forceReload) {
 	auto func = bind(&APS2::init, _1, bool(forceReload), 0);
 	return aps2_call(deviceSerial, func);
 }
