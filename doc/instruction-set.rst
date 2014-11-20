@@ -124,17 +124,17 @@ Instruction op codes
 ====  ===========
 Code  instruction
 ====  ===========
-0000  WAVEFORM
-0001  MARKER
-0010  WAIT
-0011  LOAD_REPEAT
-0100  REPEAT
-0101  CMP
-0111  GOTO
-1000  CALL
-1001  RETURN
-1010  SYNC
-1011  PREFETCH
+0x0  WAVEFORM
+0x1  MARKER
+0x2  WAIT
+0x3  LOAD_REPEAT
+0x4  REPEAT
+0x5  CMP
+0x6  GOTO
+0x7  CALL
+0x8  RETURN
+0x9  SYNC
+0xA  PREFETCH
 ====  ===========
 
 Instruction payload (56-bits)
