@@ -35,10 +35,12 @@ instructions are:
 We explain each of these instructions below.
 
 SYNC---Halts instruction dispatch until waveform and marker engines have
-executed all queued instructions.
+executed all queued instructions. The write flag should be set to broadcast
+this instruction.
 
 WAIT---Indicates that waveform and marker engines should wait for a trigger
-before continuing.
+before continuing. The write flag should be set to broadcast
+this instruction.
 
 WAVEFORM---Indicates that the APS should play back length *N* data points
 starting at the given waveform memory address. An additional flag marks the
