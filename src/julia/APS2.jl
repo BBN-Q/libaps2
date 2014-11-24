@@ -88,10 +88,12 @@ function disconnect!(aps::APS2)
 	aps.serial = ""
 end
 
-@aps2_call init Cint
-init(aps::APS2, force) = init(aps::APS2, int32(force))
+function init(aps::APS2, force=1)
+	status = ccall((:init_APS, "libaps2"), APS2_STATUS, (Ptr{Uint8}, Cint), aps.serial, Cint(force))
+	check_status(status)
+end
 
-@aps2_call set_logging_level Cint
+set_logging_level(level) = ccall((:set_logging_level, "libaps2"), APS2_STATUS, (Cint,), level)
 
 @aps2_getter get_firmware_version Uint32
 @aps2_getter get_uptime Float64
@@ -116,6 +118,21 @@ init(aps::APS2, force) = init(aps::APS2, int32(force))
 @aps2_setter set_trigger_interval Float64
 @aps2_getter get_trigger_interval Float64
 @aps2_call trigger
+
+function load_waveform{T<:Integer}(aps::APS2, chan, wf::Vector{T})
+	status = ccall((:set_waveform_int, "libaps2"), APS2_STATUS, (Ptr{Uint8}, Cint, Ptr{Int16}, Uint32), aps.serial, Cint(chan-1), int16(wf), length(wf))
+	check_status(status)
+end
+
+function load_waveform{T<:Real}(aps::APS2, chan, wf::Vector{T})
+	status = ccall((:set_waveform_float, "libaps2"), APS2_STATUS, (Ptr{Uint8}, Cint, Ptr{Float32}, Uint32), aps.serial, Cint(chan-1), float32(wf), length(wf))
+	check_status(status)
+end
+
+function load_sequence(aps::APS2, seqfile)
+	status = ccall((:load_sequence_file, "libaps2"), APS2_STATUS, (Ptr{Uint8}, Ptr{Uint8}), aps.serial, seqfile)
+	check_status(status)
+end
 
 function read_memory(aps::APS2, addr, numWords)
 	buf = Array(Uint32, numWords)
