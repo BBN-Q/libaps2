@@ -1,8 +1,38 @@
+module LIBAPS2
+
+export APS2,
+	connect!,
+	disconnect!,
+	enumerate_APS2s,
+	init,
+	set_logging_level,
+	get_firmware_version,
+	get_fpga_temperature,
+	get_uptime,
+	run,
+	stop,
+	trigger,
+	set_run_mode,
+	set_trigger_source,
+	get_trigger_source,
+	set_trigger_interval,
+	get_trigger_interval,
+	set_channel_offset,
+	get_channel_offset,
+	set_channel_scale,
+	get_channel_scale,
+	set_channel_enabled,
+	get_channel_enabled,
+	load_waveform,
+	load_sequence,
+	read_memory,
+	write_memory
+
 type APS2
 	serial::ASCIIString
 end
 
-push!(DL_LOAD_PATH, joinpath(dirname(@__FILE__), "../../build/"))
+__init__() = push!(DL_LOAD_PATH, joinpath(dirname(@__FILE__), "../../build/"))
 
 typealias APS2_STATUS Cint
 
@@ -162,4 +192,6 @@ function create_test_waveform()
 		wf = cat(1, wf, zeros(Int16, 12), fill(int16(8191), int(2^ex/2)), fill(int16(-8192), int(2^ex/2)))
 	end
 	return wf
+end
+
 end
