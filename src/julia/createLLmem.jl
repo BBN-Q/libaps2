@@ -13,23 +13,43 @@ type APSInstr
 	target::Symbol
 end
 
-const emptySymbol = symbol("")
+function __init__()
+	global PRINTSHORT = false
+	global const emptySymbol = symbol("")
+	global const OPCODES = Dict(
+		0x0 => :WFM,
+		0x1 => :MARKER,
+		0x2 => :WAIT,
+		0x3 => :LOAD_REPEAT,
+		0x4 => :REPEAT,
+		0x5 => :CMP,
+		0x6 => :GOTO,
+		0x7 => :CALL,
+		0x8 => :RETURN,
+		0x9 => :SYNC,
+		0xA => :PREFETCH)
+end
 
 APSInstr(data::Vector{Uint16}) = APSInstr(data, emptySymbol, emptySymbol)
 APSInstr(data::Vector{Uint16}, name::Symbol) = APSInstr(data, name, emptySymbol)
+header(instr::APSInstr) = uint8(instr.data[1] >> 8)
+opcode(instr::APSInstr) = header(instr) >> 4
 
 function show(io::IO, e::APSInstr)
+	PRINTSHORT || print(io, string(OPCODES[opcode(e)], ": "))
 	for b in e.data
 		print(io, hex(b, 4))
 	end
 end
 
 function write_file(filename, seq)
+	global PRINTSHORT = true
 	open(filename, "w") do f
 		for s = seq
 			println(f, s)
 		end
 	end
+	PRINTSHORT = false
 end
 
 function write_hdf5_file(filename, seq, wfA, wfB)
@@ -56,9 +76,21 @@ function write_hdf5_file(filename, seq, wfA, wfB)
 	h5write(filename, "chan_2/waveforms", wfB);
 end
 
+function read_hdf5_file(filename)
+	fid = h5open(filename)
+	raw_instrs = read(fid["chan_1/instructions"])
+	instrs = Array(APSInstr, length(raw_instrs))
+	for ct in 1:length(raw_instrs)
+		data = raw_instrs[ct]
+		# unstack the data
+		instrs[ct] = APSInstr(Uint16[(data >> 16*(4-i)) & 0xffff for i in 1:4])
+	end
+	return instrs
+end
+
 # instruction encodings
 WFM = 0x0000
-TRIG = 0x0001
+MARKER = 0x0001
 WAIT_TRIG = 0x0002
 LOAD_REPEAT = 0x0003
 DEC_REPEAT = 0x0004
@@ -93,10 +125,10 @@ end
 
 wf_prefetch(addr) = APSInstr(Uint16[WFM << 12 | 1 << 8, PREFETCH_INSTR_WORD, addr >> 16, addr & 0xffff])
 
-function trig_entry(target, state, count, transitionWord; writeData=true, label=emptySymbol)
+function marker_entry(target, state, count, transitionWord; writeData=true, label=emptySymbol)
 	@assert (count & 0xffffffff) == count "Oops! We can only handle 32 bit trigger counts"
 
-	APSInstr(Uint16[TRIG << 12 | (writeData ? 1 : 0) << 8 | (target & 0x3) << 10, (transitionWord & 0xf) << 1 | (state & 0x1), count >> 16, count & 0xffff], label)
+	APSInstr(Uint16[MARKER << 12 | (writeData ? 1 : 0) << 8 | (target & 0x3) << 10, (transitionWord & 0xf) << 1 | (state & 0x1), count >> 16, count & 0xffff], label)
 end
 
 flow_entry(cmd, jumpAddr::Integer, payload; label=emptySymbol) =
@@ -193,14 +225,14 @@ function ramsey()
 		push!(seq, sync())
 		push!(seq, wait_trig())
 		push!(seq, wf_entry(0, 9, TAPair=true, writeData=false))
-		push!(seq, trig_entry(0, 0, 8, 0xC))
+		push!(seq, marker_entry(0, 0, 8, 0xC))
 		push!(seq, wf_entry(13, 11))
-		push!(seq, trig_entry(0, 1, 11, 0x3))
+		push!(seq, marker_entry(0, 1, 11, 0x3))
 		push!(seq, wf_entry(0, delay, TAPair=true))
-		push!(seq, trig_entry(0, 0, delay, 0xC))
+		push!(seq, marker_entry(0, 0, delay, 0xC))
 		push!(seq, wf_entry(1, 11))
-		push!(seq, trig_entry(0, 1, 11, 0x3))
-		push!(seq, trig_entry(0, 0, 1, 0x0))
+		push!(seq, marker_entry(0, 1, 11, 0x3))
+		push!(seq, marker_entry(0, 0, 1, 0x0))
 	end
 	push!(seq, flow_goto(0x00))
 	resolve_symbols!(seq)
@@ -214,28 +246,28 @@ function cpmg()
 
 		#First 90
 		push!(seq, wf_entry(0, 9, TAPair=true, writeData=false))
-		push!(seq, trig_entry(0, 0, 8, 0xC))
+		push!(seq, marker_entry(0, 0, 8, 0xC))
 		push!(seq, wf_entry(1, 11))
-		push!(seq, trig_entry(0, 1, 11, 0x3))
+		push!(seq, marker_entry(0, 1, 11, 0x3))
 
 		#CPMG block repeats
 		push!(seq, load_repeat(rep-1))
 
 		push!(seq, wf_entry(0, 0xA, TAPair=true; label=symbol("C$ct")))
-		push!(seq, trig_entry(0, 0, 9, 0xC))
+		push!(seq, marker_entry(0, 0, 9, 0xC))
 		push!(seq, wf_entry(25, 11))
-		push!(seq, trig_entry(0, 1, 11, 0x3))
+		push!(seq, marker_entry(0, 1, 11, 0x3))
 		push!(seq, wf_entry(0, 0x14, TAPair=true))
-		push!(seq, trig_entry(0, 0, 0x13, 0xC))
+		push!(seq, marker_entry(0, 0, 0x13, 0xC))
 		push!(seq, wf_entry(25, 11))
-		push!(seq, trig_entry(0, 1, 11, 0x3))
+		push!(seq, marker_entry(0, 1, 11, 0x3))
 		push!(seq, wf_entry(0, 0xA, TAPair=true))
-		push!(seq, trig_entry(0, 0, 9, 0x0))
+		push!(seq, marker_entry(0, 0, 9, 0x0))
 		push!(seq, flow_repeat(symbol("C$ct")))
 
 		#Final 90
 		push!(seq, wf_entry(1, 11))
-		push!(seq, trig_entry(0, 1, 11, 0x3))
+		push!(seq, marker_entry(0, 1, 11, 0x3))
 	end
 	push!(seq, flow_goto(0x00))
 	resolve_symbols!(seq)
@@ -247,11 +279,11 @@ function rabi_amp()
 		push!(seq, sync())
 		push!(seq, wait_trig())
 		push!(seq, wf_entry(0, 9, TAPair=true, writeData=false))
-		push!(seq, trig_entry(0, 0, 8, 0xC))
+		push!(seq, marker_entry(0, 0, 8, 0xC))
 		push!(seq, wf_entry((ct-1)*256 + 1, 255))
-		push!(seq, trig_entry(0, 1, 255, 0x3))
+		push!(seq, marker_entry(0, 1, 255, 0x3))
 		push!(seq, wf_entry(0, 9, TAPair=true))
-		push!(seq, trig_entry(0, 0, 9, 0x0))
+		push!(seq, marker_entry(0, 0, 9, 0x0))
 	end
 	push!(seq, flow_goto(0x00))
 end	
@@ -265,11 +297,11 @@ function test_prefetch()
 			push!(seq, sync())
 			push!(seq, wait_trig())
 			push!(seq, wf_entry(offset+0, 9, TAPair=true, writeData=false))
-			push!(seq, trig_entry(0, 0, 8, 0xC))
+			push!(seq, marker_entry(0, 0, 8, 0xC))
 			push!(seq, wf_entry(offset+ (ct-1)*256 + 1, 255))
-			push!(seq, trig_entry(0, 1, 255, 0x3))
+			push!(seq, marker_entry(0, 1, 255, 0x3))
 			push!(seq, wf_entry(offset+0, 9, TAPair=true))
-			push!(seq, trig_entry(0, 0, 9, 0x0))
+			push!(seq, marker_entry(0, 0, 9, 0x0))
 		end
 	end
 	push!(seq, flow_goto(0x00))
