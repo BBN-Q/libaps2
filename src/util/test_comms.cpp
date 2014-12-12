@@ -84,7 +84,7 @@ int main(int argc, char const *argv[])
 	//Poll for which device to test
 	string deviceSerial = get_device_id();
 	if (deviceSerial.empty()){
-		cout << concol::RED << "No APS2 devices connected! Exiting..." << concol::RESET << endl;
+		cout << concol::RED << "No APS2 devices connected! Exiting..." << concol::RESET;
 		return 0;
 	}
 
@@ -95,6 +95,38 @@ int main(int argc, char const *argv[])
 
 	// force initialize device
 	init_APS(deviceSerial.c_str(), 1);
+
+	//Test a range of write sizes up to 256 words
+	cout << concol::CYAN << "Testing variable write sizes..... " << concol::RESET;
+	vector<uint32_t> outData, inData;
+	size_t idx=0;
+	std::default_random_engine generator;
+	std::uniform_int_distribution<uint32_t> wordDistribution;
+	for (unsigned writeSize=4; writeSize<=256; writeSize+=4){
+		for (unsigned ct=0; ct<writeSize; ct++){
+			outData.push_back(wordDistribution(generator));
+		}
+		write_memory(deviceSerial.c_str(), idx*4, outData.data()+idx, writeSize);
+		idx += writeSize;
+	}
+	inData.resize(idx);
+	idx = 0;
+	while (idx < inData.size()){
+		read_memory(deviceSerial.c_str(),  idx*4, inData.data()+idx, 128);
+		idx += 128;
+	}
+
+	bool passed = true;
+	for (unsigned ct=0; ct<inData.size(); ct++){
+		passed &= (inData[ct] == outData[ct]);
+	}
+	if (passed) {
+		cout << concol::GREEN << " passed" << concol::RESET << endl;
+	}
+	else {
+		cout << concol::RED << " failed" << concol::RESET << endl;
+	}
+
 
 	run_test(deviceSerial, "sequence", 0, 0x1FFFFFFFu, 4*(1<<20));
 	run_test(deviceSerial, "waveform", 0x20000000u, 0x3FFFFFFFu, 4*(1<<20));
