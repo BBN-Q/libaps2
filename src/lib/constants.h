@@ -255,12 +255,15 @@ static const int IO_CHB_RST_BIT = 11;
 static const int DAC_BIST_CHA_RST_BIT = 12;
 static const int DAC_BIST_CHB_RST_BIT = 13;
 
+// USER_STATUS bits
 static const int MMCM_SYS_LOCK_BIT = 31;
 static const int MMCM_CFG_LOCK_BIT = 30;
-static const int MIG_C0_LOCK_BIT = 24;
-static const int MIG_C0_CAL_BIT = 25;
-static const int MIG_C1_LOCK_BIT = 26;
-static const int MIG_C1_CAL_BIT = 27;
+static const int MIG_C0_LOCK_BIT   = 24;
+static const int MIG_C0_CAL_BIT    = 25;
+static const int MIG_C1_LOCK_BIT   = 26;
+static const int MIG_C1_CAL_BIT    = 27;
+static const int AXI_RESET_BIT     = 21;
+static const int AXI_RESETN_BIT    = 20;
 
 //DAC SPI Addresses
 static const uint8_t DAC_SYNC_ADDR = 0x0;
