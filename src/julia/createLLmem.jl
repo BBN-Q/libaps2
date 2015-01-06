@@ -27,7 +27,8 @@ function __init__()
 		0x7 => :CALL,
 		0x8 => :RETURN,
 		0x9 => :SYNC,
-		0xA => :PREFETCH)
+		0xA => :PREFETCH,
+		0xB => :WAITCMP)
 end
 
 APSInstr(data::Vector{Uint16}) = APSInstr(data, emptySymbol, emptySymbol)
