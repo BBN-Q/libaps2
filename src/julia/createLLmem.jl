@@ -78,8 +78,7 @@ function write_hdf5_file(filename, seq, wfA, wfB)
 end
 
 function read_hdf5_file(filename)
-	fid = h5open(filename)
-	raw_instrs = read(fid["chan_1/instructions"])
+	raw_instrs = h5read(filename, fid["chan_1/instructions"])
 	instrs = Array(APSInstr, length(raw_instrs))
 	for ct in 1:length(raw_instrs)
 		data = raw_instrs[ct]
