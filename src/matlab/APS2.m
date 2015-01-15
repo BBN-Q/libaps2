@@ -183,11 +183,6 @@ classdef APS2 < handle
                 settings.lastseqFile = '';
             end
             
-            % If we are going to call load_sequence below, we can clear all channel data first
-            if (~strcmp(settings.lastseqFile, settings.seqFile) || settings.seqForce)
-                aps2_call('clear_channel_data')
-            end
-            
             obj.stop();
 			
             % Set the channel parameters;  set amplitude and offset before loading waveform data so that we
