@@ -24,6 +24,7 @@ classdef APS2 < handle
     
     properties (Constant)
         libpath = '../../build';
+        samplingRate = 1200000000 % for now only run at 1.2GS/s
     end
     
     methods
