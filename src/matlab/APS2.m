@@ -68,7 +68,10 @@ classdef APS2 < handle
         end
         
         function val = get_firmware_version(obj)
-            val = aps2_getter(obj, 'get_firmware_version');
+            ver = aps2_getter(obj, 'get_firmware_version');
+            major_ver = bitshift(ver, -8);
+            minor_ver = bitand(ver, hex2dec('FF'));
+            val = sprintf('%d.%d', major_ver, minor_ver);
         end
         
         function val = get_uptime(obj)
