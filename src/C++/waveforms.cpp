@@ -30,7 +30,6 @@ vector<uint64_t> read_seq_file(string fileName) {
 
 int main (int argc, char* argv[])
 {
-
   concol::concolinit();
   cout << concol::RED << "BBN AP2 Test Executable" << concol::RESET << endl;
 
@@ -73,7 +72,7 @@ int main (int argc, char* argv[])
   cout << "Initial cache control reg: " << hexn<8> << testInt << endl;
   read_memory(deviceSerial.c_str(), CACHE_STATUS_ADDR, &testInt, 1);
   cout << "Initial cache status reg: " << hexn<8> << testInt << endl;
-  read_memory(deviceSerial.c_str(), PLL_STATUS_ADDR, &testInt, 1);
+  read_memory(deviceSerial.c_str(), DMA_STATUS_ADDR, &testInt, 1);
   cout << "Initial DMA status reg: " << hexn<8> << testInt << endl;
 
   // upload test waveforms to A and B
@@ -96,7 +95,7 @@ int main (int argc, char* argv[])
 
   // read_memory(deviceSerial.c_str(), CACHE_STATUS_ADDR, &testInt, 1);
   // cout << "Cache status reg after wfA write: " << hexn<8> << testInt << endl;
-  // read_memory(deviceSerial.c_str(), PLL_STATUS_ADDR, &testInt, 1);
+  // read_memory(deviceSerial.c_str(), DMA_STATUS_ADDR, &testInt, 1);
   // cout << "DMA status reg after wfA write: " << hexn<8> << testInt << endl;
   
   // ramp waveform
@@ -109,7 +108,7 @@ int main (int argc, char* argv[])
 
   // read_memory(deviceSerial.c_str(), CACHE_STATUS_ADDR, &testInt, 1);
   // cout << "Cache status reg after wfB write: " << hexn<8> << testInt << endl;
-  // read_memory(deviceSerial.c_str(), PLL_STATUS_ADDR, &testInt, 1);
+  // read_memory(deviceSerial.c_str(), DMA_STATUS_ADDR, &testInt, 1);
   // cout << "DMA status reg after wfB write: " << hexn<8> << testInt << endl;
 
   // // check that cache controller was enabled
@@ -159,7 +158,7 @@ int main (int argc, char* argv[])
 
   // read_memory(deviceSerial.c_str(), CACHE_STATUS_ADDR, &testInt, 1);
   // cout << "Cache status reg after seq write: " << hexn<8> << testInt << endl;
-  // read_memory(deviceSerial.c_str(), PLL_STATUS_ADDR, &testInt, 1);
+  // read_memory(deviceSerial.c_str(), DMA_STATUS_ADDR, &testInt, 1);
   // cout << "DMA status reg after seq write: " << hexn<8> << testInt << endl;
 
   // // test sequence cache
@@ -193,7 +192,7 @@ int main (int argc, char* argv[])
 
   // read_memory(deviceSerial.c_str(), CACHE_STATUS_ADDR, &testInt, 1);
   // cout << "Cache status reg after pulse sequencer enable: " << hexn<8> << testInt << endl;
-  // read_memory(deviceSerial.c_str(), PLL_STATUS_ADDR, &testInt, 1);
+  // read_memory(deviceSerial.c_str(), DMA_STATUS_ADDR, &testInt, 1);
   // cout << "DMA status reg after pulse sequencer enable: " << hexn<8> << testInt << endl;
 
   // cout << concol::RED << "Stopping" << concol::RESET << endl;
@@ -205,7 +204,7 @@ int main (int argc, char* argv[])
 
   read_memory(deviceSerial.c_str(), CACHE_STATUS_ADDR, &testInt, 1);
   cout << "Cache status reg: " << hexn<8> << testInt << endl;
-  read_memory(deviceSerial.c_str(), PLL_STATUS_ADDR, &testInt, 1);
+  read_memory(deviceSerial.c_str(), DMA_STATUS_ADDR, &testInt, 1);
   cout << "DMA status reg: " << hexn<8> << testInt << endl;
 
 
@@ -250,7 +249,7 @@ int main (int argc, char* argv[])
 
   read_memory(deviceSerial.c_str(), CACHE_STATUS_ADDR, &testInt, 1);
   cout << "Cache status reg after pulse sequencer enable: " << hexn<8> << testInt << endl;
-  read_memory(deviceSerial.c_str(), PLL_STATUS_ADDR, &testInt, 1);
+  read_memory(deviceSerial.c_str(), DMA_STATUS_ADDR, &testInt, 1);
   cout << "DMA status reg after pulse sequencer enable: " << hexn<8> << testInt << endl;
 
   for (size_t ct=0; ct < 3; ct++) {
@@ -259,7 +258,7 @@ int main (int argc, char* argv[])
     read_memory(deviceSerial.c_str(), CACHE_STATUS_ADDR, &testInt, 1);
     cout << "Cache status reg: " << hexn<8> << testInt << endl;
   }
-  read_memory(deviceSerial.c_str(), PLL_STATUS_ADDR, &testInt, 1);
+  read_memory(deviceSerial.c_str(), DMA_STATUS_ADDR, &testInt, 1);
   cout << "DMA status reg: " << hexn<8> << testInt << endl;
 
   disconnect_APS(deviceSerial.c_str());
