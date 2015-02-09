@@ -232,6 +232,9 @@ static const uint32_t DAC_BIST_CHA_PH1_ADDR = CSR_AXI_OFFSET + 13*4;
 static const uint32_t DAC_BIST_CHA_PH2_ADDR = CSR_AXI_OFFSET + 14*4;
 static const uint32_t DAC_BIST_CHB_PH1_ADDR = CSR_AXI_OFFSET + 15*4;
 static const uint32_t DAC_BIST_CHB_PH2_ADDR = CSR_AXI_OFFSET + 16*4;
+static const uint32_t DMA_STATUS_ADDR    = CSR_AXI_OFFSET + 17*4;
+static const uint32_t SATA_STATUS_ADDR   = CSR_AXI_OFFSET + 18*4;
+static const uint32_t INIT_STATUS_ADDR   = CSR_AXI_OFFSET + 19*4;
 
 
 static const uint32_t MEMORY_ADDR = 0x00000000u;

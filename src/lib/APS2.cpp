@@ -13,10 +13,10 @@ void APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
 	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
 		ethernetRM_->connect(deviceSerial_);
-		try{
+		try {
 			read_status_registers();
 		}
-		catch(...){
+		catch(...) {
 			disconnect();
 			throw APS2_FAILED_TO_CONNECT;
 		}
@@ -69,14 +69,18 @@ void APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */)
 	throw APS2_RESET_TIMEOUT;
 }
 
-APS2_STATUS APS2::init(const bool & forceReload, const int & bitFileNum){
+APS2_STATUS APS2::init(const bool & forceReload, const int & bitFileNum) {
 	 //TODO: bitfiles will be stored in flash so all we need to do here is the DACs
 
 	get_sampleRate(); // to update state variable
 
 	check_clocks_status();
 
-	if (forceReload) {
+	// check if previously initialized
+	uint32_t initReg = read_memory(INIT_STATUS_ADDR, 1)[0];
+	bool initialized = (initReg & 0x1) == 0x1;
+
+	if (!initialized || forceReload) {
 		FILE_LOG(logINFO) << "Initializing APS2";
 
 		// send hard reset to APS2
@@ -97,6 +101,10 @@ APS2_STATUS APS2::init(const bool & forceReload, const int & bitFileNum){
 		clear_channel_data();
 
 		write_memory_map();
+
+		// write to INIT_STATUS_ADDR to record that init() was run
+		initReg |= 0x1;
+		write_memory(INIT_STATUS_ADDR, initReg);
 	}
 
 	return APS2_OK;
