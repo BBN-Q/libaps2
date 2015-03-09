@@ -24,7 +24,7 @@ public:
 	APS2(string);
 	~APS2();
 
-	
+
 	void connect(shared_ptr<APSEthernet> &&);
 	void disconnect();
 
@@ -93,8 +93,8 @@ public:
 	static string printAPSChipCommand(APSChipConfigCommand_t & command);
 
 	//Memory read/write
-	int write_memory(const uint32_t & addr, const vector<uint32_t> & data);
-	int write_memory(const uint32_t & addr, const uint32_t & data);
+	void write_memory(const uint32_t & addr, const vector<uint32_t> & data);
+	void write_memory(const uint32_t & addr, const uint32_t & data);
 	vector<uint32_t> read_memory(const uint32_t &, const uint32_t &);
 
 	//SPI read/write
@@ -130,7 +130,7 @@ private:
 	int samplingRate_;
 	MACAddr macAddr_;
 
-	//Read/Write commands 
+	//Read/Write commands
 	int write_command(const APSCommand_t &, const uint32_t & addr = 0, const bool & checkResponse = true);
 	vector<APSEthernetPacket> pack_data(const uint32_t &, const vector<uint32_t> &, const APS_COMMANDS & cmdtype = APS_COMMANDS::USERIO_ACK);
 	vector<APSEthernetPacket> read_packets(const size_t &);
@@ -165,8 +165,8 @@ private:
 	// int trigger();
 	// int disable();
 
-	int set_bit(const uint32_t &, std::initializer_list<int>);
-	int clear_bit(const uint32_t &, std::initializer_list<int>);
+	void set_bit(const uint32_t &, std::initializer_list<int>);
+	void clear_bit(const uint32_t &, std::initializer_list<int>);
 
 	void write_waveform(const int &, const vector<int16_t> &);
 
@@ -179,7 +179,7 @@ private:
 
 	//Non-exported functions
 	shared_ptr<APSEthernet> get_interface();
-	
+
 }; //end class APS2
 
 

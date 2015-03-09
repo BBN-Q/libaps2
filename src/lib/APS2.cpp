@@ -30,9 +30,9 @@ void APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
 void APS2::disconnect() {
 	if (isOpen) {
 		ethernetRM_->disconnect(deviceSerial_);
-	
+
 		FILE_LOG(logINFO) << "Closed connection to device: " << deviceSerial_;
-	
+
 		//Release reference to ethernet RM
 		ethernetRM_.reset();
 		// TODO: save state information to file
@@ -40,15 +40,15 @@ void APS2::disconnect() {
 }
 
 void APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */) {
-	
+
 	APSCommand_t command = { .packed=0 };
-	
+
 	command.cmd = static_cast<uint32_t>(APS_COMMANDS::RESET);
 	command.mode_stat = static_cast<uint32_t>(resetMode);
 
 	uint32_t addr = 0;
 	if (resetMode == APS_RESET_MODE_STAT::RECONFIG_EPROM) {
-		addr = EPROM_USER_IMAGE_ADDR; 
+		addr = EPROM_USER_IMAGE_ADDR;
 	}
 
 	write_command(command, addr, false);
@@ -125,7 +125,7 @@ APSStatusBank_t APS2::read_status_registers(){
 	command.r_w = 1;
 	command.mode_stat = APS_STATUS_HOST;
 	APSEthernetPacket statusPacket = query(command)[0];
-	//Copy the data back into the status type 
+	//Copy the data back into the status type
 	APSStatusBank_t statusRegs;
 	std::copy(statusPacket.payload.begin(), statusPacket.payload.end(), statusRegs.array);
 	FILE_LOG(logDEBUG) << print_status_bank(statusRegs);
@@ -138,14 +138,14 @@ uint32_t APS2::get_firmware_version() {
 	uint32_t version = statusRegs.userFirmwareVersion;
 
 	FILE_LOG(logDEBUG) << "Firmware version on FPGA is " << myhex << version;
-	
+
 	return version;
 }
 
 double APS2::get_uptime(){
 	/*
 	* Return the board uptime in seconds.
-	*/ 
+	*/
 	//Read the status registers
 	APSStatusBank_t statusRegs = read_status_registers();
 	//Put together the seconds and nanoseconds parts
@@ -156,7 +156,7 @@ double APS2::get_uptime(){
 double APS2::get_fpga_temperature(){
 	/*
 	* Return the FGPA die temperature in C.
-	*/ 
+	*/
 	//Read the status registers
 	APSStatusBank_t statusRegs = read_status_registers();
 
@@ -434,24 +434,22 @@ void APS2::set_run_mode(const RUN_MODE & mode) {
 }
 
 // FPGA memory read/write
-int APS2::write_memory(const uint32_t & addr, const uint32_t & data){
+void APS2::write_memory(const uint32_t & addr, const uint32_t & data){
 	//Create the vector and pass through
-	return write_memory(addr, vector<uint32_t>({data}));
+	write_memory(addr, vector<uint32_t>({data}));
 }
 
-int APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
+void APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
 	/* APS2::write
-	 * addr = start byte of address space 
+	 * addr = start byte of address space
 	 * data = vector<uint32_t> data
 	 */
 
 	//Pack the data into APSEthernetFrames
 	vector<APSEthernetPacket> dataPackets = pack_data(addr, data);
 
-	//Send the packets out 
+	//Send the packets out
 	ethernetRM_->send(deviceSerial_, dataPackets, 20);
-
-	return 0;
 }
 
 vector<uint32_t> APS2::read_memory(const uint32_t & addr, const uint32_t & numWords){
@@ -500,7 +498,7 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & ad
 	// config target and instruction
 	switch (target) {
 		case CHIPCONFIG_TARGET_DAC_0:
-			cmd.target = CHIPCONFIG_IO_TARGET_DAC_0;			
+			cmd.target = CHIPCONFIG_IO_TARGET_DAC_0;
 			dacinstr.addr = addr;
 			dacinstr.N = 0; // single-byte read
 			dacinstr.r_w = 1; // read
@@ -577,7 +575,7 @@ int APS2::write_flash(const uint32_t & addr, vector<uint32_t> & data) {
 int APS2::erase_flash(uint32_t addr, uint32_t numBytes) {
 	// each erase command erases 64 KB of data starting at addr
 	FILE_LOG(logINFO) << "Erasing " << numBytes << " bytes starting at " << myhex << addr;
-	//TODO: check 64KB alignment 
+	//TODO: check 64KB alignment
 	if ((addr % 65536) != 0){
 		FILE_LOG(logERROR) << "Flash memory erase command was not 64KB aligned!";
 		return -1;
@@ -590,7 +588,7 @@ int APS2::erase_flash(uint32_t addr, uint32_t numBytes) {
 
 	uint32_t erasedBytes = 0;
 
-	//Since erasing can take a while throw up some info if we have are erasing more than 1MB 
+	//Since erasing can take a while throw up some info if we have are erasing more than 1MB
 	bool verbose = numBytes > 1048576 ? true : false;
 
 	while(erasedBytes < numBytes) {
@@ -684,7 +682,7 @@ int APS2::write_SPI_setup() {
 
 int APS2::write_command(const APSCommand_t & command, const uint32_t & addr, const bool & checkResponse /* see header for default values*/){
 	/*
-	* Write a single command 
+	* Write a single command
 	*/
 	//TODO: figure out move constructor
 	APSEthernetPacket packet(command, addr);
@@ -693,7 +691,7 @@ int APS2::write_command(const APSCommand_t & command, const uint32_t & addr, con
 }
 
 vector<APSEthernetPacket> APS2::pack_data(const uint32_t & addr, const vector<uint32_t> & data, const APS_COMMANDS & cmdtype /* see header for default */) {
-	//Break the data up into ethernet frame sized chunks.   
+	//Break the data up into ethernet frame sized chunks.
 	// ethernet frame payload = 1500bytes - 20bytes IPV4 and 8 bytes UDP and 24 bytes APS header (with address field) = 1448bytes = 362 words
 	// for unknown reasons, we see occasional failures when using packets that large. 256 seems to be more stable.
 	static const int maxPayload = 256;
@@ -702,7 +700,7 @@ vector<APSEthernetPacket> APS2::pack_data(const uint32_t & addr, const vector<ui
 
 	APSEthernetPacket newPacket;
 	newPacket.header.command.cmd =  static_cast<uint32_t>(cmdtype);
-	
+
 	auto idx = data.begin();
 	uint16_t seqNum = 0;
 	uint32_t curAddr = addr;
@@ -713,11 +711,11 @@ vector<APSEthernetPacket> APS2::pack_data(const uint32_t & addr, const vector<ui
 		else{
 			newPacket.header.command.cnt = std::distance(idx, data.end());
 		}
-		
+
 		newPacket.header.seqNum = seqNum++;
-		newPacket.header.addr = curAddr; 
+		newPacket.header.addr = curAddr;
 		curAddr += 4*newPacket.header.command.cnt;
-		
+
 		newPacket.payload.clear();
 		std::copy(idx, idx+newPacket.header.command.cnt, std::back_inserter(newPacket.payload));
 
@@ -911,7 +909,7 @@ int APS2::test_PLL_sync() {
 	const vector<int> CH_PLL_RESET_BIT = {PLL_CHA_RST_BIT, PLL_CHB_RST_BIT};
 
 	FILE_LOG(logINFO) << "Running channel sync procedure";
-	
+
 	// Disable DAC FIFOs
 	for (int dac = 0; dac < NUM_CHANNELS; dac++) {
 		disable_DAC_FIFO(dac);
@@ -1066,13 +1064,13 @@ int APS2::setup_VCXO() {
 	return write_SPI(msg);
 }
 
-int APS2::setup_DAC(const int & dac) 
+int APS2::setup_DAC(const int & dac)
 /*
  * Description: Aligns the data valid window of the DAC with the output of the FPGA.
  * inputs: dac = 0 or 1
  */
 {
-	
+
 	uint8_t data;
 	vector<uint32_t> msg;
 	uint8_t SD, MSD, MHD;
@@ -1097,7 +1095,7 @@ int APS2::setup_DAC(const int & dac)
 
 	// Step 1: calibrate and set the LVDS controller.
 	// get initial states of registers
-	
+
 	// TODO: remove int(... & 0x1F)
 	data = read_SPI(targets[dac], DAC_INTERRUPT_ADDR);
 	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_INTERRUPT_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
@@ -1122,15 +1120,15 @@ int APS2::setup_DAC(const int & dac)
 
 	for (MSD = 0; MSD < 16; MSD++) {
 		FILE_LOG(logDEBUG2) <<  "Setting MSD: " << int(MSD);
-		
+
 		data = (MSD << 4) | MHD;
 		msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
 		write_SPI(msg);
 		FILE_LOG(logDEBUG2) <<  "Write Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
-		
+
 		data = read_SPI(targets[dac], DAC_SD_ADDR);
 		FILE_LOG(logDEBUG2) <<  "Read Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
-		
+
 		bool check = data & 1;
 		FILE_LOG(logDEBUG2) << "Check: " << check;
 		if (!check)
@@ -1143,11 +1141,11 @@ int APS2::setup_DAC(const int & dac)
 	MSD = 0;
 	for (MHD = 0; MHD < 16; MHD++) {
 		FILE_LOG(logDEBUG2) <<  "Setting MHD: " << int(MHD);
-		
+
 		data = (MSD << 4) | MHD;
 		msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
 		write_SPI(msg);
-		
+
 		data = read_SPI(targets[dac], DAC_SD_ADDR);
 		FILE_LOG(logDEBUG2) << "Read: " << myhex << int(data & 0xFF);
 		bool check = data & 1;
@@ -1176,7 +1174,7 @@ int APS2::setup_DAC(const int & dac)
 	// data = (1 << 7) | (1 << 6) | (filter_length << 2) | (threshold & 0x3);
 	// msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLER_ADDR, data}});
 	// write_SPI(msg);
-	
+
 	// turn on SYNC FIFO
 	enable_DAC_FIFO(dac);
 
@@ -1184,7 +1182,7 @@ int APS2::setup_DAC(const int & dac)
 }
 
 int APS2::set_DAC_SD(const int & dac, const uint8_t & sd) {
-	//Sets the sample delay 
+	//Sets the sample delay
 	FILE_LOG(logDEBUG) << "Setting SD = " << int(sd);
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
 	auto msg = build_DAC_SPI_msg(targets[dac], {{DAC_SD_ADDR, ((sd & 0xf) << 4)}});
@@ -1289,7 +1287,7 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	// A few helper lambdas
 
 	//Read/write DAC SPI registers
-	auto read_reg = [&](const uint16_t & addr) { return read_SPI(targets[dac], addr); };	
+	auto read_reg = [&](const uint16_t & addr) { return read_SPI(targets[dac], addr); };
 	auto write_reg = [&](const uint16_t & addr, const uint8_t & data) {
 		vector<uint32_t> msg = build_DAC_SPI_msg(targets[dac], {{addr, data}} );
 		write_SPI(msg);
@@ -1367,7 +1365,7 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	set_run_mode(TRIG_WAVEFORM);
 	set_trigger_source(SOFTWARE);
 	run();
-	
+
 	// Following Page 45 of the AD9736 datasheet
 	// Step 0: save the current state of SD and control clock divider
 	auto ccd = read_reg(DAC_CONTROLLERCLOCK_ADDR);
@@ -1483,20 +1481,20 @@ int APS2::set_offset_register(const int & dac, const float & offset) {
 	return 0;
 }
 
-int APS2::set_bit(const uint32_t & addr, std::initializer_list<int> bits) {
+void APS2::set_bit(const uint32_t & addr, std::initializer_list<int> bits) {
 	uint32_t curReg = read_memory(addr, 1)[0];
 	for (int bit : bits) {
 		curReg |= (1 << bit);
 	}
-	return write_memory(addr, curReg);
+	write_memory(addr, curReg);
 }
 
-int APS2::clear_bit(const uint32_t & addr, std::initializer_list<int> bits) {
+void APS2::clear_bit(const uint32_t & addr, std::initializer_list<int> bits) {
 	uint32_t curReg = read_memory(addr, 1)[0];
 	for (int bit : bits) {
 		curReg &= ~(1 << bit);
 	}
-	return write_memory(addr, curReg);
+	write_memory(addr, curReg);
 }
 
 void APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
@@ -1546,7 +1544,7 @@ void APS2::write_sequence(const vector<uint64_t> & data) {
 }
 
 int APS2::write_memory_map(const uint32_t & wfA, const uint32_t & wfB, const uint32_t & seq) { /* see header for defaults */
-	/* Writes the partitioning of external memory to registers. Takes 3 offsets 
+	/* Writes the partitioning of external memory to registers. Takes 3 offsets
 	 * (in bytes) for wfA/B and seq data */
 	FILE_LOG(logDEBUG2) << "Writing memory map with offsets wfA: " << wfA << ", wfB: " << wfB << ", seq: " << seq;
 
@@ -1653,6 +1651,3 @@ string APS2::printAPSChipCommand(APSChipConfigCommand_t & cmd) {
     ret << " INSTR: " << cmd.instr;
     return ret.str();
 }
-
-
-
