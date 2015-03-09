@@ -470,7 +470,7 @@ vector<uint32_t> APS2::read_memory(const uint32_t & addr, const uint32_t & numWo
 }
 
 //SPI read/write
-int APS2::write_SPI(vector<uint32_t> & msg) {
+void APS2::write_SPI(vector<uint32_t> & msg) {
 	// push on "end of message"
 	APSChipConfigCommand_t cmd = {.packed=0};
 	cmd.target = CHIPCONFIG_IO_TARGET_EOL;
@@ -485,7 +485,6 @@ int APS2::write_SPI(vector<uint32_t> & msg) {
 
 	APSEthernetPacket p = query(packet)[0];
 	// TODO: check ACK packet status
-	return 0;
 }
 
 uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & addr) {
@@ -1027,7 +1026,7 @@ int APS2::get_PLL_freq() {
 	return freq;
 }
 
-int APS2::enable_DAC_clock(const int & dac) {
+void APS2::enable_DAC_clock(const int & dac) {
 	// enables the PLL output to a DAC (0 or 1)
 	const vector<uint16_t> DAC_PLL_ADDR = {0xF0, 0xF1};
 
@@ -1036,10 +1035,10 @@ int APS2::enable_DAC_clock(const int & dac) {
 		{0x232, 0x1}
 	};
 	auto msg = build_PLL_SPI_msg(enable_msg);
-	return write_SPI(msg);
+	write_SPI(msg);
 }
 
-int APS2::disable_DAC_clock(const int & dac) {
+void APS2::disable_DAC_clock(const int & dac) {
 	const vector<uint16_t> DAC_PLL_ADDR = {0xF0, 0xF1};
 
 	vector<SPI_AddrData_t> disable_msg = {
@@ -1047,10 +1046,10 @@ int APS2::disable_DAC_clock(const int & dac) {
 		{0x232, 0x1}
 	};
 	auto msg = build_PLL_SPI_msg(disable_msg);
-	return write_SPI(msg);
+	write_SPI(msg);
 }
 
-int APS2::setup_VCXO() {
+void APS2::setup_VCXO() {
 	// Write the standard VCXO setup
 
 	FILE_LOG(logINFO) << "Setting up VCX0";
@@ -1061,10 +1060,10 @@ int APS2::setup_VCXO() {
 //		return -1;
 
 	vector<uint32_t> msg = build_VCXO_SPI_msg(VCXO_INIT);
-	return write_SPI(msg);
+	write_SPI(msg);
 }
 
-int APS2::setup_DAC(const int & dac)
+void APS2::setup_DAC(const int & dac)
 /*
  * Description: Aligns the data valid window of the DAC with the output of the FPGA.
  * inputs: dac = 0 or 1
@@ -1078,7 +1077,7 @@ int APS2::setup_DAC(const int & dac)
 
 	if (dac < 0 || dac >= NUM_CHANNELS) {
 		FILE_LOG(logERROR) << "FPGA::setup_DAC: unknown DAC, " << dac;
-		return -1;
+		throw APS2_INVALID_DAC;
 	}
 	FILE_LOG(logINFO) << "Setting up DAC " << dac;
 
@@ -1177,16 +1176,14 @@ int APS2::setup_DAC(const int & dac)
 
 	// turn on SYNC FIFO
 	enable_DAC_FIFO(dac);
-
-	return 0;
 }
 
-int APS2::set_DAC_SD(const int & dac, const uint8_t & sd) {
+void APS2::set_DAC_SD(const int & dac, const uint8_t & sd) {
 	//Sets the sample delay
 	FILE_LOG(logDEBUG) << "Setting SD = " << int(sd);
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
 	auto msg = build_DAC_SPI_msg(targets[dac], {{DAC_SD_ADDR, ((sd & 0xf) << 4)}});
-	return write_SPI(msg);
+	write_SPI(msg);
 }
 
 int APS2::run_chip_config(const uint32_t & addr /* default = 0 */) {
@@ -1207,11 +1204,11 @@ int APS2::run_chip_config(const uint32_t & addr /* default = 0 */) {
 	return response.header.command.mode_stat;
 }
 
-int APS2::enable_DAC_FIFO(const int & dac) {
+void APS2::enable_DAC_FIFO(const int & dac) {
 
 	if (dac < 0 || dac >= NUM_CHANNELS) {
 		FILE_LOG(logERROR) << "FPGA::setup_DAC: unknown DAC, " << dac;
-		return -1;
+		throw APS2_INVALID_DAC;
 	}
 
 	uint8_t data = 0;
@@ -1251,11 +1248,9 @@ int APS2::enable_DAC_FIFO(const int & dac) {
 	data = read_SPI(targets[dac], DAC_FIFOSTAT_ADDR);
 	data = (data & 0x70) >> 4;
 	FILE_LOG(logDEBUG) << "FIFO phase = " << int(data);
-
-	return 0;
 }
 
-int APS2::disable_DAC_FIFO(const int & dac) {
+void APS2::disable_DAC_FIFO(const int & dac) {
 	uint8_t data, mask;
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
 
@@ -1265,8 +1260,6 @@ int APS2::disable_DAC_FIFO(const int & dac) {
 	mask = (0x1 << 2);
 	vector<uint32_t> msg = build_DAC_SPI_msg(targets[dac], {{DAC_SYNC_ADDR, data & ~mask}});
 	write_SPI(msg);
-
-	return 0;
 }
 
 int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<uint32_t> & results){

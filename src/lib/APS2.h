@@ -98,7 +98,7 @@ public:
 	vector<uint32_t> read_memory(const uint32_t &, const uint32_t &);
 
 	//SPI read/write
-	int write_SPI(vector<uint32_t> &);
+	void write_SPI(vector<uint32_t> &);
 	uint32_t read_SPI(const CHIPCONFIG_IO_TARGET &, const uint16_t &);
 
 	//Flash read/write
@@ -120,7 +120,7 @@ public:
 
 	// DAC BIST test
 	int run_DAC_BIST(const int &, const vector<int16_t> &, vector<uint32_t> &);
-	int set_DAC_SD(const int &, const uint8_t &);
+	void set_DAC_SD(const int &, const uint8_t &);
 
 private:
 
@@ -151,16 +151,16 @@ private:
 	int test_PLL_sync();
 	void check_clocks_status();
 	int get_PLL_freq();
-	int enable_DAC_clock(const int &);
-	int disable_DAC_clock(const int &);
+	void enable_DAC_clock(const int &);
+	void disable_DAC_clock(const int &);
 
 	// VCXO methods
-	int setup_VCXO();
+	void setup_VCXO();
 
 	// DAC methods
-	int setup_DAC(const int &);
-	int enable_DAC_FIFO(const int &);
-	int disable_DAC_FIFO(const int &);
+	void setup_DAC(const int &);
+	void enable_DAC_FIFO(const int &);
+	void disable_DAC_FIFO(const int &);
 
 	// int trigger();
 	// int disable();
