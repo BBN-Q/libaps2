@@ -127,7 +127,7 @@ private:
 	string deviceSerial_;
 	vector<Channel> channels_;
 	shared_ptr<APSEthernet> ethernetRM_;
-	int samplingRate_;
+	unsigned samplingRate_;
 	MACAddr macAddr_;
 
 	//Read/Write commands

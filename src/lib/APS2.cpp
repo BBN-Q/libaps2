@@ -1,8 +1,8 @@
 #include "APS2.h"
 
-APS2::APS2() :  isOpen{false}, channels_(2), samplingRate_{-1} {};
+APS2::APS2() :  isOpen{false}, channels_(2), samplingRate_{0} {};
 
-APS2::APS2(string deviceSerial) :  isOpen{false}, deviceSerial_{deviceSerial}, samplingRate_{-1} {
+APS2::APS2(string deviceSerial) :  isOpen{false}, deviceSerial_{deviceSerial}, samplingRate_{0} {
 	channels_.reserve(2);
 	for(size_t ct=0; ct<2; ct++) channels_.push_back(Channel(ct));
 };
