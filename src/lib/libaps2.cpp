@@ -1,15 +1,9 @@
 /*
- * libaps.cpp - Library for APSv2 control. 
+ * libaps.cpp - C API shared library for APSv2 control.
  *
  */
 
 #include <sstream>
-#include <functional>
-
-using namespace std::placeholders;
-using std::function;
-using std::bind;
-
 
 #include "headings.h"
 #include "libaps2.h"
@@ -41,6 +35,7 @@ InitAndCleanUp::~InitAndCleanUp() {
 }
 InitAndCleanUp initandcleanup_;
 
+//Return the shared_ptr to the Ethernet interface
 shared_ptr<APSEthernet> get_interface() {
 	//See if we have to setup our own RM
 	shared_ptr<APSEthernet> myEthernetRM = ethernetRM.lock();
@@ -53,10 +48,12 @@ shared_ptr<APSEthernet> get_interface() {
 	return myEthernetRM;
 }
 
-template<typename F>
-APS2_STATUS aps2_call(const char* deviceSerial, F func){
+//Define a couple of templated wrapper functions to make library calls and catch thrown errors
+//First one for void calls
+template<typename F, typename... Args>
+APS2_STATUS aps2_call(const char* deviceSerial, F func, Args... args){
 	try {
-		func(APSs.at(deviceSerial));
+		(APSs.at(deviceSerial).*func)(args...);
 		//Nothing thrown then assume OK
 		return APS2_OK;
 	}
@@ -75,10 +72,11 @@ APS2_STATUS aps2_call(const char* deviceSerial, F func){
 	}
 }
 
-template<typename R, typename F>
-APS2_STATUS aps2_getter(const char* deviceSerial, F func, R* resPtr){
+//and one for to store getter values in pointer passed to library
+template<typename R, typename F, typename... Args>
+APS2_STATUS aps2_getter(const char* deviceSerial, F func, R* resPtr, Args... args){
 	try {
-		*resPtr = func(APSs.at(deviceSerial));
+		*resPtr = (APSs.at(deviceSerial).*func)(args...);
 		//Nothing thrown then assume OK
 		return APS2_OK;
 	}
@@ -150,9 +148,8 @@ APS2_STATUS connect_APS(const char* deviceSerial) {
 	if (APSs.find(serial) == APSs.end()) {
 		APSs[serial] = APS2(serial);
 	}
-	//Can't seem to bind the interface
-	// function<void(APS2&)> func = bind(&APS2::connect, _1, get_interface());
-	// return aps2_call(deviceSerial, func);
+	//Can't seem to bind the interface lvalue to ‘std::shared_ptr<APSEthernet>&&’
+	// return aps2_call(deviceSerial, &APS2::connect, get_interface());
 	try {
 		APSs.at(deviceSerial).connect(get_interface());
 		return APS2_OK;
@@ -169,94 +166,82 @@ APS2_STATUS disconnect_APS(const char* deviceSerial) {
 	/*
 	Tear-down connection to APS specified by serial number string.
 	*/
-	auto func = bind(&APS2::disconnect, _1);
-	APS2_STATUS status = aps2_call(deviceSerial, func);
+	APS2_STATUS status = aps2_call(deviceSerial, &APS2::disconnect);
 	APSs.erase(string(deviceSerial));
 	return status;
 }
 
 APS2_STATUS reset(const char* deviceSerial, int resetMode) {
-	auto func = bind(&APS2::reset, _1, static_cast<APS_RESET_MODE_STAT>(resetMode));
-	return aps2_call(deviceSerial, func);
+	return aps2_call(deviceSerial, &APS2::reset, static_cast<APS_RESET_MODE_STAT>(resetMode));
 }
 
 //Initialize an APS unit
-//Assumes null-terminated bitFile
 APS2_STATUS init_APS(const char* deviceSerial, int forceReload) {
-	auto func = bind(&APS2::init, _1, bool(forceReload), 0);
-	return aps2_call(deviceSerial, func);
+	return aps2_call(deviceSerial, &APS2::init, bool(forceReload), 0);
 }
 
 APS2_STATUS get_firmware_version(const char* deviceSerial, uint32_t* version) {
-	auto func = bind(&APS2::get_firmware_version, _1);
-	return aps2_getter(deviceSerial, func, version);
+	return aps2_getter(deviceSerial, &APS2::get_firmware_version, version);
 }
 
 APS2_STATUS get_uptime(const char* deviceSerial, double* upTime) {
-	auto func = bind(&APS2::get_uptime, _1);
-	return aps2_getter(deviceSerial, func, upTime);
+	return aps2_getter(deviceSerial, &APS2::get_uptime, upTime);
 }
 
 APS2_STATUS get_fpga_temperature(const char* deviceSerial, double* temp) {
-	auto func = bind(&APS2::get_fpga_temperature, _1);
-	return aps2_getter(deviceSerial, func, temp);
+	return aps2_getter(deviceSerial, &APS2::get_fpga_temperature, temp);
 }
 
 APS2_STATUS set_sampleRate(const char* deviceSerial, unsigned int freq) {
-	auto func = bind(&APS2::set_sampleRate, _1, freq);
-	return aps2_call(deviceSerial, func);
+	return aps2_call(deviceSerial, &APS2::set_sampleRate, freq);
 }
 
 APS2_STATUS get_sampleRate(const char* deviceSerial, unsigned int* freq) {
-	auto func = bind(&APS2::get_sampleRate, _1);
-	return aps2_getter(deviceSerial, func, freq);
+	return aps2_getter(deviceSerial, &APS2::get_sampleRate, freq);
 }
 
 //Load the waveform library as floats
 APS2_STATUS set_waveform_float(const char* deviceSerial, int channelNum, float* data, int numPts) {
-	auto func = bind(static_cast<void(APS2::*)(const int&, const vector<float>&)>(&APS2::set_waveform), _1, channelNum, vector<float>(data, data+numPts));
-	return aps2_call(deviceSerial, func);
+	//specialize the templated APS2::set_waveform here
+	return aps2_call(deviceSerial,
+						static_cast<void(APS2::*)(const int&, const vector<float>&)>(&APS2::set_waveform),
+						channelNum, vector<float>(data, data+numPts));
 }
 
 //Load the waveform library as int16
 APS2_STATUS set_waveform_int(const char* deviceSerial, int channelNum, int16_t* data, int numPts) {
-	auto func = bind(static_cast<void(APS2::*)(const int&, const vector<int16_t>&)>(&APS2::set_waveform), _1, channelNum, vector<int16_t>(data, data+numPts));
-	return aps2_call(deviceSerial, func);
+	//specialize the templated APS2::set_waveform here
+	return aps2_call(deviceSerial,
+						static_cast<void(APS2::*)(const int&, const vector<int16_t>&)>(&APS2::set_waveform),
+						channelNum, vector<int16_t>(data, data+numPts));
 }
 
 APS2_STATUS set_markers(const char* deviceSerial, int channelNum, uint8_t* data, int numPts) {
-	auto func = bind(&APS2::set_markers, _1, channelNum, vector<uint8_t>(data, data+numPts));
-	return aps2_call(deviceSerial, func);
+	return aps2_call(deviceSerial, &APS2::set_markers, channelNum, vector<uint8_t>(data, data+numPts));
 }
 
 APS2_STATUS write_sequence(const char* deviceSerial, uint64_t* data, uint32_t numWords) {
-	auto func = bind(&APS2::write_sequence, _1, vector<uint64_t>(data, data+numWords));
-	return aps2_call(deviceSerial, func);
+	return aps2_call(deviceSerial, &APS2::write_sequence, vector<uint64_t>(data, data+numWords));
 }
 
 APS2_STATUS load_sequence_file(const char* deviceSerial, const char* seqFile) {
-	auto func = bind(&APS2::load_sequence_file, _1, string(seqFile));
-	return aps2_call(deviceSerial, func);
+	return aps2_call(deviceSerial, &APS2::load_sequence_file, string(seqFile));
 }
 
 APS2_STATUS clear_channel_data(const char* deviceSerial) {
-	auto func = bind(&APS2::clear_channel_data, _1);
-	return aps2_call(deviceSerial, func);
+	return aps2_call(deviceSerial, &APS2::clear_channel_data);
 }
 
 APS2_STATUS run(const char* deviceSerial) {
-	auto func = bind(&APS2::run, _1);
-	return aps2_call(deviceSerial, func);
+	return aps2_call(deviceSerial, &APS2::run);
 }
 
 APS2_STATUS stop(const char* deviceSerial) {
-	auto func = bind(&APS2::stop, _1);
-	return aps2_call(deviceSerial, func);
+	return aps2_call(deviceSerial, &APS2::stop);
 }
 
 APS2_STATUS get_runState(const char* deviceSerial, RUN_STATE* state) {
-	auto func = bind(&APS2::get_runState, _1);
-	return aps2_getter(deviceSerial, func, state);
+	return aps2_getter(deviceSerial, &APS2::get_runState, state);
 }
 
 //Expects a null-terminated character array
@@ -264,7 +249,7 @@ APS2_STATUS set_log(const char* fileNameArr) {
 
 	//Close the current file
 	if (Output2FILE::Stream()) fclose(Output2FILE::Stream());
-	
+
 	string fileName(fileNameArr);
 	if (fileName.compare("stdout") == 0) {
 		Output2FILE::Stream() = stdout;
@@ -289,65 +274,54 @@ APS2_STATUS set_logging_level(TLogLevel logLevel) {
 	return APS2_OK;
 }
 
-APS2_STATUS set_trigger_source(const char* deviceSerial, TRIGGER_SOURCE triggerSource) {
-	auto func = bind(&APS2::set_trigger_source, _1, triggerSource);
-	return aps2_call(deviceSerial, func);	
+APS2_STATUS set_trigger_source(const char* deviceSerial, TRIGGER_SOURCE src) {
+	return aps2_call(deviceSerial, &APS2::set_trigger_source, src);
 }
 
-APS2_STATUS get_trigger_source(const char* deviceSerial, TRIGGER_SOURCE* source) {
-	function<TRIGGER_SOURCE(APS2&)> func = bind(&APS2::get_trigger_source, _1);
-	return aps2_getter(deviceSerial, func, source);
+APS2_STATUS get_trigger_source(const char* deviceSerial, TRIGGER_SOURCE* src) {
+	return aps2_getter(deviceSerial, &APS2::get_trigger_source, src);
 }
 
 APS2_STATUS set_trigger_interval(const char* deviceSerial, double interval) {
-	auto func = bind(&APS2::set_trigger_interval, _1, interval);
-	return aps2_call(deviceSerial, func);	
+	return aps2_call(deviceSerial, &APS2::set_trigger_interval, interval);
 }
 
 APS2_STATUS get_trigger_interval(const char* deviceSerial, double* interval) {
-	function<double(APS2&)> func = bind(&APS2::get_trigger_interval, _1);
-	return aps2_getter(deviceSerial, func, interval);
+	return aps2_getter(deviceSerial, &APS2::get_trigger_interval, interval);
 }
 
 APS2_STATUS trigger(const char* deviceSerial) {
-	auto func = bind(&APS2::trigger, _1);
-	return aps2_call(deviceSerial, func);	
+	return aps2_call(deviceSerial, &APS2::trigger);
 }
 
 APS2_STATUS set_channel_offset(const char* deviceSerial, int channelNum, float offset) {
-	auto func = bind(&APS2::set_channel_offset, _1, channelNum, offset);
-	return aps2_call(deviceSerial, func);
+	return aps2_call(deviceSerial, &APS2::set_channel_offset, channelNum, offset);
 }
 APS2_STATUS set_channel_scale(const char* deviceSerial, int channelNum, float scale) {
-	auto func = bind(&APS2::set_channel_scale, _1, channelNum, scale);
-	return aps2_call(deviceSerial, func);
+	return aps2_call(deviceSerial, &APS2::set_channel_scale, channelNum, scale);
 }
 APS2_STATUS set_channel_enabled(const char* deviceSerial, int channelNum, int enable) {
-	auto func = bind(&APS2::set_channel_enabled, _1, channelNum, enable);
-	return aps2_call(deviceSerial, func);
+	return aps2_call(deviceSerial, &APS2::set_channel_enabled, channelNum, enable);
 }
 
 APS2_STATUS get_channel_offset(const char* deviceSerial, int channelNum, float* offset) {
-	auto func = bind(&APS2::get_channel_offset, _1, channelNum);
-	return aps2_getter(deviceSerial, func, offset);
+	return aps2_getter(deviceSerial, &APS2::get_channel_offset, offset, channelNum);
 }
 APS2_STATUS get_channel_scale(const char* deviceSerial, int channelNum, float* scale) {
-	auto func = bind(&APS2::get_channel_offset, _1, channelNum);
-	return aps2_getter(deviceSerial, func, scale);
+	return aps2_getter(deviceSerial, &APS2::get_channel_scale, scale, channelNum);
 }
 APS2_STATUS get_channel_enabled(const char* deviceSerial, int channelNum, int* enabled) {
-	auto func = bind(&APS2::get_channel_offset, _1, channelNum);
-	return aps2_getter(deviceSerial, func, enabled);
+	return aps2_getter(deviceSerial, &APS2::get_channel_offset, enabled, channelNum);
 }
 
 APS2_STATUS set_run_mode(const char* deviceSerial, RUN_MODE mode) {
-	auto func = bind(&APS2::set_run_mode, _1, mode);
-	return aps2_call(deviceSerial, func);
+	return aps2_call(deviceSerial, &APS2::set_run_mode, mode);
 }
 
 int write_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
-	vector<uint32_t> dataVec(data, data+numWords);
-	return APSs[string(deviceSerial)].write_memory(addr, dataVec);
+	return aps2_call(deviceSerial,
+						static_cast<void(APS2::*)(const uint32_t&, const vector<uint32_t>&)>(&APS2::write_memory),
+						addr, vector<uint32_t>(data, data + numWords));
 }
 
 int read_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
@@ -363,12 +337,11 @@ int read_register(const char* deviceSerial, uint32_t addr) {
 }
 
 int program_FPGA(const char* deviceSerial, const char* bitFile) {
-	return APSs[string(deviceSerial)].program_FPGA(string(bitFile));
+	return aps2_call(deviceSerial, &APS2::program_FPGA, string(bitFile));
 }
 
 int write_flash(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
-	vector<uint32_t> writeData(data, data+numWords);
-	return APSs[string(deviceSerial)].write_flash(addr, writeData);
+	return aps2_call(deviceSerial, &APS2::write_flash, addr, vector<uint32_t>(data, data + numWords));
 }
 
 int read_flash(const char* deviceSerial, uint32_t addr, uint32_t numWords, uint32_t* data) {
@@ -398,12 +371,11 @@ APS2_STATUS get_ip_addr(const char* deviceSerial, char* ipAddrPtr) {
 
 APS2_STATUS set_ip_addr(const char* deviceSerial, const char* ipAddrStr) {
 	uint32_t ipAddr = asio::ip::address_v4::from_string(ipAddrStr).to_ulong();
-	auto func = bind(&APS2::set_ip_addr, _1, ipAddr);
-	return aps2_call(deviceSerial, func);
+	return aps2_call(deviceSerial, &APS2::set_ip_addr, ipAddr);
 }
 
-int write_SPI_setup(const char* deviceSerial) {
-	return APSs[string(deviceSerial)].write_SPI_setup();
+APS2_STATUS write_SPI_setup(const char* deviceSerial) {
+	return aps2_call(deviceSerial, &APS2::write_SPI_setup);
 }
 
 int run_DAC_BIST(const char* deviceSerial, const int dac, int16_t* data, unsigned int length, uint32_t* results){
@@ -414,11 +386,10 @@ int run_DAC_BIST(const char* deviceSerial, const int dac, int16_t* data, unsigne
 	return passed;
 }
 
-int set_DAC_SD(const char* deviceSerial, const int dac, const uint8_t sd){
-	return APSs[string(deviceSerial)].set_DAC_SD(dac, sd);
+APS2_STATUS set_DAC_SD(const char* deviceSerial, const int dac, const uint8_t sd){
+	return aps2_call(deviceSerial, &APS2::set_DAC_SD, dac, sd);
 }
 
 #ifdef __cplusplus
 }
 #endif
-

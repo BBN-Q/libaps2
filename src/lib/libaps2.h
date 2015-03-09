@@ -89,10 +89,10 @@ EXPORT int read_flash(const char*, uint32_t, uint32_t, uint32_t*);
 EXPORT uint64_t get_mac_addr(const char*);
 EXPORT int set_mac_addr(const char*, uint64_t);
 
-EXPORT int write_SPI_setup(const char*);
+EXPORT APS2_STATUS write_SPI_setup(const char*);
 
 EXPORT int run_DAC_BIST(const char*, const int, int16_t*, unsigned int, uint32_t*);
-EXPORT int set_DAC_SD(const char*, const int, const uint8_t);
+EXPORT APS2_STATUS set_DAC_SD(const char*, const int, const uint8_t);
 
 #ifdef __cplusplus
 }
