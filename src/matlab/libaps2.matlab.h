@@ -8,35 +8,27 @@
 #ifndef LIBAPS_H_
 #define LIBAPS_H_
 
+#include "../lib/APS2_errno.h"
+#include "../lib/APS2_enums.h"
+enum TLogLevel {logERROR, logWARNING, logINFO, logDEBUG, logDEBUG1, logDEBUG2, logDEBUG3, logDEBUG4};
+
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
 #else
 #define EXPORT
 #endif
 
-typedef enum {EXTERNAL=0, INTERNAL, SOFTWARE} TRIGGER_SOURCE;
-
-typedef enum {RUN_SEQUENCE=0, TRIG_WAVEFORM, CW_WAVEFORM} RUN_MODE;
-
-typedef enum {STOPPED=0, PLAYING} RUN_STATE;
-
-typedef enum {logERROR, logWARNING, logINFO, logDEBUG, logDEBUG1, logDEBUG2, logDEBUG3, logDEBUG4} TLogLevel;
-
-typedef enum {
-	APS2_OK,
-	APS2_UNKNOWN_ERROR = -1,
-	APS2_NO_DEVICE_FOUND = -2,
-	APS2_UNCONNECTED = -3,
-	APS2_RESET_TIMEOUT =-4,
-	APS2_FILELOG_ERROR = -5,
-	APS2_SEQFILE_FAIL = -6,
-	APS2_PLL_LOST_LOCK = -7,
-	APS2_MMCM_LOST_LOCK = -8,
-} APS2_STATUS;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//Typedef the enums for C compatibility
+typedef enum APS2_STATUS APS2_STATUS;
+typedef enum TRIGGER_SOURCE TRIGGER_SOURCE;
+typedef enum RUN_MODE RUN_MODE;
+typedef enum RUN_STATE RUN_STATE;
+typedef enum TLogLevel TLogLevel;
 
 EXPORT const char* get_error_msg(APS2_STATUS);
 
@@ -104,10 +96,10 @@ EXPORT int read_flash(const char*, unsigned int, unsigned int, unsigned int*);
 EXPORT unsigned __int64 get_mac_addr(const char*);
 EXPORT int set_mac_addr(const char*, unsigned __int64);
 
-EXPORT int write_SPI_setup(const char*);
+EXPORT APS2_STATUS write_SPI_setup(const char*);
 
 EXPORT int run_DAC_BIST(const char*, const int, short*, unsigned int, unsigned int*);
-EXPORT int set_DAC_SD(const char*, const int, const char);
+EXPORT APS2_STATUS set_DAC_SD(const char*, const int, const char);
 
 #ifdef __cplusplus
 }

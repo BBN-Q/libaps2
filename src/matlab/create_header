@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Creates the Matlab compatible version of the header file
+
+cp ../lib/libaps2.h libaps2.matlab.h
+
+#Change the path to the includes
+#Replace C++ logger header with logging level enum
+#Change types that Matlab can't handle
+sed -i '
+s/^#include "APS2/#include "..\/lib\/APS2/g
+s/^#include "logger.h"/enum TLogLevel {logERROR, logWARNING, logINFO, logDEBUG, logDEBUG1, logDEBUG2, logDEBUG3, logDEBUG4};/
+s/uint8_t/char/g
+s/int16_t/short/g
+s/uint32_t/unsigned int/g
+s/uint64_t/unsigned __int64/g' libaps2.matlab.h

@@ -1,9 +1,6 @@
 #ifndef APS2_ERRNO_H_
 #define APS2_ERRNO_H_
 
-#include <map>
-#include <string>
-
 enum APS2_STATUS {
 	APS2_OK,
 	APS2_UNKNOWN_ERROR = -1,
@@ -19,6 +16,12 @@ enum APS2_STATUS {
 	APS2_INVALID_DAC = -11
 };
 
+
+#ifdef __cplusplus
+
+#include <map>
+#include <string>
+
 static std::map<APS2_STATUS, std::string> messages = {
 	{APS2_UNCONNECTED, "Attempt to run library function on unconnected APS2"},
 	{APS2_SEQFILE_FAIL, "Failed to load HDF5 sequence file. Check it is present and correctly formatted."},
@@ -31,6 +34,6 @@ static std::map<APS2_STATUS, std::string> messages = {
 };
 
 
-
+#endif
 
 #endif

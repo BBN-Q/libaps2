@@ -23,6 +23,13 @@
 extern "C" {
 #endif
 
+//Typedef the enums for C compatibility
+typedef enum APS2_STATUS APS2_STATUS;
+typedef enum TRIGGER_SOURCE TRIGGER_SOURCE;
+typedef enum RUN_MODE RUN_MODE;
+typedef enum RUN_STATE RUN_STATE;
+typedef enum TLogLevel TLogLevel;
+
 EXPORT const char* get_error_msg(APS2_STATUS);
 
 EXPORT APS2_STATUS get_numDevices(unsigned int*);
