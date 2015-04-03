@@ -52,17 +52,17 @@ repository.
 		+ gaussian pulses from 256 samples down to 8 samples with 10ns gaps;
 		+ square wave from 256 down to 8 samples with 10ns gaps;
 		+ wfB.dat is negative wfA.dat.
-	- `ramsey_unslipped.h5` - an 10 sequence Ramsey pattern with 40ns gausssian shaped pulses in a ``40ns delay - X90 - variable delay - X90m pattern`` with the delay stepping from 44 to 104 samples.  All four markers are mirrored and act as blanking pulses around the analog pulses. 
+	- `ramsey_unslipped.h5` - an 10 sequence Ramsey pattern with 40ns gausssian shaped pulses in a ``40ns delay - X90 - variable delay - X90m pattern`` with the delay stepping from 44 to 104 samples.  All four markers are mirrored and act as blanking pulses around the analog pulses.
 	- `ramsey_slipped.h5`` - a similar Ramsey pattern but with the markers slipped by one sample to show the marker resolution and jitter.
 * `src` - the source code
 	- `src/lib` - the shared library. ``libaps2.h`` contains the public API definitions.
 	- `src/matlab` - Matlab bindings to libaps2
 	- `src/julia` - Julia bindings to libaps2
-	- `src/util` - test and utility command line programs. See below for description. 
+	- `src/util` - test and utility command line programs. See below for description.
 	- `src/C++` - C++ command line programs to play waveforms and sequences.
 	- `src/wireshark` - lua dissector for sniffing APS2 packets.
 * `build` - compiled shared library and executable programs
-	- Shared library 
+	- Shared library
 		+ `libaps2.dll` - the main shared library
 		+ load time dependencies for libaps2: `libgcc_s_seh-1.dll, libhdf5-0.dll, libhdf5_cpp-0.dll, libstdc++-6.dll, libwinpthread-1.dll, libszip-0.dll, zlib1.dll`
 	- Command line programs
@@ -103,9 +103,10 @@ port, we recommend placing the APS2 system on a private network, or behind a
 firewall.
 
 The control computer must be on the same subnet as the APS2 to respond to
-returning packets. Most operating systems allow multiple IP addresses to
-coexist on the same network card so the control computer must add a virtual IP
-on the subnet.
+returning packets. Most operating systems allow multiple IP addresses to coexist
+on the same network card so the control computer must add a virtual IP on the
+subnet.  For now multiple network interfaces (e.g. Ethernet for APS2 and
+wireless for other networks) is not supported.  Contact BBN for a work-around.
 
 Windows
 ~~~~~~~~~~~~~~
@@ -117,7 +118,7 @@ settings. Then set the properties of the TCP/IPv4 interface.
 .. figure:: images/WindowsDualHome-1.png
 	:scale: 100%
 
-	**Step 1** accessing the IPv4 settings for the network interface. 
+	**Step 1** accessing the IPv4 settings for the network interface.
 
 Then under the Advanced tab it will be possible to add additional IP
 addresses. Unfortunately, Windows does not support multiple IP addresses with
@@ -126,7 +127,7 @@ DHCP so a static address is required for the main network.
 .. figure:: images/WindowsDualHome-2.png
 	:scale: 100%
 
-	**Step 2** Adding addition IP addresses for the network interface. 
+	**Step 2** Adding addition IP addresses for the network interface.
 
 Linux
 ~~~~~~~~~~~~~~~
@@ -139,12 +140,12 @@ interfaces::
 A more permanent solution would involve editing the network interfaces file,
 e.g. ``/etc/network/interfaces``.
 
-OS X 
+OS X
 ~~~~~~~~~~~~
 
 In the System Preferences pane under Networking use the "Plus" button to add
 an interface.
-	
+
 
 Firmware Updates
 -------------------------
@@ -155,17 +156,17 @@ can be loaded onto the APS2 modules using the ``program`` executable::
 	./program
 	BBN AP2 Firmware Programming Executable
 	USAGE: program [options]
-	
+
 	Options:
 	  --help      Print usage and exit.
 	  --bitFile   Path to firmware bitfile.
 	  --ipAddr    IP address of unit to program (optional).
 	  --progMode  (optional) Where to program firmware DRAM/EPROM/BACKUP (optional).
 	  --logLevel  (optional) Logging level level to print (optional; default=2/INFO).
-	
+
 	Examples:
 	  program --bitFile=/path/to/bitfile (all other options will be prompted for)
-	  program --bitFile=/path/to/bitfile --ipAddr=192.168.2.2 --progMode=DRAM 
+	  program --bitFile=/path/to/bitfile --ipAddr=192.168.2.2 --progMode=DRAM
 
 The executable will prompt the user for ip address and programming mode. The
 APS2 can boot from multiple locations: volatile DRAM; non-volatile flash or if
