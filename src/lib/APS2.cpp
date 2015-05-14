@@ -173,27 +173,26 @@ double APS2::get_fpga_temperature(){
 int APS2::store_image(const string & bitFile, const int & position) { /* see header for position default = 0 */
 	FILE_LOG(logDEBUG) << "Opening bitfile: " << bitFile;
 
-	std::ifstream FID (bitFile, std::ios::in|std::ios::binary);
+	std::ifstream FID(bitFile, std::ios::in | std::ios::binary);
 	if (!FID.is_open()){
 		FILE_LOG(logERROR) << "Unable to open bitfile: " << bitFile;
 		return -1; // TODO return a proper error code
 	}
 
-	//Get the file size in bytes
-	FID.seekg(0, std::ios::end);
-	size_t fileSize = FID.tellg();
-	FILE_LOG(logDEBUG1) << "Bitfile is " << fileSize << " bytes";
-	FID.seekg(0, std::ios::beg);
+	//Read the file into a byte array
+	vector<uint8_t> fileData((std::istreambuf_iterator<char>(FID)), std::istreambuf_iterator<char>());
+	FILE_LOG(logDEBUG1) << "Read " << fileData.size() << " bytes in bitfile.";
 
-	//Copy over the file data to the data vector
+	//Pad out to align with a multiple of 8 bytes
+	//This is because DRAM writes must be mulitples of 8 bytes and 8 bytes aligned
+	int padBytes = (8 - (fileData.size() % 8)) % 8;
+	FILE_LOG(logDEBUG1) << "Padding bitfile byte vector with " << padBytes << " bytes.";
+	fileData.resize(fileData.size() + padBytes, 0xff);
+
+	//Copy over the file data to a 32 bit data vector
 	vector<uint32_t> packedData;
-	packedData.resize(fileSize/4);
-	FID.read(reinterpret_cast<char *>(packedData.data()), fileSize);
-
-	// make packedData size even to ensure that the payload will be a multiple of 8 bytes
-	if (packedData.size() % 2 != 0) {
-		packedData.push_back(0xffffffffu);
-	}
+	packedData.resize(fileData.size()/4);
+	memcpy(packedData.data(), fileData.data(), fileData.size());
 
 	//Convert to big endian byte order - basically because it will be byte-swapped again when the packet is serialized
 	for (auto & packet : packedData) {
@@ -202,7 +201,7 @@ int APS2::store_image(const string & bitFile, const int & position) { /* see hea
 
 	FILE_LOG(logDEBUG1) << "Bit file is " << packedData.size() << " 32-bit words long";
 
-	uint32_t addr = 0; // todo: make start address depend on position
+	uint32_t addr = 0; // TODO: make start address depend on position
 	auto packets = pack_data(addr, packedData, APS_COMMANDS::FPGACONFIG_ACK);
 
 	// send in groups of 20
