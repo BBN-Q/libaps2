@@ -24,14 +24,13 @@ public:
 	APS2(string);
 	~APS2();
 
-
 	void connect(shared_ptr<APSEthernet> &&);
 	void disconnect();
 
 	APS2_STATUS init(const bool & = false, const int & bitFileNum = 0);
 	void reset(const APS_RESET_MODE_STAT & resetMode = APS_RESET_MODE_STAT::SOFT_RESET);
 
-	int store_image(const string & bitFile, const int & position = 0);
+	void store_image(const string & bitFile, const int & position = 0);
 	int select_image(const int &);
 	int program_FPGA(const string &);
 

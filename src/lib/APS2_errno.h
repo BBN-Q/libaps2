@@ -13,7 +13,8 @@ enum APS2_STATUS {
 	APS2_MMCM_LOST_LOCK = -8,
 	APS2_UNKNOWN_RUN_MODE = -9,
 	APS2_FAILED_TO_CONNECT = -10,
-	APS2_INVALID_DAC = -11
+	APS2_INVALID_DAC = -11,
+	APS2_NO_SUCH_BITFILE = -12
 };
 
 
@@ -30,7 +31,8 @@ static std::map<APS2_STATUS, std::string> messages = {
 	{APS2_MMCM_LOST_LOCK, "The FPGA MMCM has lost its lock.  Try resetting the module."},
 	{APS2_UNKNOWN_RUN_MODE, "Unknown APS2 run mode.  Available options are RUN_SEQUENCE, TRIG_WAVEFORM, CW_WAVEFORM"},
 	{APS2_FAILED_TO_CONNECT, "Unable to connect to requested APS2.  Make sure it is connected to network."},
-	{APS2_INVALID_DAC, "API call requested invalide DAC channel.  Only 2 channels per module."}
+	{APS2_INVALID_DAC, "API call requested invalide DAC channel.  Only 2 channels per module."},
+	{APS2_NO_SUCH_BITFILE, "Could not find bitfile at location specified."}
 };
 
 

@@ -170,13 +170,13 @@ double APS2::get_fpga_temperature(){
 	return temp;
 }
 
-int APS2::store_image(const string & bitFile, const int & position) { /* see header for position default = 0 */
+void APS2::store_image(const string & bitFile, const int & position) { /* see header for position default = 0 */
 	FILE_LOG(logDEBUG) << "Opening bitfile: " << bitFile;
 
 	std::ifstream FID(bitFile, std::ios::in | std::ios::binary);
 	if (!FID.is_open()){
 		FILE_LOG(logERROR) << "Unable to open bitfile: " << bitFile;
-		return -1; // TODO return a proper error code
+		throw APS2_NO_SUCH_BITFILE;
 	}
 
 	//Read the file into a byte array
@@ -206,7 +206,6 @@ int APS2::store_image(const string & bitFile, const int & position) { /* see hea
 
 	// send in groups of 20
 	ethernetRM_->send(deviceSerial_, packets, 20);
-	return 0;
 }
 
 int APS2::select_image(const int & bitFileNum) {
@@ -228,10 +227,8 @@ int APS2::program_FPGA(const string & bitFile) {
 	 * @param bitFile path to a Xilinx bit file
 	 * @param expectedVersion - checks whether version register matches this value after programming. -1 = skip the check
 	 */
-	int success = store_image(bitFile);
-	if (success != 0)
-		return success;
-	success = select_image(0);
+	store_image(bitFile);
+	int success = select_image(0);
 	if (success != 0)
 		return success;
 
