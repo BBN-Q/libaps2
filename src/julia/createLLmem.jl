@@ -16,7 +16,7 @@ end
 function __init__()
 	global PRINTSHORT = false
 	global const emptySymbol = symbol("")
-	global const OPCODES = Dict(
+	global const OPCODES = @compat Dict(
 		0x0 => :WFM,
 		0x1 => :MARKER,
 		0x2 => :WAIT,
