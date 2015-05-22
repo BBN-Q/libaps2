@@ -378,6 +378,14 @@ APS2_STATUS write_SPI_setup(const char* deviceSerial) {
 	return aps2_call(deviceSerial, &APS2::write_SPI_setup);
 }
 
+APS2_STATUS get_dhcp_enable(const char* deviceSerial, int * enabled) {
+	return aps2_getter(deviceSerial, &APS2::get_dhcp_enable, enabled);
+}
+
+APS2_STATUS set_dhcp_enable(const char* deviceSerial, const int enable) {
+	return aps2_call(deviceSerial, &APS2::set_dhcp_enable, enable);
+}
+
 int run_DAC_BIST(const char* deviceSerial, const int dac, int16_t* data, unsigned int length, uint32_t* results){
 	vector<int16_t> testVec(data, data+length);
 	vector<uint32_t> tmpResults;

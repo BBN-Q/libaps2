@@ -84,6 +84,10 @@ EXPORT APS2_STATUS set_logging_level(TLogLevel);
 EXPORT APS2_STATUS get_ip_addr(const char*, char*);
 EXPORT APS2_STATUS set_ip_addr(const char*, const char*);
 
+EXPORT APS2_STATUS get_dhcp_enable(const char*, int *);
+EXPORT APS2_STATUS set_dhcp_enable(const char*, const int*);
+
+
 /* private API methods */
 
 EXPORT int write_memory(const char*, unsigned int, unsigned int*, unsigned int);

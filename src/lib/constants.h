@@ -282,6 +282,8 @@ static const uint32_t EPROM_SPI_CONFIG_ADDR = 0x0;
 static const uint32_t EPROM_USER_IMAGE_ADDR = 0x00010000;
 static const uint32_t EPROM_BASE_IMAGE_ADDR = 0x01000000;
 static const uint32_t EPROM_MACIP_ADDR      = 0x00FF0000;
+static const uint32_t EPROM_IP_OFFSET       = 8;
+static const uint32_t EPROM_DHCP_OFFSET     = 12;
 
 //APS ethernet type
 static const uint16_t APS_PROTO = 0xBB4E;

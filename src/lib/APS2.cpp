@@ -619,6 +619,30 @@ vector<uint32_t> APS2::read_flash(const uint32_t & addr, const uint32_t & numWor
 	return data;
 }
 
+int APS2::write_macip_flash(const uint64_t & mac, 
+	                  const uint32_t & ip_addr, 
+	                  const bool & dhcp_enable) {
+	uint32_t dhcp_int;
+
+	dhcp_int = (dhcp_enable) ? 1 : 0;
+	vector<uint32_t> data = {static_cast<uint32_t>(mac >> 16),
+		                     static_cast<uint32_t>((mac & 0xffff) << 16),
+		                     ip_addr,
+		                     dhcp_int};
+	write_flash(EPROM_MACIP_ADDR, data);
+	// verify
+	if (get_mac_addr() != mac) {
+		return -1;
+	}
+	if (get_ip_addr() != ip_addr) {
+		return -1;
+	}
+	if (get_dhcp_enable() != dhcp_enable) {
+		return -1;
+	}
+	return 0;
+}
+
 uint64_t APS2::get_mac_addr() {
 	auto data = read_flash(EPROM_MACIP_ADDR, 2);
 	return (static_cast<uint64_t>(data[0]) << 16) | (data[1] >> 16);
@@ -626,32 +650,30 @@ uint64_t APS2::get_mac_addr() {
 
 int APS2::set_mac_addr(const uint64_t & mac) {
 	uint32_t ip_addr = get_ip_addr();
-	vector<uint32_t> data = {static_cast<uint32_t>(mac >> 16),
-		                     static_cast<uint32_t>((mac & 0xffff) << 16),
-		                     ip_addr};
-	write_flash(EPROM_MACIP_ADDR, data);
-	// verify
-	if (get_mac_addr() != mac) {
-		return -1;
-	}
-	return 0;
+	bool dhcp_enable = get_dhcp_enable();
+	return write_macip_flash(mac, ip_addr, dhcp_enable);
 }
 
 uint32_t APS2::get_ip_addr() {
-	return read_flash(EPROM_MACIP_ADDR+8, 1)[0];
+	return read_flash(EPROM_MACIP_ADDR+EPROM_IP_OFFSET, 1)[0];
 }
 
 int APS2::set_ip_addr(const uint32_t & ip_addr) {
 	uint64_t mac = get_mac_addr();
-	vector<uint32_t> data = {static_cast<uint32_t>(mac >> 16),
-		                     static_cast<uint32_t>((mac & 0xffff) << 16),
-		                     ip_addr};
-	write_flash(EPROM_MACIP_ADDR, data);
-	// verify
-	if (get_ip_addr() != ip_addr) {
-		return -1;
-	}
-	return 0;
+	bool dhcp_enable = get_dhcp_enable();
+	return write_macip_flash(mac, ip_addr, dhcp_enable);
+}
+
+
+bool APS2::get_dhcp_enable() {
+	uint32_t dhcp_enable = read_flash(EPROM_MACIP_ADDR+EPROM_DHCP_OFFSET, 1)[0];
+	return ((dhcp_enable & 0x1) == 0x1);
+}
+
+int APS2::set_dhcp_enable(const bool & dhcp_enable) {
+	uint64_t mac = get_mac_addr();
+	uint32_t ip_addr = get_ip_addr();
+	return write_macip_flash(mac, ip_addr, dhcp_enable);
 }
 
 //Create/restore setup SPI sequence
