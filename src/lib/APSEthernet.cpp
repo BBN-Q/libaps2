@@ -1,6 +1,10 @@
 #include "APSEthernet.h"
 
+#ifdef _WIN32
 #include "iphlpapi.h"
+#else
+#include <ifaddrs.h>
+#endif
 
 APSEthernet::APSEthernet() : socket_(ios_, udp::endpoint(udp::v4(), APS_PROTO)) {
     FILE_LOG(logDEBUG) << "Creating ethernet interface";
@@ -75,6 +79,8 @@ void APSEthernet::init() {
 vector<string> APSEthernet::get_local_IPs(){
     vector<string> IPs;
 
+    #ifdef _WIN32
+
     DWORD dwRetVal = 0;
     ULONG family = AF_INET; // we only care about IPv4 for now
     LONG flags = GAA_FLAG_INCLUDE_PREFIX; // not sure what the address prefix is
@@ -117,6 +123,23 @@ vector<string> APSEthernet::get_local_IPs(){
       free(pAddresses);
       pAddresses = nullptr;
     }
+
+    #else
+
+    struct ifaddrs *ifap, *ifa;
+
+    getifaddrs(&ifap);
+    for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+        //We only care about IPv4 addresses
+        if (ifa->ifa_addr->sa_family == AF_INET) {
+            struct sockaddr_in* sa = (struct sockaddr_in *) ifa->ifa_addr;
+            char* addr = inet_ntoa(sa->sin_addr);
+            IPs.push_back(string(addr));
+            FILE_LOG(logDEBUG1) << "Interface: " << ifa->ifa_name << "Address: " << IPs.back();
+        }
+    }
+
+    #endif //_WIN32
 
     return IPs;
 }
