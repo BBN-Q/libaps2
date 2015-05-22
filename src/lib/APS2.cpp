@@ -619,8 +619,8 @@ vector<uint32_t> APS2::read_flash(const uint32_t & addr, const uint32_t & numWor
 	return data;
 }
 
-int APS2::write_macip_flash(const uint64_t & mac, 
-	                  const uint32_t & ip_addr, 
+void APS2::write_macip_flash(const uint64_t & mac,
+	                  const uint32_t & ip_addr,
 	                  const bool & dhcp_enable) {
 	uint32_t dhcp_int;
 
@@ -632,15 +632,14 @@ int APS2::write_macip_flash(const uint64_t & mac,
 	write_flash(EPROM_MACIP_ADDR, data);
 	// verify
 	if (get_mac_addr() != mac) {
-		return -1;
+		throw APS2_MAC_ADDR_VALIDATION_FAILURE;
 	}
 	if (get_ip_addr() != ip_addr) {
-		return -1;
+		throw APS2_IP_ADDR_VALIDATION_FAILURE;
 	}
 	if (get_dhcp_enable() != dhcp_enable) {
-		return -1;
+		throw APS2_DHCP_VALIDATION_FAILURE;
 	}
-	return 0;
 }
 
 uint64_t APS2::get_mac_addr() {
@@ -648,20 +647,20 @@ uint64_t APS2::get_mac_addr() {
 	return (static_cast<uint64_t>(data[0]) << 16) | (data[1] >> 16);
 }
 
-int APS2::set_mac_addr(const uint64_t & mac) {
+void APS2::set_mac_addr(const uint64_t & mac) {
 	uint32_t ip_addr = get_ip_addr();
 	bool dhcp_enable = get_dhcp_enable();
-	return write_macip_flash(mac, ip_addr, dhcp_enable);
+	write_macip_flash(mac, ip_addr, dhcp_enable);
 }
 
 uint32_t APS2::get_ip_addr() {
 	return read_flash(EPROM_MACIP_ADDR+EPROM_IP_OFFSET, 1)[0];
 }
 
-int APS2::set_ip_addr(const uint32_t & ip_addr) {
+void APS2::set_ip_addr(const uint32_t & ip_addr) {
 	uint64_t mac = get_mac_addr();
 	bool dhcp_enable = get_dhcp_enable();
-	return write_macip_flash(mac, ip_addr, dhcp_enable);
+	write_macip_flash(mac, ip_addr, dhcp_enable);
 }
 
 
@@ -670,10 +669,10 @@ bool APS2::get_dhcp_enable() {
 	return ((dhcp_enable & 0x1) == 0x1);
 }
 
-int APS2::set_dhcp_enable(const bool & dhcp_enable) {
+void APS2::set_dhcp_enable(const bool & dhcp_enable) {
 	uint64_t mac = get_mac_addr();
 	uint32_t ip_addr = get_ip_addr();
-	return write_macip_flash(mac, ip_addr, dhcp_enable);
+	write_macip_flash(mac, ip_addr, dhcp_enable);
 }
 
 //Create/restore setup SPI sequence

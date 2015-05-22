@@ -99,7 +99,7 @@ EXPORT int write_flash(const char*, unsigned int, unsigned int*, unsigned int);
 EXPORT int read_flash(const char*, unsigned int, unsigned int, unsigned int*);
 
 EXPORT uint64_t get_mac_addr(const char*);
-EXPORT int set_mac_addr(const char*, uint64_t);
+EXPORT APS2_STATUS set_mac_addr(const char*, uint64_t);
 
 EXPORT APS2_STATUS write_SPI_setup(const char*);
 

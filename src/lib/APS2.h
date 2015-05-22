@@ -106,13 +106,13 @@ public:
 
 	//MAC and IP addresses
 	uint64_t get_mac_addr();
-	int set_mac_addr(const uint64_t &);
+	void set_mac_addr(const uint64_t &);
 	uint32_t get_ip_addr();
-	int set_ip_addr(const uint32_t &);
+	void set_ip_addr(const uint32_t &);
 
 	// dhcp enable
 	bool get_dhcp_enable();
-	int set_dhcp_enable(const bool &);
+	void set_dhcp_enable(const bool &);
 
 	//CLPD DRAM
 	int write_bitfile(const uint32_t &, const string &);
@@ -183,8 +183,8 @@ private:
 	//Non-exported functions
 	shared_ptr<APSEthernet> get_interface();
 
-	int write_macip_flash(const uint64_t &, const uint32_t &, const bool &);
-	
+	void write_macip_flash(const uint64_t &, const uint32_t &, const bool &);
+
 }; //end class APS2
 
 

@@ -353,8 +353,9 @@ int read_flash(const char* deviceSerial, uint32_t addr, uint32_t numWords, uint3
 uint64_t get_mac_addr(const char* deviceSerial) {
 	return APSs[string(deviceSerial)].get_mac_addr();
 }
-int set_mac_addr(const char* deviceSerial, uint64_t mac) {
-	return APSs[string(deviceSerial)].set_mac_addr(mac);
+
+APS2_STATUS set_mac_addr(const char* deviceSerial, uint64_t mac) {
+	return aps2_call(deviceSerial, &APS2::set_mac_addr, mac);
 }
 
 APS2_STATUS get_ip_addr(const char* deviceSerial, char* ipAddrPtr) {
