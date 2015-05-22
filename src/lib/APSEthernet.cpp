@@ -1,5 +1,7 @@
 #include "APSEthernet.h"
 
+#include "iphlpapi.h"
+
 APSEthernet::APSEthernet() : socket_(ios_, udp::endpoint(udp::v4(), APS_PROTO)) {
     FILE_LOG(logDEBUG) << "Creating ethernet interface";
     //enable broadcasting for enumerating
@@ -70,6 +72,55 @@ void APSEthernet::init() {
     reset_maps();
 }
 
+vector<string> APSEthernet::get_local_IPs(){
+    vector<string> IPs;
+
+    DWORD dwRetVal = 0;
+    ULONG family = AF_INET; // we only care about IPv4 for now
+    LONG flags = GAA_FLAG_INCLUDE_PREFIX; // not sure what the address prefix is
+    PIP_ADAPTER_ADDRESSES pAddresses = nullptr;
+    PIP_ADAPTER_ADDRESSES pCurrAddresses = nullptr;
+    PIP_ADAPTER_UNICAST_ADDRESS pUnicast = nullptr;
+
+    ULONG outBufLen = 15000; //MSDN recommends preallocating 15KB
+    pAddresses = (IP_ADAPTER_ADDRESSES *) malloc(outBufLen);
+    dwRetVal = GetAdaptersAddresses(family, flags, nullptr, pAddresses, &outBufLen);
+
+    if (dwRetVal == NO_ERROR) {
+      pCurrAddresses = pAddresses;
+      while (pCurrAddresses) {
+        FILE_LOG(logDEBUG1) << "Found IPv4 interface.";
+        FILE_LOG(logDEBUG3) << "IfIndex (IPv4 interface): " << pCurrAddresses->IfIndex;
+        FILE_LOG(logDEBUG2) << "Adapter name: " << pCurrAddresses->AdapterName;
+        FILE_LOG(logDEBUG2) << "Friendly adapter name: " << pCurrAddresses->FriendlyName; //TODO figure out unicode printing
+
+        //Not yet supported in mingw64
+        FILE_LOG(logDEBUG2) << "Transmit link speed: " << pCurrAddresses->TransmitLinkSpeed;
+        FILE_LOG(logDEBUG2) << "Receive link speed: " << pCurrAddresses->ReceiveLinkSpeed;
+
+        pUnicast = pCurrAddresses->FirstUnicastAddress;
+        while (pUnicast != nullptr) {
+            char IPV4Addr[16]; //should be LPTSTR
+            DWORD addrSize;
+            WSAAddressToString(pUnicast->Address.lpSockaddr, pUnicast->Address.iSockaddrLength, nullptr, IPV4Addr, &addrSize);
+            IPs.push_back(string(IPV4Addr));
+            FILE_LOG(logDEBUG1) << "IPv4 address: " << IPs.back();
+            FILE_LOG(logDEBUG1) << "Prefix length: " << pUnicast->OnLinkPrefixLength; //doesn't seem to work with mingw64
+            pUnicast = pUnicast->Next;
+        }
+
+        pCurrAddresses = pCurrAddresses->Next;
+      }
+    }
+    else{
+      FILE_LOG(logERROR) << "Call to GetAdaptersAddresses failed.";
+      free(pAddresses);
+      pAddresses = nullptr;
+    }
+
+    return IPs;
+}
+
 set<string> APSEthernet::enumerate() {
 	/*
 	 * Look for all APS units that respond to the broadcast packet
@@ -77,31 +128,21 @@ set<string> APSEthernet::enumerate() {
 
 	FILE_LOG(logDEBUG1) << "APSEthernet::enumerate";
 
-    tcp::resolver resolver(ios_);
-    tcp::resolver::query query(asio::ip::host_name(),"");
-    tcp::resolver::iterator it=resolver.resolve(query);
-
-    while(it!=tcp::resolver::iterator())
-    {
-        asio::ip::address addr=(it++)->endpoint().address();
-        if(addr.is_v6())
-        {
-            std::cout<<"ipv6 address: ";
-        }
-        else
-            std::cout<<"ipv4 address: ";
-
-        std::cout<<addr.to_string()<<std::endl;
-    }
-
     reset_maps();
 
-    //Put together the broadcast status request
-    APSEthernetPacket broadcastPacket = APSEthernetPacket::create_broadcast_packet();
-    udp::endpoint broadCastEndPoint(asio::ip::address_v4::broadcast(), APS_PROTO);
-    socket_.send_to(asio::buffer(broadcastPacket.serialize()), broadCastEndPoint);
+    vector<string> localIPs = get_local_IPs();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    for(auto IP : localIPs){
+        //Put together the broadcast status request
+        APSEthernetPacket broadcastPacket = APSEthernetPacket::create_broadcast_packet();
+        typedef asio::ip::address_v4 addrv4;
+        addrv4 broadcastAddr = addrv4::broadcast(addrv4::from_string(IP), addrv4::from_string("255.255.255.0"));
+        FILE_LOG(logDEBUG2) << "Sending enumerate broadcast out on: " << broadcastAddr.to_string();
+        udp::endpoint broadCastEndPoint(broadcastAddr, APS_PROTO);
+        socket_.send_to(asio::buffer(broadcastPacket.serialize()), broadCastEndPoint);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     set<string> deviceSerials;
     for (auto kv : devInfo_) {

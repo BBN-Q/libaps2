@@ -3,7 +3,7 @@
 # mkdir build
 # cd build
 # cmake -G "MSYS Makefiles" -DHDF5_INCLUDE_DIR:string=/path/to/hdf5 -DCMAKE_BUILD_TYPE=Release/Debug ../src
-# 
+#
 # make
 #
 # On Mac/Linux you can skip the '-G "MSYS Makefiles" option'
@@ -27,12 +27,18 @@ INCLUDE_DIRECTORIES("./lib/")
 INCLUDE_DIRECTORIES( "../asio/asio/include" )
 ADD_DEFINITIONS(-DASIO_STANDALONE)
 
-#Add flags for gcc and C++11
-ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-DGCC")
+#Add flag for C++11
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11")
+
+#mingw64 defaults to WindowsXP SP03 which doesn't support the network calls we want
+#https://github.com/Alexpux/mingw-w64/blob/e960f8fffb399036079cef960a44e86a9abebc71/mingw-w64-headers/include/sdkddkver.h#L145
+#define windows 7 instead
+ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-D_WIN32_WINNT=0x0601")
+
+#Warn all for better code
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
 
-SET ( DLL_SRC 
+SET ( DLL_SRC
 	./lib/libaps2.cpp
 	./lib/Channel.cpp
 	./lib/APS2.cpp
@@ -93,11 +99,7 @@ TARGET_LINK_LIBRARIES(DAC_BIST aps2)
 TARGET_LINK_LIBRARIES(waveforms aps2)
 
 if(WIN32)
-TARGET_LINK_LIBRARIES(aps2 hdf5	hdf5_cpp ws2_32)
+TARGET_LINK_LIBRARIES(aps2 hdf5	hdf5_cpp ws2_32 iphlpapi)
 else(WIN32)
 TARGET_LINK_LIBRARIES(aps2 hdf5	hdf5_cpp)
 endif(WIN32)
-
-
-
-

@@ -9,7 +9,6 @@
 #include "asio.hpp"
 
 using asio::ip::udp;
-using asio::ip::tcp;
 
 struct EthernetDevInfo {
 	MACAddr macAddr;
@@ -42,6 +41,8 @@ private:
 
 	unordered_map<string, queue<APSEthernetPacket>> msgQueues_;
 
+	vector<string> get_local_IPs();
+	
 	void reset_maps();
 
 	void setup_receive();
