@@ -85,7 +85,7 @@ vector<string> APSEthernet::get_local_IPs(){
     ULONG family = AF_INET; // we only care about IPv4 for now
     LONG flags = GAA_FLAG_INCLUDE_PREFIX; // not sure what the address prefix is
     PIP_ADAPTER_ADDRESSES pAddresses = nullptr;
-    PIP_ADAPTER_ADDRESSES pCurrAddresses = nullptr;
+    PIP_ADAPTER_ADDRESSES pCurAddresses = nullptr;
     PIP_ADAPTER_UNICAST_ADDRESS pUnicast = nullptr;
 
     ULONG outBufLen = 15000; //MSDN recommends preallocating 15KB
@@ -93,29 +93,24 @@ vector<string> APSEthernet::get_local_IPs(){
     dwRetVal = GetAdaptersAddresses(family, flags, nullptr, pAddresses, &outBufLen);
 
     if (dwRetVal == NO_ERROR) {
-      pCurrAddresses = pAddresses;
-      while (pCurrAddresses) {
+      for(pCurAddresses = pAddresses; pCurAddresses; pCurAddresses = pCurAddresses->Next){
         FILE_LOG(logDEBUG1) << "Found IPv4 interface.";
-        FILE_LOG(logDEBUG3) << "IfIndex (IPv4 interface): " << pCurrAddresses->IfIndex;
-        FILE_LOG(logDEBUG2) << "Adapter name: " << pCurrAddresses->AdapterName;
-        FILE_LOG(logDEBUG2) << "Friendly adapter name: " << pCurrAddresses->FriendlyName; //TODO figure out unicode printing
+        FILE_LOG(logDEBUG3) << "IfIndex (IPv4 interface): " << pCurAddresses->IfIndex;
+        FILE_LOG(logDEBUG2) << "Adapter name: " << pCurAddresses->AdapterName;
+        FILE_LOG(logDEBUG2) << "Friendly adapter name: " << pCurAddresses->FriendlyName; //TODO figure out unicode printing
 
         //Not yet supported in mingw64
-        FILE_LOG(logDEBUG2) << "Transmit link speed: " << pCurrAddresses->TransmitLinkSpeed;
-        FILE_LOG(logDEBUG2) << "Receive link speed: " << pCurrAddresses->ReceiveLinkSpeed;
+        FILE_LOG(logDEBUG2) << "Transmit link speed: " << pCurAddresses->TransmitLinkSpeed;
+        FILE_LOG(logDEBUG2) << "Receive link speed: " << pCurAddresses->ReceiveLinkSpeed;
 
-        pUnicast = pCurrAddresses->FirstUnicastAddress;
-        while (pUnicast != nullptr) {
+        for(pUnicast = pCurAddresses->FirstUnicastAddress; pUnicast; pUnicast = pUnicast->Next){
             char IPV4Addr[16]; //should be LPTSTR
             DWORD addrSize;
             WSAAddressToString(pUnicast->Address.lpSockaddr, pUnicast->Address.iSockaddrLength, nullptr, IPV4Addr, &addrSize);
             IPs.push_back(string(IPV4Addr));
             FILE_LOG(logDEBUG1) << "IPv4 address: " << IPs.back();
             FILE_LOG(logDEBUG1) << "Prefix length: " << pUnicast->OnLinkPrefixLength; //doesn't seem to work with mingw64
-            pUnicast = pUnicast->Next;
         }
-
-        pCurrAddresses = pCurrAddresses->Next;
       }
       free(pAddresses);
       pAddresses = nullptr;
