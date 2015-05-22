@@ -42,7 +42,8 @@ Detailed Specifications
 ========================  ==============================================================
 Analog channels           two 14-bit 1.2 GS/s outputs per module
 Digital channels          four 1.5V outputs per module
-Jitter                    28ps RMS (71ps peak-to-peak)
+Analog Jitter             7.5ps RMS
+Digital Jitter            5ps RMS
 Rise/fall time            2ns
 Settling time             2ns to 10%, 10ns to 1%
 Trigger input             1 V minimum into 50 Ω, 5 V maximum; triggered on *rising* edge
