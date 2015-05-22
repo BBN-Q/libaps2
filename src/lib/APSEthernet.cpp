@@ -93,7 +93,7 @@ vector<string> APSEthernet::get_local_IPs(){
     dwRetVal = GetAdaptersAddresses(family, flags, nullptr, pAddresses, &outBufLen);
 
     if (dwRetVal == NO_ERROR) {
-      for(pCurAddresses = pAddresses; pCurAddresses; pCurAddresses = pCurAddresses->Next){
+      for(pCurAddresses = pAddresses; pCurAddresses != nullptr; pCurAddresses = pCurAddresses->Next){
         FILE_LOG(logDEBUG1) << "Found IPv4 interface.";
         FILE_LOG(logDEBUG3) << "IfIndex (IPv4 interface): " << pCurAddresses->IfIndex;
         FILE_LOG(logDEBUG2) << "Adapter name: " << pCurAddresses->AdapterName;
@@ -103,7 +103,7 @@ vector<string> APSEthernet::get_local_IPs(){
         FILE_LOG(logDEBUG2) << "Transmit link speed: " << pCurAddresses->TransmitLinkSpeed;
         FILE_LOG(logDEBUG2) << "Receive link speed: " << pCurAddresses->ReceiveLinkSpeed;
 
-        for(pUnicast = pCurAddresses->FirstUnicastAddress; pUnicast; pUnicast = pUnicast->Next){
+        for(pUnicast = pCurAddresses->FirstUnicastAddress; pUnicast != nullptr; pUnicast = pUnicast->Next){
             char IPV4Addr[16]; //should be LPTSTR
             DWORD addrSize;
             WSAAddressToString(pUnicast->Address.lpSockaddr, pUnicast->Address.iSockaddrLength, nullptr, IPV4Addr, &addrSize);
@@ -126,7 +126,7 @@ vector<string> APSEthernet::get_local_IPs(){
     struct ifaddrs *ifap, *ifa;
 
     getifaddrs(&ifap);
-    for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+    for (ifa = ifap; ifa != nullptr; ifa = ifa->ifa_next) {
         //We only care about IPv4 addresses
         if (ifa->ifa_addr->sa_family == AF_INET) {
             struct sockaddr_in* sa = (struct sockaddr_in *) ifa->ifa_addr;
