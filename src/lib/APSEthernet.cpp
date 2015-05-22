@@ -52,7 +52,7 @@ void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::end
             FILE_LOG(logDEBUG1) << "Added device with IP " << senderIP <<
                 " ; MAC addresss " << devInfo_[senderIP].macAddr.to_string() <<
                 " ; firmware version " << hexn<4> << statusRegs.userFirmwareVersion;
-        } 
+        }
     }
     else {
         //Turn the byte array into an APSEthernetPacket
@@ -76,6 +76,23 @@ set<string> APSEthernet::enumerate() {
 	 */
 
 	FILE_LOG(logDEBUG1) << "APSEthernet::enumerate";
+
+    tcp::resolver resolver(ios_);
+    tcp::resolver::query query(asio::ip::host_name(),"");
+    tcp::resolver::iterator it=resolver.resolve(query);
+
+    while(it!=tcp::resolver::iterator())
+    {
+        asio::ip::address addr=(it++)->endpoint().address();
+        if(addr.is_v6())
+        {
+            std::cout<<"ipv6 address: ";
+        }
+        else
+            std::cout<<"ipv4 address: ";
+
+        std::cout<<addr.to_string()<<std::endl;
+    }
 
     reset_maps();
 
@@ -141,7 +158,7 @@ int APSEthernet::send(string serial, vector<APSEthernetPacket> msg, unsigned ack
         auto endPoint = iter + ackEvery;
         if (endPoint > msg.end()) {
             endPoint = msg.end();
-        } 
+        }
         auto chunkSize = std::distance(iter, endPoint);
         buffer.resize(chunkSize);
         std::copy(iter, endPoint, buffer.begin());
@@ -152,12 +169,12 @@ int APSEthernet::send(string serial, vector<APSEthernetPacket> msg, unsigned ack
             //NOACK sets the top bit of the command nibble of the command word
             packet.header.command.cmd |= (1 << 3);
         }
-        
+
         //Apply acknowledge flag to last element of chunk
         if (!noACK){
             buffer.back().header.command.cmd &= ~(1 << 3);
         }
-        
+
         auto result = send_chunk(serial, buffer, noACK);
         if (result != 0){
             return result;
@@ -182,11 +199,11 @@ int APSEthernet::send_chunk(string serial, vector<APSEthernetPacket> chunk, bool
             seqNum++;
             FILE_LOG(logDEBUG4) << "Packet command: " << print_APSCommand(packet.header.command);
             socket_.send_to(asio::buffer(packet.serialize()), devInfo_[serial].endpoint);
-            // std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
         }
-        
+
         if(noACK) break;
-        //Wait for acknowledge 
+        //Wait for acknowledge
         //TODO: how to check response mode/stat for success?
         try{
             auto response = receive(serial)[0];
@@ -233,4 +250,3 @@ vector<APSEthernetPacket> APSEthernet::receive(string serial, size_t numPackets,
 
     throw runtime_error("Timed out on receive");
 }
-

@@ -9,6 +9,7 @@
 #include "asio.hpp"
 
 using asio::ip::udp;
+using asio::ip::tcp;
 
 struct EthernetDevInfo {
 	MACAddr macAddr;
