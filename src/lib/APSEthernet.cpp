@@ -117,6 +117,8 @@ vector<string> APSEthernet::get_local_IPs(){
 
         pCurrAddresses = pCurrAddresses->Next;
       }
+      free(pAddresses);
+      pAddresses = nullptr;
     }
     else{
       FILE_LOG(logERROR) << "Call to GetAdaptersAddresses failed.";
@@ -138,7 +140,7 @@ vector<string> APSEthernet::get_local_IPs(){
             FILE_LOG(logDEBUG1) << "Interface: " << ifa->ifa_name << "Address: " << IPs.back();
         }
     }
-
+    freeifaddrs(ifap);
     #endif //_WIN32
 
     return IPs;
