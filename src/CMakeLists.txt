@@ -33,7 +33,9 @@ ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11")
 #mingw64 defaults to WindowsXP SP03 which doesn't support the network calls we want
 #https://github.com/Alexpux/mingw-w64/blob/e960f8fffb399036079cef960a44e86a9abebc71/mingw-w64-headers/include/sdkddkver.h#L145
 #define windows 7 instead
+if(WIN32)
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-D_WIN32_WINNT=0x0601")
+endif(WIN32)
 
 #Warn all for better code
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
