@@ -260,7 +260,7 @@ int APSEthernet::send_chunk(string serial, vector<APSEthernetPacket> chunk, bool
             seqNum++;
             FILE_LOG(logDEBUG4) << "Packet command: " << print_APSCommand(packet.header.command);
             socket_.send_to(asio::buffer(packet.serialize()), devInfo_[serial].endpoint);
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
+            // std::this_thread::sleep_for(std::chrono::microseconds(100));
         }
 
         if(noACK) break;
