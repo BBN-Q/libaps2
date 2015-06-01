@@ -3,7 +3,7 @@
 # mkdir build
 # cd build
 # cmake -G "MSYS Makefiles" -DHDF5_INCLUDE_DIR:string=/path/to/hdf5 -DCMAKE_BUILD_TYPE=Release/Debug ../src
-# 
+#
 # make
 #
 # On Mac/Linux you can skip the '-G "MSYS Makefiles" option'
@@ -32,7 +32,18 @@ ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-DGCC")
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11")
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
 
-SET ( DLL_SRC 
+#Work around a gcc-4.7 issue with sleep_for
+#See: http://stackoverflow.com/questions/4438084/stdthis-threadsleep-for-and-gcc
+#Drop once Matlab supports gcc 4.8 on Linux
+message(STATUS, "Compiler ID: " ${CMAKE_CXX_COMPILER_ID} " " ${CMAKE_CXX_COMPILER_VERSION})
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8)
+		message(STATUS, "Found GCC 4.7.3 compiler so adding D_GLIBCXX_USE_NANOSLEEP workaround.")
+		ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-D_GLIBCXX_USE_NANOSLEEP")
+  endif()
+endif()
+
+SET ( DLL_SRC
 	./lib/libaps2.cpp
 	./lib/Channel.cpp
 	./lib/APS2.cpp
@@ -97,7 +108,3 @@ TARGET_LINK_LIBRARIES(aps2 hdf5	hdf5_cpp ws2_32)
 else(WIN32)
 TARGET_LINK_LIBRARIES(aps2 hdf5	hdf5_cpp)
 endif(WIN32)
-
-
-
-
