@@ -105,8 +105,7 @@ firewall.
 The control computer must be on the same subnet as the APS2 to respond to
 returning packets. Most operating systems allow multiple IP addresses to coexist
 on the same network card so the control computer must add a virtual IP on the
-subnet.  For now multiple network interfaces (e.g. Ethernet for APS2 and
-wireless for other networks) is not supported.  Contact BBN for a work-around.
+subnet.
 
 Windows
 ~~~~~~~~~~~~~~
