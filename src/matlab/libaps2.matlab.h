@@ -18,10 +18,11 @@ enum TLogLevel {logERROR, logWARNING, logINFO, logDEBUG, logDEBUG1, logDEBUG2, l
 #define EXPORT
 #endif
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stdint.h> //fixed-width integer types
 
 //Typedef the enums for C compatibility
 typedef enum APS2_STATUS APS2_STATUS;
@@ -65,7 +66,7 @@ EXPORT APS2_STATUS set_waveform_float(const char*, int, float*, int);
 EXPORT APS2_STATUS set_waveform_int(const char*, int, short*, int);
 EXPORT APS2_STATUS set_markers(const char*, int, char*, int);
 
-EXPORT APS2_STATUS write_sequence(const char*, unsigned __int64*, unsigned int);
+EXPORT APS2_STATUS write_sequence(const char*, uint64_t*, unsigned int);
 
 EXPORT APS2_STATUS set_run_mode(const char*, RUN_MODE);
 
@@ -93,8 +94,8 @@ EXPORT int program_FPGA(const char*, const char*);
 EXPORT int write_flash(const char*, unsigned int, unsigned int*, unsigned int);
 EXPORT int read_flash(const char*, unsigned int, unsigned int, unsigned int*);
 
-EXPORT unsigned __int64 get_mac_addr(const char*);
-EXPORT int set_mac_addr(const char*, unsigned __int64);
+EXPORT uint64_t get_mac_addr(const char*);
+EXPORT int set_mac_addr(const char*, uint64_t);
 
 EXPORT APS2_STATUS write_SPI_setup(const char*);
 

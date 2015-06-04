@@ -1,8 +1,8 @@
 module APSInstructions
 
-using HDF5
+using HDF5, Compat
 
-export APSInstr, wf_entry, flow_call, flow_return, flow_repeat, load_repeat, sync, wait_trig
+export APSInstr, wf_entry, flow_call, flow_return, flow_repeat, load_repeat, sync, wait_trig, flow_loadcmp
 # write_file, write_hdf5_file
 
 import Base.show
@@ -16,7 +16,7 @@ end
 function __init__()
 	global PRINTSHORT = false
 	global const emptySymbol = symbol("")
-	global const OPCODES = Dict(
+	global const OPCODES = @compat Dict(
 		0x0 => :WFM,
 		0x1 => :MARKER,
 		0x2 => :WAIT,
@@ -28,12 +28,12 @@ function __init__()
 		0x8 => :RETURN,
 		0x9 => :SYNC,
 		0xA => :PREFETCH,
-		0xB => :WAITCMP)
+		0xB => :LOAD_CMP)
 end
 
 APSInstr(data::Vector{Uint16}) = APSInstr(data, emptySymbol, emptySymbol)
 APSInstr(data::Vector{Uint16}, name::Symbol) = APSInstr(data, name, emptySymbol)
-header(instr::APSInstr) = uint8(instr.data[1] >> 8)
+header(instr::APSInstr) = (instr.data[1] >> 8) % UInt8
 opcode(instr::APSInstr) = header(instr) >> 4
 
 function show(io::IO, e::APSInstr)
@@ -62,9 +62,9 @@ function write_hdf5_file(filename, seq, wfA, wfB)
 	#Stack the instruction data
 	instrs = Uint64[]
 	for s in seq
-		r = uint64(0)
+		r = UInt64(0)
 		for ct in 1:4
-			r += uint64(s.data[ct]) << 16*(4-ct) 
+			r += (s.data[ct]) << 16*(4-ct) % UInt64
 		end
 		push!(instrs, r)
 	end
@@ -99,6 +99,8 @@ GOTO = 0x0006
 CALL = 0x0007
 RET = 0x0008
 SYNC = 0x0009
+# PREFETCH = 0x000A
+LOAD_CMP = 0x000B
 
 #The top bits of the 48 bit instruction payload set the sync or wait for trigger in the playback engines
 WAIT_TRIG_INSTR_WORD = 1 << 14;
@@ -154,8 +156,8 @@ function load_repeat(loadValue; label=emptySymbol)
 	flow_entry(LOAD_REPEAT, loadValue, 0; label=label)
 end
 
+flow_loadcmp(; label=emptySymbol) = flow_entry(LOAD_CMP, 0, 0; label=label)
 flow_cmp(cmpOp, mask; label=emptySymbol) = APSInstr(Uint16[CMP << 12, 0, 0, ((cmpOp & 0x03) << 8) | (mask & 0xff)], label)
-
 flow_repeat(target; label=emptySymbol) = flow_entry(DEC_REPEAT, target, 0; label=label)
 flow_goto(target; label=emptySymbol) = flow_entry(GOTO, target, 0; label=label)
 flow_call(target; label=emptySymbol) = flow_entry(CALL, target, 0; label=label)
@@ -198,24 +200,27 @@ end
 # 	resolve_symbols!(seq)
 # end
 function simpleSeq()
-	seq = APSInstr[]
-	push!(seq, sync())
-	push!(seq, load_repeat(1))
-	push!(seq, wf_entry(0x1A, 3; label=:A))
-	push!(seq, flow_cmp(EQUAL, 0x01))
-	push!(seq, flow_call(:C))
-	push!(seq, wf_entry(0x2A, 3))
-	push!(seq, flow_repeat(:A))
-	push!(seq, load_repeat(2))
-	push!(seq, wf_entry(0x3A, 3; label=:B))
-	push!(seq, wf_entry(0x4A, 4; label=:C))
-	push!(seq, wf_entry(0x5A, 4))
-	push!(seq, wf_entry(0x6A, 3))
-	push!(seq, flow_repeat(:B))
-	push!(seq, wf_entry(0x00, 3; label=:D))
-	push!(seq, flow_cmp(EQUAL, 0x02))
-	push!(seq, flow_return())
-	push!(seq, flow_goto(:D))
+	seq = APSInstr[
+		sync(),
+		load_repeat(1),
+		wf_entry(0x1A, 3; label=:A),
+		flow_loadcmp(),
+		flow_cmp(EQUAL, 0x01),
+		flow_call(:C),
+		wf_entry(0x2A, 3),
+		flow_repeat(:A),
+		load_repeat(2),
+		wf_entry(0x3A, 3; label=:B),
+		wf_entry(0x4A, 4; label=:C),
+		wf_entry(0x5A, 4),
+		wf_entry(0x6A, 3),
+		flow_repeat(:B),
+		wf_entry(0x00, 3; label=:D),
+		flow_loadcmp(),
+		flow_cmp(EQUAL, 0x02),
+		flow_return(),
+		flow_goto(:D)
+	]
 	resolve_symbols!(seq)
 end
 

@@ -18,10 +18,11 @@
 #define EXPORT
 #endif
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stdint.h> //fixed-width integer types
 
 //Typedef the enums for C compatibility
 typedef enum APS2_STATUS APS2_STATUS;

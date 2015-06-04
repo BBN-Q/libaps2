@@ -28,11 +28,13 @@ export APS2,
 	read_memory,
 	write_memory
 
+using Compat
+
 type APS2
 	serial::ASCIIString
 end
 
-__init__() = push!(DL_LOAD_PATH, joinpath(dirname(@__FILE__), "../../build/"))
+__init__() = push!(Libdl.DL_LOAD_PATH, joinpath(dirname(@__FILE__), "../../build/"))
 
 typealias APS2_STATUS Cint
 

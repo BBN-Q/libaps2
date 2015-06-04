@@ -40,6 +40,17 @@ endif(WIN32)
 #Warn all for better code
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
 
+#Work around a gcc-4.7 issue with sleep_for
+#See: http://stackoverflow.com/questions/4438084/stdthis-threadsleep-for-and-gcc
+#Drop once Matlab supports gcc 4.8 on Linux
+message(STATUS, "Compiler ID: " ${CMAKE_CXX_COMPILER_ID} " " ${CMAKE_CXX_COMPILER_VERSION})
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8)
+		message(STATUS, "Found GCC 4.7.3 compiler so adding D_GLIBCXX_USE_NANOSLEEP workaround.")
+		ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-D_GLIBCXX_USE_NANOSLEEP")
+  endif()
+endif()
+
 SET ( DLL_SRC
 	./lib/libaps2.cpp
 	./lib/Channel.cpp

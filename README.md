@@ -26,12 +26,12 @@ We get the [asio] dependency via a submodule we need the --recursive switch
 
 * C++ compiler: Threaded support is important as we use C++11 std::thread. See below for OS specific compilers tested.
 * [cmake](http://www.cmake.org/): Cmake build tool version 2.8 or higher (http://www.cmake.org/)
-* [hdf5](http://www.hdfgroup.org/HDF5/): Currently built against 1.8.13
+* [hdf5](http://www.hdfgroup.org/HDF5/): Currently built against 1.8.13.  Watch out for HDF5 version incompatibilities with other programs (such as Matlab) that ship with a bundled HDF5 library.  You may have to use the environment variable ``HDF5_DISABLE_VERSION_CHECK=1`` to avoid conflict. 
 
-### Windows 
-Using gcc on Windows is a rapidly moving target.  Our setup has changed every couple of months but the latest and most painless way has been using [MSYS2](http://sourceforge.net/projects/msys2/) and the [MinGW-w64](http://mingw-w64.sourceforge.net/) gcc compiler stack. 
+### Windows
+Using gcc on Windows is a rapidly moving target.  Our setup has changed every couple of months but the latest and most painless way has been using [MSYS2](http://sourceforge.net/projects/msys2/) and the [MinGW-w64](http://mingw-w64.sourceforge.net/) gcc compiler stack.
 
-1. [Download](http://msys2.github.io/) the MSYS2 installer and follow the instructions to install and update in place. 
+1. [Download](http://msys2.github.io/) the MSYS2 installer and follow the instructions to install and update in place.
 2. Use pacman package manager to install some additional tools and libraries:
 
   ```bash
@@ -49,7 +49,7 @@ Using gcc on Windows is a rapidly moving target.  Our setup has changed every co
   cmake -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=Debug ../src/
   make
   ```
-  
+
 Tested on:
 * Windows 7 Professional
 * Windows 8.1
@@ -61,14 +61,14 @@ Tested on:
 * Linux Mint 16
 
 ### OS X
-1. Install the command-line developer tools. 
+1. Install the command-line developer tools.
 2. Use [Homebrew](http://brew.sh/) to install hdf5 and cmake. For HDF5 you'll need to tap the science formulae and build the C++ bindings:
 
     ```bash
     brew tap homebrew/science
     brew install hdf5 --enable-cxx
     ```
-3. Then a standard ``cmake ../src`` and ``make`` should build. 
+3. Then a standard ``cmake ../src`` and ``make`` should build.
 
 Tested on:
 * OS X 10.9 Mavericks

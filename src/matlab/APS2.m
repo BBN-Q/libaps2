@@ -219,7 +219,11 @@ classdef APS2 < handle
         function load_library()
             if ~libisloaded('libaps2')
                 curPath = fileparts(mfilename('fullpath'));
-                loadlibrary(fullfile(curPath, APS2.libpath, 'libaps2.dll'), fullfile(curPath, 'libaps2.matlab.h'));
+                ext = 'dll';
+                if isunix()
+                    ext = 'so';
+                end
+                loadlibrary(fullfile(curPath, APS2.libpath, ['libaps2.' ext]), fullfile(curPath, 'libaps2.matlab.h'));
             end
         end
 
