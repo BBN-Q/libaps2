@@ -134,11 +134,12 @@ vector<string> APSEthernet::get_local_IPs(){
     getifaddrs(&ifap);
     for (ifa = ifap; ifa != nullptr; ifa = ifa->ifa_next) {
         //We only care about IPv4 addresses
+        if ( ifa->ifa_addr == nullptr) continue; //According to Linux Programmers Manual "This field may contain a null pointer."
         if (ifa->ifa_addr->sa_family == AF_INET) {
             struct sockaddr_in* sa = (struct sockaddr_in *) ifa->ifa_addr;
             char* addr = inet_ntoa(sa->sin_addr);
             IPs.push_back(string(addr));
-            FILE_LOG(logDEBUG1) << "Interface: " << ifa->ifa_name << "Address: " << IPs.back();
+            FILE_LOG(logDEBUG1) << "Interface: " << ifa->ifa_name << "; Address: " << IPs.back();
         }
     }
     freeifaddrs(ifap);
