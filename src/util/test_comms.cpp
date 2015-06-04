@@ -1,5 +1,5 @@
 /*
-Runs a read/write test to confirm communications integrity. 
+Runs a read/write test to confirm communications integrity.
 */
 
 #include <iostream>
@@ -36,7 +36,7 @@ void run_test(string deviceSerial, string memArea, uint32_t memStartAddr, uint32
 		testVec[ct] = wordDistribution(generator);
 	}
 
-	//Choose a random starting point 
+	//Choose a random starting point
 	std::uniform_int_distribution<uint32_t> addrDistribution(memStartAddr, memHighAddr-testLength );
 	uint32_t testStartAddr = addrDistribution(generator);
 	testStartAddr &= ~(0x3); //align address to 32 bit word
@@ -81,14 +81,14 @@ int main(int argc, char const *argv[])
 {
 	print_title("BBN APS2 Communications Test");
 
+	set_logging_level(logDEBUG1);
+
 	//Poll for which device to test
 	string deviceSerial = get_device_id();
 	if (deviceSerial.empty()){
-		cout << concol::RED << "No APS2 devices connected! Exiting..." << concol::RESET;
+		cout << concol::RED << "No APS2 devices connected! Exiting..." << concol::RESET << endl;
 		return 0;
 	}
-
-	set_logging_level(logDEBUG1);
 
 	connect_APS(deviceSerial.c_str());
 	stop(deviceSerial.c_str());
