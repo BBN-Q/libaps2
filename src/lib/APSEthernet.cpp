@@ -160,11 +160,21 @@ set<string> APSEthernet::enumerate() {
     vector<string> localIPs = get_local_IPs();
 
     for(auto IP : localIPs){
+        //Skip the loop-back
+        if ( IP.compare("127.0.0.1") == 0 ) continue;
+
+        //Make sure it is a valid IP
+        typedef asio::ip::address_v4 addrv4;
+        asio::error_code ec;
+        addrv4::from_string(IP, ec);
+        if (ec) {
+          FILE_LOG(logERROR) << "Invalid IP address: " << ec.message();
+          continue;
+        }
         //Put together the broadcast status request
         APSEthernetPacket broadcastPacket = APSEthernetPacket::create_broadcast_packet();
-        typedef asio::ip::address_v4 addrv4;
         addrv4 broadcastAddr = addrv4::broadcast(addrv4::from_string(IP), addrv4::from_string("255.255.255.0"));
-        FILE_LOG(logDEBUG2) << "Sending enumerate broadcast out on: " << broadcastAddr.to_string();
+        FILE_LOG(logDEBUG1) << "Sending enumerate broadcast out on: " << broadcastAddr.to_string();
         udp::endpoint broadCastEndPoint(broadcastAddr, APS_PROTO);
         socket_.send_to(asio::buffer(broadcastPacket.serialize()), broadCastEndPoint);
     }
