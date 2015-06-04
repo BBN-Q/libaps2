@@ -12,18 +12,18 @@ using std::string;
 
 string get_device_id() {
   /*
-  Helper funciton than enumerates and asks for which APS to talk to.
+  Helper function than enumerates and asks for which APS to talk to.
   */
   cout << concol::CYAN << "Enumerating devices" << concol::RESET << endl;
 
-  unsigned numDevices;
+  unsigned numDevices = 0;
   get_numDevices(&numDevices);
 
   cout << concol::CYAN << numDevices << " APS device" << (numDevices > 1 ? "s": "")  << " found" << concol::RESET << endl;
 
   if (numDevices < 1)
     return "";
-  
+
   const char ** serialBuffer = new const char*[numDevices];
   get_deviceSerials(serialBuffer);
 
