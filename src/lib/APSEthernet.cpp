@@ -99,7 +99,7 @@ vector<string> APSEthernet::get_local_IPs(){
         FILE_LOG(logDEBUG2) << "Adapter name: " << pCurAddresses->AdapterName;
         FILE_LOG(logDEBUG2) << "Friendly adapter name: " << pCurAddresses->FriendlyName; //TODO figure out unicode printing
 
-        //Not yet supported in mingw64
+        //TODO: since we only support 1GigE should check that here
         FILE_LOG(logDEBUG2) << "Transmit link speed: " << pCurAddresses->TransmitLinkSpeed;
         FILE_LOG(logDEBUG2) << "Receive link speed: " << pCurAddresses->ReceiveLinkSpeed;
 
