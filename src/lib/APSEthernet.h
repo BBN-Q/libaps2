@@ -41,8 +41,8 @@ private:
 
 	unordered_map<string, queue<APSEthernetPacket>> msgQueues_;
 
-	vector<string> get_local_IPs();
-	
+	vector<std::pair<string,string>> get_local_IPs();
+
 	void reset_maps();
 
 	void setup_receive();

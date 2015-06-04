@@ -76,8 +76,8 @@ void APSEthernet::init() {
     reset_maps();
 }
 
-vector<string> APSEthernet::get_local_IPs(){
-    vector<string> IPs;
+vector<std::pair<string,string>> APSEthernet::get_local_IPs(){
+    vector<std::pair<string,string>> IPs;
 
     #ifdef _WIN32
 
@@ -135,11 +135,16 @@ vector<string> APSEthernet::get_local_IPs(){
     for (ifa = ifap; ifa != nullptr; ifa = ifa->ifa_next) {
         //We only care about IPv4 addresses
         if ( ifa->ifa_addr == nullptr) continue; //According to Linux Programmers Manual "This field may contain a null pointer."
-        if (ifa->ifa_addr->sa_family == AF_INET) {
+        if ( ifa->ifa_addr->sa_family == AF_INET ) {
             struct sockaddr_in* sa = (struct sockaddr_in *) ifa->ifa_addr;
-            char* addr = inet_ntoa(sa->sin_addr);
-            IPs.push_back(string(addr));
-            FILE_LOG(logDEBUG1) << "Interface: " << ifa->ifa_name << "; Address: " << IPs.back();
+            string addr = string(inet_ntoa(sa->sin_addr));
+            string netmask = "255.255.255.255";
+            if (ifa->ifa_netmask != nullptr) {
+              sa = (struct sockaddr_in *) ifa->ifa_netmask;
+              netmask = string(inet_ntoa(sa->sin_addr));
+            }
+            IPs.push_back(std::pair<string,string>(addr, netmask));
+            FILE_LOG(logDEBUG1) << "Interface: " << ifa->ifa_name << "; Address: " << IPs.back().first << "; Netmask: " << IPs.back().second;
         }
     }
     freeifaddrs(ifap);
@@ -157,23 +162,23 @@ set<string> APSEthernet::enumerate() {
 
     reset_maps();
 
-    vector<string> localIPs = get_local_IPs();
+    vector<std::pair<string,string>> localIPs = get_local_IPs();
 
     for(auto IP : localIPs){
         //Skip the loop-back
-        if ( IP.compare("127.0.0.1") == 0 ) continue;
+        if ( IP.first.compare("127.0.0.1") == 0 ) continue;
 
         //Make sure it is a valid IP
         typedef asio::ip::address_v4 addrv4;
         asio::error_code ec;
-        addrv4::from_string(IP, ec);
+        addrv4::from_string(IP.first, ec);
         if (ec) {
           FILE_LOG(logERROR) << "Invalid IP address: " << ec.message();
           continue;
         }
         //Put together the broadcast status request
         APSEthernetPacket broadcastPacket = APSEthernetPacket::create_broadcast_packet();
-        addrv4 broadcastAddr = addrv4::broadcast(addrv4::from_string(IP), addrv4::from_string("255.255.255.0"));
+        addrv4 broadcastAddr = addrv4::broadcast(addrv4::from_string(IP.first), addrv4::from_string(IP.second));
         FILE_LOG(logDEBUG1) << "Sending enumerate broadcast out on: " << broadcastAddr.to_string();
         udp::endpoint broadCastEndPoint(broadcastAddr, APS_PROTO);
         socket_.send_to(asio::buffer(broadcastPacket.serialize()), broadCastEndPoint);
