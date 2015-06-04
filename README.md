@@ -26,7 +26,7 @@ We get the [asio] dependency via a submodule we need the --recursive switch
 
 * C++ compiler: Threaded support is important as we use C++11 std::thread. See below for OS specific compilers tested.
 * [cmake](http://www.cmake.org/): Cmake build tool version 2.8 or higher (http://www.cmake.org/)
-* [hdf5](http://www.hdfgroup.org/HDF5/): Currently built against 1.8.13.  Watch out for HDF5 version incompatibilities with other programs (such as Matlab) that ship with a bundled HDF5 library.  You may have to use the environment variable ``HDF5_DISABLE_VERSION_CHECK=1`` to avoid conflict. 
+* [hdf5](http://www.hdfgroup.org/HDF5/): Currently built against 1.8.13.  Watch out for HDF5 version incompatibilities with other programs (such as Matlab) that ship with a bundled HDF5 library.  You may have to use the environment variable ``HDF5_DISABLE_VERSION_CHECK=1`` to avoid conflict.
 
 ### Windows
 Using gcc on Windows is a rapidly moving target.  Our setup has changed every couple of months but the latest and most painless way has been using [MSYS2](http://sourceforge.net/projects/msys2/) and the [MinGW-w64](http://mingw-w64.sourceforge.net/) gcc compiler stack.
@@ -51,14 +51,14 @@ Using gcc on Windows is a rapidly moving target.  Our setup has changed every co
   ```
 
 Tested on:
-* Windows 7 Professional
-* Windows 8.1
+* Windows 7 Professional with gcc 4.9.2
+* Windows 8.1 with gcc 4.9.2
 
 ### Linux
 Use your distribution's package manager to install the dependencies and it should work out of the box.
 
 Tested on:
-* Linux Mint 16
+* Linux Mint 17.1 with gcc 4.7, 4.8
 
 ### OS X
 1. Install the command-line developer tools.
@@ -71,4 +71,4 @@ Tested on:
 3. Then a standard ``cmake ../src`` and ``make`` should build.
 
 Tested on:
-* OS X 10.9 Mavericks
+* OS X 10.10 Yosemite with Apple clang 6.0
