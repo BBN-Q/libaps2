@@ -104,9 +104,15 @@ vector<string> APSEthernet::get_local_IPs(){
         FILE_LOG(logDEBUG2) << "Receive link speed: " << pCurAddresses->ReceiveLinkSpeed;
 
         for(pUnicast = pCurAddresses->FirstUnicastAddress; pUnicast != nullptr; pUnicast = pUnicast->Next){
-            char IPV4Addr[16]; //should be LPTSTR
-            DWORD addrSize;
-            WSAAddressToString(pUnicast->Address.lpSockaddr, pUnicast->Address.iSockaddrLength, nullptr, IPV4Addr, &addrSize);
+            char IPV4Addr[16]; //should be LPTSTR; 16 is maximum length of null terminated xxx.xxx.xxx.xxx
+            DWORD addrSize = 16;
+            int val;
+            val = WSAAddressToString(pUnicast->Address.lpSockaddr, pUnicast->Address.iSockaddrLength, nullptr, IPV4Addr, &addrSize);
+            if ( val != 0) {
+              val = WSAGetLastError();
+              FILE_LOG(logERROR) << "WSAAddressToString error code: " << val;
+              continue;
+            }
             IPs.push_back(string(IPV4Addr));
             FILE_LOG(logDEBUG1) << "IPv4 address: " << IPs.back();
             FILE_LOG(logDEBUG1) << "Prefix length: " << pUnicast->OnLinkPrefixLength; //doesn't seem to work with mingw64
