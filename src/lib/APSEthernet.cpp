@@ -113,9 +113,16 @@ vector<std::pair<string,string>> APSEthernet::get_local_IPs(){
               FILE_LOG(logERROR) << "WSAAddressToString error code: " << val;
               continue;
             }
-            IPs.push_back(string(IPV4Addr));
-            FILE_LOG(logDEBUG1) << "IPv4 address: " << IPs.back();
-            FILE_LOG(logDEBUG1) << "Prefix length: " << pUnicast->OnLinkPrefixLength; //doesn't seem to work with mingw64
+            //Create a sock_addr for the netmask string prefix to string conversion
+            struct sockaddr_in sin;
+            memset(&sin, 0, sizeof(sin));
+            sin.sin_family = AF_INET;
+            sin.sin_addr.s_addr = htonl(0xffffffff << (32 - pUnicast->OnLinkPrefixLength));
+
+            IPs.push_back(std::pair<string,string>(IPV4Addr, inet_ntoa(sin.sin_addr)));
+            FILE_LOG(logDEBUG1) << "IPv4 address: " << IPs.back().first <<
+                                    "; Prefix length: " << (unsigned) pUnicast->OnLinkPrefixLength << 
+                                    "; Netmask: " << IPs.back().second;
         }
       }
       free(pAddresses);
