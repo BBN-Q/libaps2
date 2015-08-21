@@ -167,15 +167,20 @@ can be loaded onto the APS2 modules using the ``program`` executable::
 	  program --bitFile=/path/to/bitfile (all other options will be prompted for)
 	  program --bitFile=/path/to/bitfile --ipAddr=192.168.2.2 --progMode=DRAM
 
-The executable will prompt the user for ip address and programming mode. The
-APS2 can boot from multiple locations: volatile DRAM; non-volatile flash or if
-all else fails a master backup in flash. The DRAM storage takes only a few
-seconds to program and is used for temporary booting for testing purposes. It
-will be lost on a power cycle. Once you are happy there are no issues with the
-new bitfile you can program it to the flash memory so the module will boot
-from the new firmware on a power cycle. This process involves erasing, writing
-and verifiying and takes several minutes. The backup firmware should only be
-programmed in the rare case BBN releases an update to the backup image.
+The executable will prompt the user for ip address and programming
+mode. The APS2 can boot from multiple locations: volatile DRAM;
+non-volatile flash or if all else fails a master backup in flash. The
+DRAM storage takes only a few seconds to program and is used for
+temporary booting for testing purposes. It will be lost on a power
+cycle. Once you are happy there are no issues with the new bitfile you
+can program it to the flash memory so the module will boot from the
+new firmware on a power cycle. This process involves erasing, writing
+and verifying and takes several minutes. The backup firmware should
+only be programmed in the rare case BBN releases an update to the
+backup image.  Should something catastrophic happen during programming
+(unplugging the ethernet cable) the module may drop to an extremely
+primitive firmware that will flash L1 and L2 in an alternating
+fashion.  Should this happen contact BBN for assistance.
 
 .. rubric:: Footnotes
 
