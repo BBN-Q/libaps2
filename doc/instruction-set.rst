@@ -57,7 +57,7 @@ zero, jumps to the given instruction address by updating the instruction
 counter.
 
 CMP---Compares the value of the comparison register to the mask *N* with any
-of these operators: :math:`=, \neq, >, <`. So, (CMP :math:`\neq` 0) would be 
+of these operators: :math:`=, \neq, >, <`. So, (CMP :math:`\neq` 0) would be
 true if the comparison register contains any value other than zero.
 
 GOTO---Jumps to the given address by updating the instruction counter.
@@ -176,7 +176,7 @@ Bit(s)  Description
 45-37   *reserved*
 36-33   transition word
 32      state
-31-0    count
+31-0    count (firmwave versions 2.5-2.33 support only 20 bit count)
 ======  ===========
 
 The top two bits of the MARKER payload are an op code for the marker engine. A
@@ -235,7 +235,7 @@ Bit(s)  Description
 23-0    address
 ======  ===========
 
-Refills the waveform cache starting at *address*. Sequencer execution halts 
+Refills the waveform cache starting at *address*. Sequencer execution halts
 until the cache is filled.
 
 RETURN and SYNC
