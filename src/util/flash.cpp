@@ -10,7 +10,7 @@
 using std::cout;
 using std::endl;
 
-enum  optionIndex { UNKNOWN, HELP, IP_ADDR, MAC_ADDR, SPI, LOG_LEVEL};
+enum  optionIndex { UNKNOWN, HELP, IP_ADDR, MAC_ADDR, DHCP_ENABLE, SPI, LOG_LEVEL, RESET};
 const option::Descriptor usage[] =
 {
   {UNKNOWN, 0,"" , ""    , option::Arg::None, "USAGE: flash [options]\n\n"
@@ -18,8 +18,11 @@ const option::Descriptor usage[] =
   {HELP,    0,"" , "help", option::Arg::None, "  --help  \tPrint usage and exit." },
   {IP_ADDR, 0,"", "IP", option::Arg::None, "  --IP  \tProgram a new IP address." },
   {MAC_ADDR, 0,"", "MAC", option::Arg::None, "  --MAC  \tProgram a new MAC address." },
+  {DHCP_ENABLE, 0,"", "DHCP", option::Arg::None, "  --DHCP  \tProgram DHCP Enable" },
   {SPI,  0,"", "SPI", option::Arg::None, "  --SPI  \tWrite the SPI startup sequence." },
   {LOG_LEVEL,  0,"", "logLevel", option::Arg::Numeric, "  --logLevel  \t(optional) Logging level level to print to console (optional; default=2/INFO)." },
+  {RESET,  0,"", "reset", option::Arg::None, "  --reset  \t(optional) Issue soft reset to FPGA (optional; default=N)." },
+    
   {UNKNOWN, 0,"" ,  ""   , option::Arg::None, "\nExamples:\n"
                                            "  flash --IP\n"
                                            "  flash --SPI\n" },
@@ -56,8 +59,7 @@ string get_ip_input() {
   return input;
 }
 
-bool spi_prompt() {
-  cout << concol::YELLOW << "Do you want to program the SPI startup sequence? [y/N]: " << concol::RESET;
+bool get_yes_no_input() {
   string input = "";
   getline(cin, input);
   if (input.length() == 0) {
@@ -76,6 +78,22 @@ bool spi_prompt() {
     default:
       return false;
   }
+}
+
+bool get_dhcp_input() {
+  cout << concol::YELLOW << "Do you want to enable DHCP [y/N]: " << concol::RESET;
+  return get_yes_no_input();
+}
+
+
+bool spi_prompt() {
+  cout << concol::YELLOW << "Do you want to program the SPI startup sequence? [y/N]: " << concol::RESET;
+  return get_yes_no_input();
+}
+
+bool get_soft_reset_input() {
+  cout << concol::YELLOW << "Do you want to soft reset FPGA [y/N]: " << concol::RESET;
+  return get_yes_no_input();
 }
 
 
@@ -128,6 +146,10 @@ int main(int argc, char* argv[])
     char curIP[16];
     get_ip_addr(deviceSerial.c_str(), curIP);
     cout << concol::CYAN << "IP addr: " << curIP << concol::RESET << endl;
+    int dhcp_enable;
+    get_dhcp_enable(deviceSerial.c_str(), &dhcp_enable);
+    cout << concol::CYAN << "DHCP enable: " <<  dhcp_enable << endl;
+
   }
 
   // write a new MAC address
@@ -146,6 +168,14 @@ int main(int argc, char* argv[])
       cout << concol::CYAN << "Writing new IP address" << concol::RESET << endl;
       set_ip_addr(deviceSerial.c_str(), ip_addr.c_str());
     }
+  }
+
+  // write dhcp_ebable
+  if (options[DHCP_ENABLE] || interactiveMode) {
+    bool dhcp_enable = get_dhcp_input();
+    int dhcp_int = (dhcp_enable) ? 1 : 0;
+    cout << concol::CYAN << "Writing DHCP enable" << concol::RESET << endl;
+    set_dhcp_enable(deviceSerial.c_str(), dhcp_int);
   }
 
   // read SPI setup sequence
@@ -167,6 +197,13 @@ int main(int argc, char* argv[])
       cout << concol::CYAN << "Writing SPI startup sequence" << concol::RESET << endl;
       write_SPI_setup(deviceSerial.c_str());
     }
+  }
+
+  if (options[RESET] || interactiveMode) {
+    bool softReset = get_soft_reset_input();
+    #define SOFT_RESET 1
+    #define HARD_RESET 0
+    if (softReset) reset(deviceSerial.c_str(), SOFT_RESET);
   }
 
   disconnect_APS(deviceSerial.c_str());
