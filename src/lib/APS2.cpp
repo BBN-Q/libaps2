@@ -441,6 +441,9 @@ void APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
 	 * data = vector<uint32_t> data
 	 */
 
+	if (data.size() == 0) {
+		return;
+	}
 	//Pack the data into APSEthernetFrames
 	vector<APSEthernetPacket> dataPackets = pack_data(addr, data);
 

@@ -98,13 +98,13 @@ vector<int16_t> Channel::prep_waveform() const{
 
 	//Clip to the max and min values allowed
 	//Signed integer data is asymmetric: can go to -8192 but only up to 8191.
-	if (*max_element(prepVec.begin(), prepVec.end()) > MAX_WF_AMP){
+	if ( (prepVec.size() > 0) && (*max_element(prepVec.begin(), prepVec.end()) > MAX_WF_AMP) ){
 		FILE_LOG(logWARNING) << "Waveform element too positive. Clipping to max.";
 		for(int16_t & tmpVal : prepVec){
 			if (tmpVal > MAX_WF_AMP) tmpVal = MAX_WF_AMP;
 		}
 	}
-	if (*min_element(prepVec.begin(), prepVec.end()) < -(MAX_WF_AMP+1)){
+	if ( (prepVec.size() > 0) && (*min_element(prepVec.begin(), prepVec.end()) < -(MAX_WF_AMP+1)) ){
 		FILE_LOG(logWARNING) << "Waveform element too negative. Clipping to min.";
 		for(int16_t & tmpVal : prepVec){
 			if (tmpVal < -MAX_WF_AMP) tmpVal = -MAX_WF_AMP;
