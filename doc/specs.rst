@@ -46,7 +46,8 @@ Analog Jitter             7.5ps RMS
 Digital Jitter            5ps RMS
 Rise/fall time            2ns
 Settling time             2ns to 10%, 10ns to 1%
-Trigger input             1 V minimum into 50 Ω, 5 V maximum; triggered on *rising* edge
+Trigger modes             Internal, external, or software triggering
+Ext. trigger input        1 V minimum into 50 Ω, 5 V maximum; triggered on *rising* edge
 Waveform cache            128K samples
 Sequence memory           64M instructions
 Min instruction duration  8 samples
@@ -84,4 +85,4 @@ L2:
 * solid green - playback enabled and outputing sequences;
 * green breathing - playback enabled but no trigger received in the past 100ms;
 * red - fatal cache controller error. Power cycle the module to restore playback
-functionality. 
+  functionality.
