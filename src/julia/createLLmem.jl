@@ -172,7 +172,7 @@ end
 
 function resolve_symbols!(seq)
 	labeledEntries = filter((x) -> x[2].name != emptySymbol, collect(enumerate(seq)))
-	symbolDict = {entry.name => idx-1 for (idx, entry) in labeledEntries}
+	symbolDict = [entry.name => idx-1 for (idx, entry) in labeledEntries]
 	println(symbolDict)
 	for entry in seq
 		if entry.target != emptySymbol && haskey(symbolDict, entry.target)
