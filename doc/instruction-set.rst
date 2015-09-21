@@ -24,7 +24,7 @@ instructions are:
 | WAIT
 | WAVEFORM *address* *N*
 | MARKER *channel* *state* *N*
-| LOAD *count*
+| LOAD_REPEAT *count*
 | REPEAT *address*
 | CMP *operator* *N*
 | GOTO *address*
@@ -50,7 +50,7 @@ address for *N* counts.
 MARKER---Indicates the APS should hold marker *channel* in *state*
 (0 or 1) for *N* samples.
 
-LOAD---Loads the given value into the repeat counter.
+LOAD_REPEAT---Loads the given value into the repeat counter.
 
 REPEAT---Decrements the repeat counter. If the resulting value is greater than
 zero, jumps to the given instruction address by updating the instruction
@@ -238,10 +238,25 @@ Bit(s)  Description
 Refills the waveform cache starting at *address*. Sequencer execution halts
 until the cache is filled.
 
-RETURN and SYNC
-^^^^^^^^^^^^^^^^^^^^^^^^
+WAIT and SYNC
+^^^^^^^^^^^^^
 
-These instructions ignore all payload data.
+======  ===========
+Bit(s)  Description
+======  ===========
+47-46   op code (0 = play waveform/marker, 1 = wait for trig, 2 = wait for sync)
+======  ===========
+
+The payloads for the WAIT and SYNC instructions must also be valid WAVEFORM
+and MARKER payloads. Therefore, in addition to indicating WAIT or SYNC in the
+instruction header, the instruction type must also appear in the payload. The
+write flag should be set to immediately dispatch this instruction.
+
+
+RETURN
+^^^^^^
+
+This instruction ignores all payload data.
 
 Example Sequences
 -----------------
