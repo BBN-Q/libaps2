@@ -2,13 +2,13 @@ module APSInstructions
 
 using HDF5, Compat
 
-export APSInstr, wf_entry, flow_call, flow_return, flow_repeat, load_repeat, sync, wait_trig, flow_loadcmp
+export APSInstr, wf_entry, flow_call, flow_return, flow_repeat, load_repeat, sync, wait_trig, flow_loadcmp, flow_cmp, flow_goto
 # write_file, write_hdf5_file
 
 import Base.show
 
 type APSInstr
-	data::Vector{Uint16}
+	data::Vector{UInt16}
 	name::Symbol
 	target::Symbol
 end
@@ -31,8 +31,8 @@ function __init__()
 		0xB => :LOAD_CMP)
 end
 
-APSInstr(data::Vector{Uint16}) = APSInstr(data, emptySymbol, emptySymbol)
-APSInstr(data::Vector{Uint16}, name::Symbol) = APSInstr(data, name, emptySymbol)
+APSInstr(data::Vector{UInt16}) = APSInstr(data, emptySymbol, emptySymbol)
+APSInstr(data::Vector{UInt16}, name::Symbol) = APSInstr(data, name, emptySymbol)
 header(instr::APSInstr) = (instr.data[1] >> 8) % UInt8
 opcode(instr::APSInstr) = header(instr) >> 4
 
@@ -60,7 +60,7 @@ function write_hdf5_file(filename, seq, wfA, wfB)
 	end
 
 	#Stack the instruction data
-	instrs = Uint64[]
+	instrs = UInt64[]
 	for s in seq
 		r = UInt64(0)
 		for ct in 1:4
@@ -83,7 +83,7 @@ function read_hdf5_file(filename)
 	for ct in 1:length(raw_instrs)
 		data = raw_instrs[ct]
 		# unstack the data
-		instrs[ct] = APSInstr(Uint16[(data >> 16*(4-i)) & 0xffff for i in 1:4])
+		instrs[ct] = APSInstr(UInt16[(data >> 16*(4-i)) & 0xffff for i in 1:4])
 	end
 	return instrs
 end
@@ -122,22 +122,22 @@ function wf_entry(addr, count; TAPair=false, writeData=true, label=emptySymbol)
 	@assert (addr & 0xffffff) == addr "Oops! We can only handle 24 bit addresses"
 	@assert (count & 0xfffff) == count "Oops! We can only handle 20 bit counts"
 
-	APSInstr(Uint16[WFM << 12 | (writeData ? 1 : 0) << 8, (TAPair ? 1 : 0) << 13  | count >> 8 , (count & 0x00ff) << 8 | addr >> 16, addr & 0xffff], label)
+	APSInstr(UInt16[WFM << 12 | (writeData ? 1 : 0) << 8, (TAPair ? 1 : 0) << 13  | count >> 8 , (count & 0x00ff) << 8 | addr >> 16, addr & 0xffff], label)
 end
 
-wf_prefetch(addr) = APSInstr(Uint16[WFM << 12 | 1 << 8, PREFETCH_INSTR_WORD, addr >> 16, addr & 0xffff])
+wf_prefetch(addr) = APSInstr(UInt16[WFM << 12 | 1 << 8, PREFETCH_INSTR_WORD, addr >> 16, addr & 0xffff])
 
 function marker_entry(target, state, count, transitionWord; writeData=true, label=emptySymbol)
 	@assert (count & 0xffffffff) == count "Oops! We can only handle 32 bit trigger counts"
 
-	APSInstr(Uint16[MARKER << 12 | (writeData ? 1 : 0) << 8 | (target & 0x3) << 10, (transitionWord & 0xf) << 1 | (state & 0x1), count >> 16, count & 0xffff], label)
+	APSInstr(UInt16[MARKER << 12 | (writeData ? 1 : 0) << 8 | (target & 0x3) << 10, (transitionWord & 0xf) << 1 | (state & 0x1), count >> 16, count & 0xffff], label)
 end
 
 flow_entry(cmd, jumpAddr::Integer, payload; label=emptySymbol) =
-	APSInstr(Uint16[(cmd << 12), payload, jumpAddr >> 16, jumpAddr & 0xffff], label)
+	APSInstr(UInt16[(cmd << 12), payload, jumpAddr >> 16, jumpAddr & 0xffff], label)
 
 flow_entry(cmd, jumpAddr::Symbol, payload; label=emptySymbol) =
-	APSInstr(Uint16[(cmd << 12), payload, 0x0000, 0x0000], label, jumpAddr)
+	APSInstr(UInt16[(cmd << 12), payload, 0x0000, 0x0000], label, jumpAddr)
 
 function wait_trig(; label=emptySymbol)
 	instr = flow_entry(WAIT_TRIG, 0, WAIT_TRIG_INSTR_WORD; label=label)
@@ -157,7 +157,7 @@ function load_repeat(loadValue; label=emptySymbol)
 end
 
 flow_loadcmp(; label=emptySymbol) = flow_entry(LOAD_CMP, 0, 0; label=label)
-flow_cmp(cmpOp, mask; label=emptySymbol) = APSInstr(Uint16[CMP << 12, 0, 0, ((cmpOp & 0x03) << 8) | (mask & 0xff)], label)
+flow_cmp(cmpOp, mask; label=emptySymbol) = APSInstr(UInt16[CMP << 12, 0, 0, ((cmpOp & 0x03) << 8) | (mask & 0xff)], label)
 flow_repeat(target; label=emptySymbol) = flow_entry(DEC_REPEAT, target, 0; label=label)
 flow_goto(target; label=emptySymbol) = flow_entry(GOTO, target, 0; label=label)
 flow_call(target; label=emptySymbol) = flow_entry(CALL, target, 0; label=label)
