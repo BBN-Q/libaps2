@@ -14,7 +14,12 @@ void APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
 	if (!isOpen) {
 		ethernetRM_->connect(deviceSerial_);
 		try {
-			read_status_registers();
+			APSStatusBank_t statusRegs = read_status_registers();
+			if ((statusRegs.hostFirmwareVersion & (1 << HOST_TYPE_BIT)) == (1 << HOST_TYPE_BIT)) {
+				host_type = TDM;
+			} else {
+				host_type = APS;
+			}
 		}
 		catch(...) {
 			disconnect();
@@ -70,6 +75,9 @@ void APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */)
 }
 
 APS2_STATUS APS2::init(const bool & forceReload, const int & bitFileNum) {
+	if (host_type == TDM) {
+		return APS2_OK;
+	}
 	 //TODO: bitfiles will be stored in flash so all we need to do here is the DACs
 
 	get_sampleRate(); // to update state variable
@@ -118,7 +126,7 @@ int APS2::setup_DACs() {
 	return 0;
 }
 
-APSStatusBank_t APS2::read_status_registers(){
+APSStatusBank_t APS2::read_status_registers() {
 	//Query with the status request command
 	APSCommand_t command = { .packed=0 };
 	command.cmd = static_cast<uint32_t>(APS_COMMANDS::STATUS);

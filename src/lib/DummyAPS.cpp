@@ -234,7 +234,7 @@ size_t DummyAPS::select_fpga_program() {
     std::this_thread::sleep_for( dura );
 
     // dummy up expected FPGA version
-    user_registers_[FPGA_ADDR_VERSION] = FIRMWARE_VERSION;
+    user_registers_[FPGA_ADDR_VERSION] = 0xA03;
 
     // copy status registers
     memcpy((uint8_t *)getPayloadPtr(outboundPacketPtr_), &statusRegs_, sizeof(struct APS_Status_Registers));

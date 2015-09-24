@@ -242,9 +242,6 @@ static const uint32_t WFA_OFFSET  = 0;
 static const uint32_t WFB_OFFSET  = 0x10000000u;
 static const uint32_t SEQ_OFFSET  = 0x20000000u;
 
-//Expected version
-static const int FIRMWARE_VERSION =  0xA03;
-
 // sequencer control bits
 static const int SM_ENABLE_BIT = 0; // state machine enable
 static const int TRIGSRC_BIT = 1; // trigger source (0 = external, 1 = internal, 2 = software)
@@ -257,6 +254,9 @@ static const int IO_CHA_RST_BIT = 10;
 static const int IO_CHB_RST_BIT = 11;
 static const int DAC_BIST_CHA_RST_BIT = 12;
 static const int DAC_BIST_CHB_RST_BIT = 13;
+
+// HOST_STATUS bits
+static const int HOST_TYPE_BIT = 24;
 
 // USER_STATUS bits
 static const int MMCM_SYS_LOCK_BIT = 31;

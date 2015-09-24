@@ -86,6 +86,7 @@ public:
 	bool isOpen;
 
 	RUN_STATE runState;
+	HOST_TYPE host_type;
 
 	//Pretty printers
 	static string print_status_bank(const APSStatusBank_t & status);
