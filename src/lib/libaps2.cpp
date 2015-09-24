@@ -330,7 +330,7 @@ int read_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_
 	return 0;
 }
 
-int read_register(const char* deviceSerial, uint32_t addr) {
+uint32_t read_register(const char* deviceSerial, uint32_t addr) {
 	uint32_t buffer[1];
 	read_memory(deviceSerial, addr, buffer, 1);
 	return buffer[0];
