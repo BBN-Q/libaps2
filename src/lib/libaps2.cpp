@@ -318,22 +318,29 @@ APS2_STATUS set_run_mode(const char* deviceSerial, RUN_MODE mode) {
 	return aps2_call(deviceSerial, &APS2::set_run_mode, mode);
 }
 
-int write_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
+APS2_STATUS write_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
 	return aps2_call(deviceSerial,
 						static_cast<void(APS2::*)(const uint32_t&, const vector<uint32_t>&)>(&APS2::write_memory),
 						addr, vector<uint32_t>(data, data + numWords));
 }
 
-int read_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
-	auto readData = APSs[string(deviceSerial)].read_memory(addr, numWords);
-	std::copy(readData.begin(), readData.end(), data);
-	return 0;
+APS2_STATUS read_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
+	try {
+		auto readData = APSs[string(deviceSerial)].read_memory(addr, numWords);
+		std::copy(readData.begin(), readData.end(), data);	
+	}
+	catch (APS2_STATUS status) {
+		return status;
+	}
+	catch (...) {
+		return APS2_UNKNOWN_ERROR;
+	}
+	
+	return APS2_OK;
 }
 
-uint32_t read_register(const char* deviceSerial, uint32_t addr) {
-	uint32_t buffer[1];
-	read_memory(deviceSerial, addr, buffer, 1);
-	return buffer[0];
+APS2_STATUS read_register(const char* deviceSerial, uint32_t addr, uint32_t* result) {
+	return read_memory(deviceSerial, addr, result, 1);
 }
 
 int program_FPGA(const char* deviceSerial, const char* bitFile) {

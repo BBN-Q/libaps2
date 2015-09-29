@@ -29,7 +29,7 @@ public:
 	void disconnect(string serial);
 	int send(string serial, APSEthernetPacket msg, bool checkResponse=true);
 	int send(string serial, vector<APSEthernetPacket> msg, unsigned ackEvery=1);
-	vector<APSEthernetPacket> receive(string serial, size_t numPackets = 1, size_t timeoutMS = 10000);
+	vector<APSEthernetPacket> receive(string serial, size_t numPackets = 1, size_t timeoutMS = 2000);
 
 private:
 	APSEthernet(APSEthernet const &) = delete;
