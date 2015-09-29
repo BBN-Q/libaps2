@@ -27,6 +27,9 @@ INCLUDE_DIRECTORIES("./lib/")
 INCLUDE_DIRECTORIES( "../asio/asio/include" )
 ADD_DEFINITIONS(-DASIO_STANDALONE)
 
+#Catch unit-testing
+INCLUDE_DIRECTORIES("../deps/Catch/include")
+
 #Add flag for C++11
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11")
 
@@ -84,6 +87,13 @@ ADD_EXECUTABLE(test_comms
 	./util/test_comms.cpp
 )
 TARGET_LINK_LIBRARIES(test_comms aps2)
+
+ADD_EXECUTABLE(run_tests
+	../test/run_tests.cpp
+	../test/test_Sanity.cpp
+	../test/test_comms.cpp
+)
+TARGET_LINK_LIBRARIES(run_tests aps2 pthread)
 
 ADD_EXECUTABLE(flash
 	./util/flash.cpp
