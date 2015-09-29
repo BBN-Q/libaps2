@@ -64,7 +64,7 @@ function write_hdf5_file(filename, seq, wfA, wfB)
 	for s in seq
 		r = UInt64(0)
 		for ct in 1:4
-			r += (s.data[ct]) << 16*(4-ct) % UInt64
+			r += UInt64(s.data[ct]) << 16*(4-ct)
 		end
 		push!(instrs, r)
 	end
