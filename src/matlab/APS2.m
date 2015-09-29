@@ -211,7 +211,7 @@ classdef APS2 < handle
         % debug methods
         
         function out = read_register(obj, addr)
-            out = calllib('libaps2', 'read_register', obj.serial, addr);
+            out = aps2_getter(obj, 'read_register', addr);
         end
     end
     

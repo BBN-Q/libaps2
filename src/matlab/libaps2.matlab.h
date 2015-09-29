@@ -90,9 +90,9 @@ EXPORT APS2_STATUS set_dhcp_enable(const char*, const int*);
 
 /* private API methods */
 
-EXPORT int write_memory(const char*, unsigned int, unsigned int*, unsigned int);
-EXPORT int read_memory(const char*, unsigned int, unsigned int*, unsigned int);
-EXPORT unsigned int read_register(const char*, unsigned int);
+EXPORT APS2_STATUS write_memory(const char*, unsigned int, unsigned int*, unsigned int);
+EXPORT APS2_STATUS read_memory(const char*, unsigned int, unsigned int*, unsigned int);
+EXPORT APS2_STATUS read_register(const char*, unsigned int, unsigned int*);
 EXPORT int program_FPGA(const char*, const char*);
 
 EXPORT int write_flash(const char*, unsigned int, unsigned int*, unsigned int);

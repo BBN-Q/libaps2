@@ -338,5 +338,5 @@ vector<APSEthernetPacket> APSEthernet::receive(string serial, size_t numPackets,
         elapsedTime =  std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
     }
 
-    throw runtime_error("Timed out on receive");
+    throw APS2_RECEIVE_TIMEOUT;
 }
