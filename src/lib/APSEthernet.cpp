@@ -6,7 +6,12 @@
 #include <ifaddrs.h>
 #endif
 
-APSEthernet::APSEthernet() : socket_(ios_, udp::endpoint(udp::v4(), APS_PROTO)) {
+APSEthernet::APSEthernet() : socket_(ios_) {
+    try {
+        socket_ = udp::socket(ios_, udp::endpoint(udp::v4(), APS_PROTO));
+    } catch (...) {
+        throw APS2_SOCKET_FAILURE;
+    }
     FILE_LOG(logDEBUG) << "Creating ethernet interface";
     //enable broadcasting for enumerating
     socket_.set_option(asio::socket_base::broadcast(true));
