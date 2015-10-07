@@ -256,7 +256,7 @@ static const int DAC_BIST_CHA_RST_BIT = 12;
 static const int DAC_BIST_CHB_RST_BIT = 13;
 
 // HOST_STATUS bits
-static const int HOST_TYPE_BIT = 24;
+static const int APS2_HOST_TYPE_BIT = 24;
 
 // USER_STATUS bits
 static const int MMCM_SYS_LOCK_BIT = 31;

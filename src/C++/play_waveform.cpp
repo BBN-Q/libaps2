@@ -64,9 +64,9 @@ int main(int argc, char* argv[])
 	}
 
 	//Trigger source -- default of internal
-	TRIGGER_SOURCE triggerSource = INTERNAL;
+	APS2_TRIGGER_SOURCE triggerSource = INTERNAL;
 	if (options[TRIG_MODE]) {
-		triggerSource = TRIGGER_SOURCE(atoi(options[TRIG_MODE].arg));
+		triggerSource = APS2_TRIGGER_SOURCE(atoi(options[TRIG_MODE].arg));
 	}
 
 	//Trigger interval -- default of 10ms

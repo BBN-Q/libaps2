@@ -15,7 +15,7 @@ void APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
 		ethernetRM_->connect(deviceSerial_);
 		try {
 			APSStatusBank_t statusRegs = read_status_registers();
-			if ((statusRegs.hostFirmwareVersion & (1 << HOST_TYPE_BIT)) == (1 << HOST_TYPE_BIT)) {
+			if ((statusRegs.hostFirmwareVersion & (1 << APS2_HOST_TYPE_BIT)) == (1 << APS2_HOST_TYPE_BIT)) {
 				host_type = TDM;
 			} else {
 				host_type = APS;
@@ -355,7 +355,7 @@ void APS2::set_markers(const int & dac, const vector<uint8_t> & data) {
 	write_waveform(dac, channels_[dac].prep_waveform());
 }
 
-void APS2::set_trigger_source(const TRIGGER_SOURCE & triggerSource){
+void APS2::set_trigger_source(const APS2_TRIGGER_SOURCE & triggerSource){
 	FILE_LOG(logDEBUG) << "Setting trigger source to " << triggerSource;
 
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
@@ -365,9 +365,9 @@ void APS2::set_trigger_source(const TRIGGER_SOURCE & triggerSource){
 	write_memory(SEQ_CONTROL_ADDR, regVal);
 }
 
-TRIGGER_SOURCE APS2::get_trigger_source() {
+APS2_TRIGGER_SOURCE APS2::get_trigger_source() {
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
-	return TRIGGER_SOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
+	return APS2_TRIGGER_SOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
 }
 
 void APS2::set_trigger_interval(const double & interval){
@@ -407,11 +407,11 @@ void APS2::stop() {
 	clear_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
 }
 
-RUN_STATE APS2::get_runState(){
+APS2_RUN_STATE APS2::get_runState(){
 	return runState;
 }
 
-void APS2::set_run_mode(const RUN_MODE & mode) {
+void APS2::set_run_mode(const APS2_RUN_MODE & mode) {
 	FILE_LOG(logDEBUG) << "Setting run mode to " << mode;
 
 	vector<uint64_t> instructions = WF_SEQ;
@@ -433,7 +433,7 @@ void APS2::set_run_mode(const RUN_MODE & mode) {
 			break;
 		default:
 			// unknown mode
-			throw APS2_UNKNOWN_RUN_MODE;
+			throw APS2_UNKNOWN_APS2_RUN_MODE;
 	}
 }
 

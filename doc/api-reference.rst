@@ -136,11 +136,11 @@ Getter calls return the value in the appropriate pointer.
 
 	Returns the enabled state of `channel`.
 
-`APS2_STATUS set_trigger_source(const char* deviceIP, TRIGGER_SOURCE source)`
+`APS2_STATUS set_trigger_source(const char* deviceIP, APS2_TRIGGER_SOURCE source)`
 
 	Sets the trigger source to EXTERNAL (), INTERNAL or SOFTWARE.
 
-`APS2_STATUS get_trigger_source(const char* deviceIP, TRIGGER_SOURCE* source)`
+`APS2_STATUS get_trigger_source(const char* deviceIP, APS2_TRIGGER_SOURCE* source)`
 
 	Returns the current trigger source.
 
@@ -183,7 +183,7 @@ Getter calls return the value in the appropriate pointer.
 	Loads the APS2-structured HDF5 file given by the path `seqFile`. Be aware
 	the backslash character must be escaped (doubled) in C strings.
 
-`APS2_STATUS set_run_mode(const char* deviceIP, RUN_MODE mode)`
+`APS2_STATUS set_run_mode(const char* deviceIP, APS2_RUN_MODE mode)`
 
 	Changes the APS2 run mode to sequence (RUN_SEQUENCE, the default),
 	triggered  waveform (TRIG_WAVEFORM) or continuous loop waveform
@@ -202,7 +202,7 @@ Getter calls return the value in the appropriate pointer.
 
 	Disables the pulse sequencer.
 
-`APS2_STATUS get_runState(const char* deviceIP, RUN_STATE* state)`
+`APS2_STATUS get_runState(const char* deviceIP, APS2_RUN_STATE* state)`
 
 	Returns the running state of the APS2.
 

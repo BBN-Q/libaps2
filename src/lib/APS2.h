@@ -49,8 +49,8 @@ public:
 	void set_sampleRate(const unsigned int &);
 	unsigned int get_sampleRate();
 
-	void set_trigger_source(const TRIGGER_SOURCE &);
-	TRIGGER_SOURCE get_trigger_source();
+	void set_trigger_source(const APS2_TRIGGER_SOURCE &);
+	APS2_TRIGGER_SOURCE get_trigger_source();
 	void set_trigger_interval(const double &);
 	double get_trigger_interval();
 	void trigger();
@@ -71,7 +71,7 @@ public:
 
 	void set_markers(const int &, const vector<uint8_t> &);
 
-	void set_run_mode(const RUN_MODE &);
+	void set_run_mode(const APS2_RUN_MODE &);
 
 	void write_sequence(const vector<uint64_t> &);
 	void clear_channel_data();
@@ -80,13 +80,13 @@ public:
 
 	void run();
 	void stop();
-	RUN_STATE get_runState();
+	APS2_RUN_STATE get_runState();
 
 	//Whether the APS connection is open
 	bool isOpen;
 
-	RUN_STATE runState;
-	HOST_TYPE host_type;
+	APS2_RUN_STATE runState;
+	APS2_HOST_TYPE host_type;
 
 	//Pretty printers
 	static string print_status_bank(const APSStatusBank_t & status);
