@@ -433,7 +433,7 @@ void APS2::set_run_mode(const APS2_RUN_MODE & mode) {
 			break;
 		default:
 			// unknown mode
-			throw APS2_UNKNOWN_APS2_RUN_MODE;
+			throw APS2_UNKNOWN_RUN_MODE;
 	}
 }
 
