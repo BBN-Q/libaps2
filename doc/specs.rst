@@ -48,6 +48,7 @@ Rise/fall time            2ns
 Settling time             2ns to 10%, 10ns to 1%
 Trigger modes             Internal, external, or software triggering
 Ext. trigger input        1 V minimum into 50 Ω, 5 V maximum; triggered on *rising* edge
+Reference input           10 MHz sine or square, 1V to 3.3V peak to peak (+4 to +14 dBm)
 Waveform cache            128K samples
 Sequence memory           64M instructions
 Min instruction duration  8 samples
