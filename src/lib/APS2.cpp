@@ -370,14 +370,24 @@ APS2_TRIGGER_SOURCE APS2::get_trigger_source() {
 	return APS2_TRIGGER_SOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
 }
 
-void APS2::set_trigger_interval(const double & interval){
+void APS2::set_trigger_interval(const double & interval) {
+	int clockCycles;
+	switch (host_type) {
+	case APS:
+		// SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
+		clockCycles = interval*0.25*samplingRate_*1e6 - 1;
+		FILE_LOG(logDEBUG) << "Setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
 
-	//SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
-	int clockCycles = interval*0.25*samplingRate_*1e6 - 1;
+		write_memory(TRIGGER_INTERVAL_ADDR, clockCycles);
+		break;
+	case TDM:
+		// TDM operates on a fixed 100 MHz clock (10 ns period)
+		clockCycles = (interval * 10e6) - 1;
+		FILE_LOG(logDEBUG) << "Setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
 
-	FILE_LOG(logDEBUG) << "Setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
-
-	write_memory(TRIGGER_INTERVAL_ADDR, clockCycles);
+		write_memory(TDM_TRIGGER_INTERVAL_ADDR, clockCycles);
+		break;
+	}
 }
 
 double APS2::get_trigger_interval() {
@@ -387,7 +397,7 @@ double APS2::get_trigger_interval() {
 	return static_cast<double>(clockCycles + 1)/(0.25*samplingRate_*1e6);
 }
 
-void APS2::trigger(){
+void APS2::trigger() {
 	//Apply a software trigger by toggling the trigger line
 	FILE_LOG(logDEBUG) << "Sending software trigger";
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
@@ -398,13 +408,28 @@ void APS2::trigger(){
 }
 
 void APS2::run() {
-	FILE_LOG(logDEBUG1) << "Releasing pulse sequencer state machine...";
-	set_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+	switch (host_type) {
+	case APS:
+		FILE_LOG(logDEBUG1) << "Releasing pulse sequencer state machine...";
+		set_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+		break;
+	case TDM:
+		FILE_LOG(logDEBUG1) << "Enabling TDM trigger";
+		clear_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
+		break;
+	}
 }
 
 void APS2::stop() {
-	//Put the state machine back in reset
-	clear_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+	switch (host_type) {
+	case APS:
+		//Put the state machine back in reset
+		clear_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+		break;
+	case TDM:
+		set_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
+		break;
+	}
 }
 
 APS2_RUN_STATE APS2::get_runState(){
