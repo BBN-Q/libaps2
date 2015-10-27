@@ -21,59 +21,59 @@ classdef APS2 < handle
     properties
         serial = ''
     end
-    
+
     properties (Constant)
         libpath = '../../build';
         samplingRate = 1200000000 % for now only run at 1.2GS/s
     end
-    
+
     methods
         function obj = APS2()
             APS2.load_library();
         end
-        
+
         function delete(obj)
             try
                obj.disconnect();
             catch %#ok<CTCH>
             end
         end
-        
+
         function aps2_call(obj, func, varargin)
             status = calllib('libaps2', func, obj.serial, varargin{:});
             APS2.check_status(status);
         end
-        
+
         function val = aps2_getter(obj, func, varargin)
             [status, ~, val] = calllib('libaps2', func, obj.serial, varargin{:}, 0);
             APS2.check_status(status);
         end
-        
+
         function connect(obj, serial)
             obj.serial = serial;
             aps2_call(obj, 'connect_APS');
             obj.init();
         end
-        
+
         function disconnect(obj)
             aps2_call(obj, 'disconnect_APS');
             obj.serial = '';
         end
-        
+
         function init(obj, force)
             if ~exist('force', 'var')
                 force = 0;
             end
             aps2_call(obj, 'init_APS', force)
         end
-        
+
         function val = get_firmware_version(obj)
             ver = aps2_getter(obj, 'get_firmware_version');
             major_ver = bitshift(ver, -8);
             minor_ver = bitand(ver, hex2dec('FF'));
             val = sprintf('%d.%d', major_ver, minor_ver);
         end
-        
+
         function val = get_uptime(obj)
             val = aps2_getter(obj, 'get_uptime');
         end
@@ -85,32 +85,32 @@ classdef APS2 < handle
         function run(obj)
             aps2_call(obj, 'run');
         end
-        
+
         function stop(obj)
             aps2_call(obj, 'stop');
         end
-        
+
         function val = get_runState(obj)
             val = aps2_getter(obj, 'get_runState');
         end
-        
+
         % trigger methods
         function val = get_trigger_interval(obj)
             val = aps2_getter(obj, 'get_trigger_interval');
         end
-        
+
         function set_trigger_interval(obj, val)
             aps2_call(obj, 'set_trigger_interval', val);
         end
-        
+
         function val = get_trigger_source(obj)
             val = aps2_getter(obj, 'get_trigger_source');
         end
-        
+
         function set_trigger_source(obj, source)
             aps2_call(obj, 'set_trigger_source', source);
         end
-        
+
         function trigger(obj)
             aps2_call(obj, 'trigger')
         end
@@ -126,11 +126,11 @@ classdef APS2 < handle
                     error('Unhandled waveform data type');
             end
         end
-        
+
         function load_sequence(obj, filename)
             aps2_call(obj, 'load_sequence_file', filename);
         end
-        
+
         function val = get_run_mode(obj)
             val = aps2_getter(obj, 'get_run_mode');
         end
@@ -143,7 +143,7 @@ classdef APS2 < handle
         function val = get_channel_offset(obj, channel)
             val = aps2_getter(obj, 'get_channel_offset', channel-1);
         end
-        
+
         function set_channel_offset(obj, channel, offset)
             aps2_call(obj, 'set_channel_offset', channel-1, offset);
         end
@@ -151,7 +151,7 @@ classdef APS2 < handle
         function val = get_channel_scale(obj, channel)
             val = aps2_getter(obj, 'get_channel_scale', channel-1);
         end
-        
+
         function set_channel_scale(obj, channel, scale)
             aps2_call(obj, 'set_channel_scale', channel-1, scale);
         end
@@ -159,11 +159,11 @@ classdef APS2 < handle
         function val = get_channel_enabled(obj, channel)
             val = aps2_getter(obj, 'get_channel_enabled', channel-1);
         end
-        
+
         function set_channel_enabled(obj, channel, enabled)
             aps2_call(obj, 'set_channel_enabled', channel-1, enabled);
         end
-        
+
         function setAll(obj,settings)
             %setAll - Sets up the APS2 with a settings structure
             % APS2.setAll(settings)
@@ -175,31 +175,33 @@ classdef APS2 < handle
             %  settings.seqFile - hdf5 sequence file
             %  settings.seqForce - force reload of file
 
-            % Setup some defaults 
+            % Setup some defaults
             if ~isfield(settings, 'seqForce')
                 settings.seqForce = 0;
             end
             if ~isfield(settings, 'lastseqFile')
                 settings.lastseqFile = '';
             end
-            
+
             obj.stop();
-			
+
             % Set the channel parameters;  set amplitude and offset before loading waveform data so that we
  			% only have to load it once.
             channelStrs = {'chan_1','chan_2'};
-            for ct = 1:2
-                ch = channelStrs{ct};
-				obj.set_channel_scale(ct, settings.(ch).amplitude);
-				obj.set_channel_offset(ct, settings.(ch).offset);
-                obj.set_channel_enabled(ct, settings.(ch).enabled);
+            if all(isfield(settings, channelStrs))
+                for ct = 1:2
+                    ch = channelStrs{ct};
+    				obj.set_channel_scale(ct, settings.(ch).amplitude);
+    				obj.set_channel_offset(ct, settings.(ch).offset);
+                    obj.set_channel_enabled(ct, settings.(ch).enabled);
+                end
             end
-            
+
 			% load a sequence file if the settings file is changed or if force == true
 			if isfield(settings, 'seqFile') && (~strcmp(settings.lastseqFile, settings.seqFile) || settings.seqForce)
                 obj.load_sequence(settings.seqFile);
 			end
-			
+
             if isfield(settings, 'triggerInterval')
                 obj.set_trigger_interval(settings.triggerInterval);
             end
@@ -207,14 +209,14 @@ classdef APS2 < handle
                 obj.set_trigger_source(settings.triggerSource');
             end
         end
-        
+
         % debug methods
-        
+
         function out = read_register(obj, addr)
             out = aps2_getter(obj, 'read_register', addr);
         end
     end
-    
+
     methods (Static)
         function load_library()
             if ~libisloaded('libaps2')
@@ -232,7 +234,7 @@ classdef APS2 < handle
             assert(strcmp(status, 'APS2_OK'),...
             'APS2 library call failed with message: %s', calllib('libaps2', 'get_error_msg', status));
         end
-        
+
         function [serials] = enumerate()
             APS2.load_library();
             [status, numDevices] = calllib('libaps2', 'get_numDevices', 0);
@@ -253,7 +255,7 @@ classdef APS2 < handle
         end
 
 
-        
+
     end
-    
+
 end
