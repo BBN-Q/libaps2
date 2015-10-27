@@ -17,6 +17,7 @@ Contents:
    specs
    installation
    sequencer
+   tdm
    instruction-set
    formats
    api-reference
@@ -28,4 +29,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

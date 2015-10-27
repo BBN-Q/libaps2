@@ -23,7 +23,7 @@ Nearly all the library calls return an ``APS2_STATUS`` enum.  If there are no
 errors then this will be ``APS2_OK``. Otherwise a more detailed description of
 the error an be obtained from ``get_error_msg``.  See the Matlab and Julia
 drivers for examples of how to wrap each library call with error checking. The
-enum and descriptions can be found ``APS2_errno.h``.  
+enum and descriptions can be found ``APS2_errno.h``.
 
 There are also enums for the trigger mode, run mode, running status and
 logging level.  These can be found in ``APS2_enums.h`` or ``logger.h``.
@@ -31,7 +31,7 @@ logging level.  These can be found in ``APS2_enums.h`` or ``logger.h``.
 High-level methods
 ------------------
 
-Getter calls return the value in the appropriate pointer. 
+Getter calls return the value in the appropriate pointer.
 
 `const char* get_error_msg(APS2_STATUS)`
 
@@ -138,7 +138,7 @@ Getter calls return the value in the appropriate pointer.
 
 `APS2_STATUS set_trigger_source(const char* deviceIP, APS2_TRIGGER_SOURCE source)`
 
-	Sets the trigger source to EXTERNAL (), INTERNAL or SOFTWARE.
+	Sets the trigger source to EXTERNAL, INTERNAL, SYSTEM, or SOFTWARE.
 
 `APS2_STATUS get_trigger_source(const char* deviceIP, APS2_TRIGGER_SOURCE* source)`
 
@@ -148,7 +148,7 @@ Getter calls return the value in the appropriate pointer.
 
 	Set the internal trigger interval to `interval` (in seconds).  The
 	internal trigger has a resolution of 3.333 ns and a minimum interval of
-	6.67ns and maximum interval of ``2^32+1 * 3.333 ns ~ 14.17s``.
+	6.67ns and maximum interval of ``2^32+1 * 3.333 ns = 14.17s``.
 
 `APS2_STATUS get_trigger_interval(const char* deviceIP, double* interval)`
 
@@ -164,7 +164,7 @@ Getter calls return the value in the appropriate pointer.
 	length of the `data` array. :math:`\pm 1` indicate full-scale output.
 
 `APS2_STATUS set_waveform_int(const char* deviceIP, int channel, int16_t* data, int numPts)`
-	
+
 	Uploads `data` to `channel`'s waveform memory. `numPts` indicates the
 	length of the `data` array. Data should contain 14-bit waveform data sign-
 	extended int16's. Bits 14-13 in each array element will be ignored.
