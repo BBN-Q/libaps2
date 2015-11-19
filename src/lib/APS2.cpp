@@ -381,8 +381,8 @@ void APS2::set_trigger_interval(const double & interval) {
 		write_memory(TRIGGER_INTERVAL_ADDR, clockCycles);
 		break;
 	case TDM:
-		// TDM operates on a fixed 100 MHz clock (10 ns period)
-		clockCycles = (interval * 10e6);
+		// TDM operates on a fixed 100 MHz clock
+		clockCycles = (interval * 100e6);
 		FILE_LOG(logDEBUG) << "Setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
 
 		write_memory(TDM_TRIGGER_INTERVAL_ADDR, clockCycles);
@@ -402,8 +402,8 @@ double APS2::get_trigger_interval() {
 	case TDM:
 		clockCycles = read_memory(TDM_TRIGGER_INTERVAL_ADDR, 1)[0];
 		// Convert from clock cycles to time
-		// TDM operates on a fixed 100 MHz clock (10 ns period)
-		return static_cast<double>(clockCycles)/(10e6);
+		// TDM operates on a fixed 100 MHz clock
+		return static_cast<double>(clockCycles)/(100e6);
 		break;
 	}
 	//Shoud never get here;
