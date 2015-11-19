@@ -126,7 +126,7 @@ vector<std::pair<string,string>> APSEthernet::get_local_IPs() {
 
                 IPs.push_back(std::pair<string,string>(IPV4Addr, inet_ntoa(sin.sin_addr)));
                 FILE_LOG(logDEBUG1) << "IPv4 address: " << IPs.back().first <<
-                                        "; Prefix length: " << (unsigned) pUnicast->OnLinkPrefixLength << 
+                                        "; Prefix length: " << (unsigned) pUnicast->OnLinkPrefixLength <<
                                         "; Netmask: " << IPs.back().second;
             }
         }
@@ -294,6 +294,7 @@ int APSEthernet::send_chunk(string serial, vector<APSEthernetPacket> chunk, bool
             seqNum++;
             FILE_LOG(logDEBUG4) << "Packet command: " << print_APSCommand(packet.header.command);
             socket_.send_to(asio::buffer(packet.serialize()), devInfo_[serial].endpoint);
+            // sleep to make the driver compatible with newer versions of Windows
             // std::this_thread::sleep_for(std::chrono::microseconds(100));
         }
 
