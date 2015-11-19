@@ -391,10 +391,23 @@ void APS2::set_trigger_interval(const double & interval) {
 }
 
 double APS2::get_trigger_interval() {
-
-	uint32_t clockCycles = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
-	// Convert from clock cycles to time
-	return static_cast<double>(clockCycles + 1)/(0.25*samplingRate_*1e6);
+	uint32_t clockCycles;
+	switch (host_type) {
+	case APS:
+		// SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
+		clockCycles = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
+		// Convert from clock cycles to time
+		return static_cast<double>(clockCycles)/(0.25*samplingRate_*1e6);
+		break;
+	case TDM:
+		clockCycles = read_memory(TDM_TRIGGER_INTERVAL_ADDR, 1)[0];
+		// Convert from clock cycles to time
+		// TDM operates on a fixed 100 MHz clock (10 ns period)
+		return static_cast<double>(clockCycles)/(10e6);
+		break;
+	}
+	//Shoud never get here;
+	throw APS2_UNKNOWN_ERROR;
 }
 
 void APS2::trigger() {
