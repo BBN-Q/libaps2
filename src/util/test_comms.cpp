@@ -39,7 +39,6 @@ void run_test(string deviceSerial, string memArea, uint32_t memStartAddr, uint32
 	//Choose a random starting point
 	std::uniform_int_distribution<uint32_t> addrDistribution(memStartAddr, memHighAddr-testLength);
 	uint32_t testStartAddr = addrDistribution(generator);
-  testStartAddr = 0x1df9e360;
 	testStartAddr &= ~(alignmentMask); //align address
 
 	cout << endl;
