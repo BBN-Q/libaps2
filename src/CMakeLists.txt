@@ -70,6 +70,12 @@ set(APS2_VERSION_PATCH 0)
 set(APS2_VERSION_STRING ${APS2_VERSION_MAJOR}.${APS2_VERSION_MINOR}.${APS2_VERSION_PATCH})
 set_target_properties(aps2 PROPERTIES VERSION ${APS2_VERSION_STRING} SOVERSION ${APS2_VERSION_MAJOR})
 
+ADD_EXECUTABLE(enumerate
+	./C++/enumerate.cpp
+)
+TARGET_LINK_LIBRARIES(enumerate aps2)
+
+
 ADD_EXECUTABLE(play_waveform
 	./C++/play_waveform.cpp
 )

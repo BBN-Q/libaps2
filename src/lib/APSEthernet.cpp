@@ -1,3 +1,8 @@
+// Ethernet communications with APS2 boards
+//
+// Original authors: Colm Ryan, Blake Johnson, Brian Donovan
+// Copyright 2016, Raytheon BBN Technologies
+
 #include "APSEthernet.h"
 
 #ifdef _WIN32
@@ -6,18 +11,30 @@
 #include <ifaddrs.h>
 #endif
 
-APSEthernet::APSEthernet() : socket_(ios_) {
+APSEthernet::APSEthernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
+  FILE_LOG(logDEBUG) << "APSEthernet::APSEthernet";
+
+    //Setup the old UDP socket at local port bb4e
     try {
-        socket_ = udp::socket(ios_, udp::endpoint(udp::v4(), APS_PROTO));
+        udp_socket_old_ = udp::socket(ios_, udp::endpoint(udp::v4(), APS_PROTO));
     } catch (...) {
         throw APS2_SOCKET_FAILURE;
     }
-    FILE_LOG(logDEBUG) << "Creating ethernet interface";
+
+    //New UDP socket at local port bb4f
+    try {
+        udp_socket_ = udp::socket(ios_, udp::endpoint(udp::v4(), APS_PROTO+1));
+    } catch (...) {
+        throw APS2_SOCKET_FAILURE;
+    }
+
     //enable broadcasting for enumerating
-    socket_.set_option(asio::socket_base::broadcast(true));
+    udp_socket_old_.set_option(asio::socket_base::broadcast(true));
+    udp_socket_.set_option(asio::socket_base::broadcast(true));
 
     //io_service will return immediately so post receive task before .run()
-    setup_receive();
+    setup_udp_receive_old();
+    setup_udp_receive();
 
     //Setup the asio service to run on a background thread
     receiveThread_ = std::thread([this](){ ios_.run(); });
@@ -29,8 +46,9 @@ APSEthernet::~APSEthernet() {
     receiveThread_.join();
 }
 
-void APSEthernet::setup_receive() {
-    socket_.async_receive_from(
+void APSEthernet::setup_udp_receive_old() {
+    //Receive UDP packets on the two UDP sockets
+    udp_socket_old_.async_receive_from(
         asio::buffer(receivedData_, 2048), senderEndpoint_,
         [this](std::error_code ec, std::size_t bytesReceived)
         {
@@ -42,9 +60,28 @@ void APSEthernet::setup_receive() {
             }
 
             //Start the receiver again
-            setup_receive();
+            setup_udp_receive_old();
     });
 }
+
+void APSEthernet::setup_udp_receive() {
+    //Receive UDP packets on the two UDP sockets
+    udp_socket_.async_receive_from(
+        asio::buffer(receivedData_, 2048), senderEndpoint_,
+        [this](std::error_code ec, std::size_t bytesReceived)
+        {
+            //If there is anything to look at hand it off to the sorter
+            if (!ec && bytesReceived > 0)
+            {
+                vector<uint8_t> packetData(receivedData_, receivedData_ + bytesReceived);
+                sort_packet(packetData, senderEndpoint_);
+            }
+
+            //Start the receiver again
+            setup_udp_receive();
+    });
+}
+
 
 void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::endpoint & sender) {
     //If we have the endpoint address then add it to the queue
@@ -52,7 +89,7 @@ void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::end
     if (msgQueues_.find(senderIP) == msgQueues_.end()) {
         //If it isn't in our list of APSs then perhaps we are seeing an enumerate status response
         //If so add the device info to the set
-        if (packetData.size() == 84) {
+        if ((sender.port() == 0xbb4e) && (packetData.size() == 84)) {
             devInfo_[senderIP].endpoint = sender;
             //Turn the byte array into a packet to extract the MAC address and firmware version
             //MAC not strictly necessary as we could just use the broadcast MAC address
@@ -63,6 +100,15 @@ void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::end
             FILE_LOG(logDEBUG1) << "Added device with IP " << senderIP <<
                 " ; MAC addresss " << devInfo_[senderIP].macAddr.to_string() <<
                 " ; firmware version " << hexn<4> << statusRegs.userFirmwareVersion;
+        }
+        else if ((sender.port() == 0xbb4f) && (packetData.size() == 12)) {
+          string response = string(packetData.begin(), packetData.end());
+          FILE_LOG(logDEBUG2) << "Enumerate response string " << response;
+          if (response.compare("I am an APS2") == 0) {
+            devInfo_[senderIP] = EthernetDevInfo();
+            FILE_LOG(logDEBUG1) << "Added device with IP " << senderIP;
+          }
+
         }
     }
     else {
@@ -82,6 +128,9 @@ void APSEthernet::init() {
 }
 
 vector<std::pair<string,string>> APSEthernet::get_local_IPs() {
+
+    FILE_LOG(logDEBUG) << "APSEthernet::get_local_IPs";
+
     vector<std::pair<string,string>> IPs;
 
     #ifdef _WIN32
@@ -156,7 +205,7 @@ vector<std::pair<string,string>> APSEthernet::get_local_IPs() {
                 netmask = string(inet_ntoa(sa->sin_addr));
             }
             IPs.push_back(std::pair<string,string>(addr, netmask));
-            FILE_LOG(logDEBUG1) << "Interface: " << ifa->ifa_name << "; Address: " << IPs.back().first << "; Netmask: " << IPs.back().second;
+            FILE_LOG(logDEBUG1) << "Found network interface: " << ifa->ifa_name << "; Address: " << IPs.back().first << "; Netmask: " << IPs.back().second;
         }
     }
     freeifaddrs(ifap);
@@ -170,7 +219,7 @@ set<string> APSEthernet::enumerate() {
 	 * Look for all APS units that respond to the broadcast packet
 	 */
 
-	FILE_LOG(logDEBUG1) << "APSEthernet::enumerate";
+	FILE_LOG(logDEBUG) << "APSEthernet::enumerate";
 
     reset_maps();
 
@@ -191,9 +240,14 @@ set<string> APSEthernet::enumerate() {
         //Put together the broadcast status request
         APSEthernetPacket broadcastPacket = APSEthernetPacket::create_broadcast_packet();
         addrv4 broadcastAddr = addrv4::broadcast(addrv4::from_string(IP.first), addrv4::from_string(IP.second));
-        FILE_LOG(logDEBUG1) << "Sending enumerate broadcast out on: " << broadcastAddr.to_string();
+        FILE_LOG(logDEBUG1) << "Sending enumerate broadcasts out on: " << broadcastAddr.to_string();
+        //Try the old port
         udp::endpoint broadCastEndPoint(broadcastAddr, APS_PROTO);
-        socket_.send_to(asio::buffer(broadcastPacket.serialize()), broadCastEndPoint);
+        udp_socket_old_.send_to(asio::buffer(broadcastPacket.serialize()), broadCastEndPoint);
+        //And the new
+        broadCastEndPoint.port(0xbb4f);
+        uint8_t enumerate_request = 0x01;
+        udp_socket_.send_to(asio::buffer(&enumerate_request, 1), broadCastEndPoint);
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -214,7 +268,7 @@ void APSEthernet::reset_maps() {
 void APSEthernet::connect(string serial) {
 
     mLock_.lock();
-	msgQueues_[serial] = queue<APSEthernetPacket>();
+    msgQueues_[serial] = queue<APSEthernetPacket>();
     mLock_.unlock();
     if (devInfo_.find(serial) == devInfo_.end()) {
         devInfo_[serial].endpoint = udp::endpoint(asio::ip::address_v4::from_string(serial), APS_PROTO);
@@ -293,7 +347,7 @@ int APSEthernet::send_chunk(string serial, vector<APSEthernetPacket> chunk, bool
             packet.header.seqNum = seqNum;
             seqNum++;
             FILE_LOG(logDEBUG4) << "Packet command: " << print_APSCommand(packet.header.command);
-            socket_.send_to(asio::buffer(packet.serialize()), devInfo_[serial].endpoint);
+            udp_socket_old_.send_to(asio::buffer(packet.serialize()), devInfo_[serial].endpoint);
             // sleep to make the driver compatible with newer versions of Windows
             // std::this_thread::sleep_for(std::chrono::microseconds(100));
         }

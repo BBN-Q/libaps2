@@ -41,7 +41,12 @@ shared_ptr<APSEthernet> get_interface() {
 	shared_ptr<APSEthernet> myEthernetRM = ethernetRM.lock();
 
 	if (!myEthernetRM) {
-		myEthernetRM = std::make_shared<APSEthernet>();
+		try {
+			myEthernetRM = std::make_shared<APSEthernet>();
+		}
+		catch (...) {
+			FILE_LOG(logERROR) << "Failed to create ethernet interface.";
+		}
 		ethernetRM = myEthernetRM;
 	}
 
@@ -327,7 +332,7 @@ APS2_STATUS write_memory(const char* deviceSerial, uint32_t addr, uint32_t* data
 APS2_STATUS read_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
 	try {
 		auto readData = APSs[string(deviceSerial)].read_memory(addr, numWords);
-		std::copy(readData.begin(), readData.end(), data);	
+		std::copy(readData.begin(), readData.end(), data);
 	}
 	catch (APS2_STATUS status) {
 		return status;
@@ -335,7 +340,7 @@ APS2_STATUS read_memory(const char* deviceSerial, uint32_t addr, uint32_t* data,
 	catch (...) {
 		return APS2_UNKNOWN_ERROR;
 	}
-	
+
 	return APS2_OK;
 }
 

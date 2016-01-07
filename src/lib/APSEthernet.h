@@ -1,3 +1,8 @@
+// Ethernet communications with APS2 boards
+//
+// Original authors: Colm Ryan, Blake Johnson, Brian Donovan
+// Copyright 2016, Raytheon BBN Technologies
+
 #ifndef APSETHERNET_H
 #define APSETHERNET_H
 
@@ -45,13 +50,17 @@ private:
 
 	void reset_maps();
 
-	void setup_receive();
+	//ASIO service and sockets
+	asio::io_service ios_;
+	udp::socket udp_socket_old_;
+	udp::socket udp_socket_;
+
+	void setup_udp_receive();
+	void setup_udp_receive_old();
+
 	void sort_packet(const vector<uint8_t> &, const udp::endpoint &);
 
 	int send_chunk(string, vector<APSEthernetPacket>, bool);
-
-	asio::io_service ios_;
-	udp::socket socket_;
 
 	// storage for received packets
  	uint8_t receivedData_[2048];
