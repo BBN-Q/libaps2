@@ -18,7 +18,8 @@ using asio::ip::udp;
 struct EthernetDevInfo {
 	MACAddr macAddr;
 	udp::endpoint endpoint;
-	uint16_t seqNum;
+	uint16_t seqNum = 0;
+	bool supports_tcp = false;
 };
 
 class APSEthernet {

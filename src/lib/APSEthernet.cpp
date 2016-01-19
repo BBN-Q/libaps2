@@ -39,7 +39,6 @@ APSEthernet::APSEthernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
     udp_socket_old_.set_option(asio::socket_base::broadcast(true));
     udp_socket_.set_option(asio::socket_base::broadcast(true));
 
-    //io_service will return immediately so post receive task before .run()
     setup_udp_receive_old();
     setup_udp_receive();
 
@@ -102,7 +101,7 @@ void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::end
             devInfo_[senderIP].macAddr = packet.header.src;
             APSStatusBank_t statusRegs;
             std::copy(packet.payload.begin(), packet.payload.end(), statusRegs.array);
-            FILE_LOG(logDEBUG1) << "Added device with IP " << senderIP <<
+            FILE_LOG(logDEBUG1) << "Adding device info for IP " << senderIP <<
                 " ; MAC addresss " << devInfo_[senderIP].macAddr.to_string() <<
                 " ; firmware version " << hexn<4> << statusRegs.userFirmwareVersion;
         }
@@ -112,7 +111,8 @@ void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::end
           FILE_LOG(logDEBUG2) << "Enumerate response string " << response;
           if (response.compare("I am an APS2") == 0) {
             devInfo_[senderIP] = EthernetDevInfo();
-            FILE_LOG(logDEBUG1) << "Added device with IP " << senderIP;
+            devInfo_[senderIP].supports_tcp = true;
+            FILE_LOG(logDEBUG1) << "Adding device info for IP " << senderIP;
           }
 
         }
@@ -260,7 +260,7 @@ set<string> APSEthernet::enumerate() {
 
     set<string> deviceSerials;
     for (auto kv : devInfo_) {
-        FILE_LOG(logINFO) << "Found device: " << kv.first;
+        FILE_LOG(logINFO) << "Found device: " << kv.first << " with" << (kv.second.supports_tcp ? "" : "out") << " TCP support";
         deviceSerials.insert(kv.first);
     }
     return deviceSerials;
