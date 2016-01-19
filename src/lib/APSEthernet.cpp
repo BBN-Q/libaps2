@@ -12,18 +12,25 @@
 #endif
 
 APSEthernet::APSEthernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
-  FILE_LOG(logDEBUG) << "APSEthernet::APSEthernet";
+    FILE_LOG(logDEBUG) << "APSEthernet::APSEthernet";
 
-    //Setup the old UDP socket at local port bb4e
+    //Move the io_service to a background thread
+    //Give it something to chew on so that it doesn't return from the background thread
+    asio::io_service::work work(ios_);
+    receiveThread_ = std::thread([this](){ ios_.run(); });
+
+    //Bind the old UDP socket at local port bb4e
     try {
-        udp_socket_old_ = udp::socket(ios_, udp::endpoint(udp::v4(), APS_PROTO));
+        udp_socket_old_.open(udp::v4());
+        udp_socket_old_.bind(udp::endpoint(udp::v4(), APS_PROTO));
     } catch (...) {
         throw APS2_SOCKET_FAILURE;
     }
 
-    //New UDP socket at local port bb4f
+    //Bind UDP socket at local port bb4f
     try {
-        udp_socket_ = udp::socket(ios_, udp::endpoint(udp::v4(), APS_PROTO+1));
+        udp_socket_.open(udp::v4());
+        udp_socket_.bind(udp::endpoint(udp::v4(), APS_PROTO+1));
     } catch (...) {
         throw APS2_SOCKET_FAILURE;
     }
@@ -36,8 +43,6 @@ APSEthernet::APSEthernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
     setup_udp_receive_old();
     setup_udp_receive();
 
-    //Setup the asio service to run on a background thread
-    receiveThread_ = std::thread([this](){ ios_.run(); });
 };
 
 APSEthernet::~APSEthernet() {
@@ -47,7 +52,7 @@ APSEthernet::~APSEthernet() {
 }
 
 void APSEthernet::setup_udp_receive_old() {
-    //Receive UDP packets on the two UDP sockets
+    //Receive UDP packets on the old UDP sockets
     udp_socket_old_.async_receive_from(
         asio::buffer(receivedData_, 2048), senderEndpoint_,
         [this](std::error_code ec, std::size_t bytesReceived)
@@ -65,7 +70,7 @@ void APSEthernet::setup_udp_receive_old() {
 }
 
 void APSEthernet::setup_udp_receive() {
-    //Receive UDP packets on the two UDP sockets
+    //Receive UDP packets on the UDP socket
     udp_socket_.async_receive_from(
         asio::buffer(receivedData_, 2048), senderEndpoint_,
         [this](std::error_code ec, std::size_t bytesReceived)
@@ -84,11 +89,11 @@ void APSEthernet::setup_udp_receive() {
 
 
 void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::endpoint & sender) {
-    //If we have the endpoint address then add it to the queue
+    //If we have the endpoint address then add it to the queue otherwise check to see if it is an enumerate response
     string senderIP = sender.address().to_string();
     if (msgQueues_.find(senderIP) == msgQueues_.end()) {
-        //If it isn't in our list of APSs then perhaps we are seeing an enumerate status response
-        //If so add the device info to the set
+        //Are seeing an enumerate status response
+        //Old UDP port sends status response
         if ((sender.port() == 0xbb4e) && (packetData.size() == 84)) {
             devInfo_[senderIP].endpoint = sender;
             //Turn the byte array into a packet to extract the MAC address and firmware version
@@ -101,6 +106,7 @@ void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::end
                 " ; MAC addresss " << devInfo_[senderIP].macAddr.to_string() <<
                 " ; firmware version " << hexn<4> << statusRegs.userFirmwareVersion;
         }
+        //New UDP port sends "I am an APS2"
         else if ((sender.port() == 0xbb4f) && (packetData.size() == 12)) {
           string response = string(packetData.begin(), packetData.end());
           FILE_LOG(logDEBUG2) << "Enumerate response string " << response;
