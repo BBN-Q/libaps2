@@ -3,14 +3,14 @@
 // Original authors: Colm Ryan, Blake Johnson, Brian Donovan
 // Copyright 2016, Raytheon BBN Technologies
 
-#ifndef APSETHERNET_H
-#define APSETHERNET_H
+#ifndef APS2ETHERNET_H
+#define APS2ETHERNET_H
 
 #include <memory>
 
 #include "headings.h"
 #include "MACAddr.h"
-#include "APSEthernetPacket.h"
+#include "APS2EthernetPacket.h"
 #include "APS2_errno.h"
 
 #include "asio.hpp"
@@ -25,30 +25,30 @@ struct EthernetDevInfo {
 	bool supports_tcp = false;
 };
 
-class APSEthernet {
+class APS2Ethernet {
 public:
 
-	APSEthernet& operator=(APSEthernet &rhs)  { return rhs; };
+	APS2Ethernet& operator=(APS2Ethernet &rhs)  { return rhs; };
 
-	APSEthernet();
-	~APSEthernet();
+	APS2Ethernet();
+	~APS2Ethernet();
 	void init();
 	set<string> enumerate();
 	void connect(string serial);
 	void disconnect(string serial);
-	int send(string serial, APSEthernetPacket msg, bool checkResponse=true);
-	int send(string serial, vector<APSEthernetPacket> msg, unsigned ackEvery=1);
-	vector<APSEthernetPacket> receive(string serial, size_t numPackets = 1, size_t timeoutMS = 2000);
+	int send(string serial, APS2EthernetPacket msg, bool checkResponse=true);
+	int send(string serial, vector<APS2EthernetPacket> msg, unsigned ackEvery=1);
+	vector<APS2EthernetPacket> receive(string serial, size_t numPackets = 1, size_t timeoutMS = 2000);
 
 private:
-	APSEthernet(APSEthernet const &) = delete;
+	APS2Ethernet(APS2Ethernet const &) = delete;
 
 	MACAddr srcMAC_;
 
 	//Keep track of all the device info with a map from I.P. addresses to devInfo structs
 	unordered_map<string, EthernetDevInfo> devInfo_;
 
-	unordered_map<string, queue<APSEthernetPacket>> msgQueues_;
+	unordered_map<string, queue<APS2EthernetPacket>> msgQueues_;
 
 	vector<std::pair<string,string>> get_local_IPs();
 
@@ -65,7 +65,7 @@ private:
 
 	void sort_packet(const vector<uint8_t> &, const udp::endpoint &);
 
-	int send_chunk(string, vector<APSEthernetPacket>, bool);
+	int send_chunk(string, vector<APS2EthernetPacket>, bool);
 
 	// storage for received packets
  	uint8_t receivedData_[2048];

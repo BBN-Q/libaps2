@@ -8,10 +8,10 @@
 #include "headings.h"
 #include "libaps2.h"
 #include "APS2.h"
-#include "APSEthernet.h"
+#include "APS2Ethernet.h"
 #include "asio.hpp"
 
-weak_ptr<APSEthernet> ethernetRM; //resource manager for the asio ethernet interface
+weak_ptr<APS2Ethernet> ethernetRM; //resource manager for the asio ethernet interface
 map<string, APS2> APSs; //map to hold on to the APS instances
 set<string> deviceSerials; // set of APSs that responded to an enumerate broadcast
 
@@ -36,13 +36,13 @@ InitAndCleanUp::~InitAndCleanUp() {
 InitAndCleanUp initandcleanup_;
 
 //Return the shared_ptr to the Ethernet interface
-shared_ptr<APSEthernet> get_interface() {
+shared_ptr<APS2Ethernet> get_interface() {
 	//See if we have to setup our own RM
-	shared_ptr<APSEthernet> myEthernetRM = ethernetRM.lock();
+	shared_ptr<APS2Ethernet> myEthernetRM = ethernetRM.lock();
 
 	if (!myEthernetRM) {
 		try {
-			myEthernetRM = std::make_shared<APSEthernet>();
+			myEthernetRM = std::make_shared<APS2Ethernet>();
 		}
 		catch (...) {
 			FILE_LOG(logERROR) << "Failed to create ethernet interface.";
@@ -153,7 +153,7 @@ APS2_STATUS connect_APS(const char* deviceSerial) {
 	if (APSs.find(serial) == APSs.end()) {
 		APSs[serial] = APS2(serial);
 	}
-	//Can't seem to bind the interface lvalue to ‘std::shared_ptr<APSEthernet>&&’
+	//Can't seem to bind the interface lvalue to ‘std::shared_ptr<APS2Ethernet>&&’
 	// return aps2_call(deviceSerial, &APS2::connect, get_interface());
 	try {
 		APSs.at(deviceSerial).connect(get_interface());

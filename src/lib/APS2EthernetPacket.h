@@ -1,12 +1,12 @@
 
-#ifndef APSETHERNETPACKET_H_
-#define APSETHERNETPACKET_H_
+#ifndef APS2ETHERNETPACKET_H_
+#define APS2ETHERNETPACKET_H_
 
 #include "headings.h"
 #include "MACAddr.h"
 
 //Some bitfield unions for packing/unpacking the commands words
-//APS Command Protocol 
+//APS Command Protocol
 // ACK SEQ SEL R/W CMD<3:0> MODE/STAT<7:0> CNT<15:0>
 // 31 30 29 28 27..24 23..16 15..0
 // ACK .......Acknowledge Flag. Set in the Acknowledge Packet returned in response to a
@@ -42,7 +42,7 @@ typedef union {
 
 string print_APSCommand(const APSCommand_t & command);
 
-struct APSEthernetHeader {
+struct APS2EthernetHeader {
 	MACAddr  dest;
 	MACAddr  src;
 	uint16_t frameType;
@@ -51,24 +51,24 @@ struct APSEthernetHeader {
 	uint32_t addr;
 };
 
-class APSEthernetPacket{
+class APS2EthernetPacket{
 public:
-	APSEthernetHeader header;
+	APS2EthernetHeader header;
 	vector<uint32_t> payload;
 
-	APSEthernetPacket();
+	APS2EthernetPacket();
 
-	APSEthernetPacket(const APSCommand_t &, const uint32_t & addr=0);
-	APSEthernetPacket(const MACAddr &, const MACAddr &, APSCommand_t, const uint32_t &);
+	APS2EthernetPacket(const APSCommand_t &, const uint32_t & addr=0);
+	APS2EthernetPacket(const MACAddr &, const MACAddr &, APSCommand_t, const uint32_t &);
 
-	APSEthernetPacket(const vector<uint8_t> &);
-	
+	APS2EthernetPacket(const vector<uint8_t> &);
+
 	static const size_t NUM_HEADER_BYTES = 24;
 
 	vector<uint8_t> serialize() const ;
-	size_t numBytes() const; 
+	size_t numBytes() const;
 
-	static APSEthernetPacket create_broadcast_packet();
+	static APS2EthernetPacket create_broadcast_packet();
 };
 
-#endif //APSETHERNETPACKET_H_
+#endif //APS2ETHERNETPACKET_H_

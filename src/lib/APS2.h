@@ -8,7 +8,7 @@
 #define APS2_H
 
 #include "headings.h"
-#include "APSEthernet.h"
+#include "APS2Ethernet.h"
 #include "Channel.h"
 #include "APS2_errno.h"
 #include "APS2_enums.h"
@@ -24,7 +24,7 @@ public:
 	APS2(string);
 	~APS2();
 
-	void connect(shared_ptr<APSEthernet> &&);
+	void connect(shared_ptr<APS2Ethernet> &&);
 	void disconnect();
 
 	APS2_STATUS init(const bool & = false, const int & bitFileNum = 0);
@@ -130,20 +130,20 @@ private:
 
 	string deviceSerial_;
 	vector<Channel> channels_;
-	shared_ptr<APSEthernet> ethernetRM_;
+	shared_ptr<APS2Ethernet> ethernetRM_;
 	unsigned samplingRate_;
 	MACAddr macAddr_;
 
 	//Read/Write commands
 	int write_command(const APSCommand_t &, const uint32_t & addr = 0, const bool & checkResponse = true);
-	vector<APSEthernetPacket> pack_data(const uint32_t &, const vector<uint32_t> &, const APS_COMMANDS & cmdtype = APS_COMMANDS::USERIO_ACK);
-	vector<APSEthernetPacket> read_packets(const size_t &);
+	vector<APS2EthernetPacket> pack_data(const uint32_t &, const vector<uint32_t> &, const APS_COMMANDS & cmdtype = APS_COMMANDS::USERIO_ACK);
+	vector<APS2EthernetPacket> read_packets(const size_t &);
 
 	int erase_flash(uint32_t, uint32_t);
 
 	//Single packet query
-	vector<APSEthernetPacket> query(const APSCommand_t &, const uint32_t & addr = 0);
-	vector<APSEthernetPacket> query(const APSEthernetPacket &);
+	vector<APS2EthernetPacket> query(const APSCommand_t &, const uint32_t & addr = 0);
+	vector<APS2EthernetPacket> query(const APS2EthernetPacket &);
 
 	vector<uint32_t> build_DAC_SPI_msg(const CHIPCONFIG_IO_TARGET &, const vector<SPI_AddrData_t> &);
 	vector<uint32_t> build_PLL_SPI_msg(const vector<SPI_AddrData_t> &);
@@ -182,7 +182,7 @@ private:
 	int read_state_from_hdf5( H5::H5File & , const string & );
 
 	//Non-exported functions
-	shared_ptr<APSEthernet> get_interface();
+	shared_ptr<APS2Ethernet> get_interface();
 
 	void write_macip_flash(const uint64_t &, const uint32_t &, const bool &);
 

@@ -58,9 +58,9 @@ SET ( DLL_SRC
 	./lib/libaps2.cpp
 	./lib/Channel.cpp
 	./lib/APS2.cpp
-	./lib/APSEthernet.cpp
+	./lib/APS2Ethernet.cpp
 	./lib/MACAddr.cpp
-	./lib/APSEthernetPacket.cpp
+	./lib/APS2EthernetPacket.cpp
 )
 
 SET_SOURCE_FILES_PROPERTIES( ${DLL_SRC} PROPERTIES LANGUAGE CXX )

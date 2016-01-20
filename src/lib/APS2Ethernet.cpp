@@ -3,7 +3,7 @@
 // Original authors: Colm Ryan, Blake Johnson, Brian Donovan
 // Copyright 2016, Raytheon BBN Technologies
 
-#include "APSEthernet.h"
+#include "APS2Ethernet.h"
 
 #ifdef _WIN32
 #include "iphlpapi.h"
@@ -11,8 +11,8 @@
 #include <ifaddrs.h>
 #endif
 
-APSEthernet::APSEthernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
-    FILE_LOG(logDEBUG) << "APSEthernet::APSEthernet";
+APS2Ethernet::APS2Ethernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
+    FILE_LOG(logDEBUG) << "APS2Ethernet::APS2Ethernet";
 
     //Move the io_service to a background thread
     //Give it something to chew on so that it doesn't return from the background thread
@@ -44,13 +44,13 @@ APSEthernet::APSEthernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
 
 };
 
-APSEthernet::~APSEthernet() {
+APS2Ethernet::~APS2Ethernet() {
     FILE_LOG(logDEBUG) << "Cleaning up ethernet interface";
     ios_.stop();
     receiveThread_.join();
 }
 
-void APSEthernet::setup_udp_receive_old() {
+void APS2Ethernet::setup_udp_receive_old() {
     //Receive UDP packets on the old UDP sockets
     udp_socket_old_.async_receive_from(
         asio::buffer(receivedData_, 2048), senderEndpoint_,
@@ -68,7 +68,7 @@ void APSEthernet::setup_udp_receive_old() {
     });
 }
 
-void APSEthernet::setup_udp_receive() {
+void APS2Ethernet::setup_udp_receive() {
     //Receive UDP packets on the UDP socket
     udp_socket_.async_receive_from(
         asio::buffer(receivedData_, 2048), senderEndpoint_,
@@ -87,7 +87,7 @@ void APSEthernet::setup_udp_receive() {
 }
 
 
-void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::endpoint & sender) {
+void APS2Ethernet::sort_packet(const vector<uint8_t> & packetData, const udp::endpoint & sender) {
     //If we have the endpoint address then add it to the queue otherwise check to see if it is an enumerate response
     string senderIP = sender.address().to_string();
     if (msgQueues_.find(senderIP) == msgQueues_.end()) {
@@ -97,7 +97,7 @@ void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::end
             devInfo_[senderIP].endpoint = sender;
             //Turn the byte array into a packet to extract the MAC address and firmware version
             //MAC not strictly necessary as we could just use the broadcast MAC address
-            APSEthernetPacket packet = APSEthernetPacket(packetData);
+            APS2EthernetPacket packet = APS2EthernetPacket(packetData);
             devInfo_[senderIP].macAddr = packet.header.src;
             APSStatusBank_t statusRegs;
             std::copy(packet.payload.begin(), packet.payload.end(), statusRegs.array);
@@ -117,8 +117,8 @@ void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::end
         }
     }
     else {
-        //Turn the byte array into an APSEthernetPacket
-        APSEthernetPacket packet = APSEthernetPacket(packetData);
+        //Turn the byte array into an APS2EthernetPacket
+        APS2EthernetPacket packet = APS2EthernetPacket(packetData);
         //Grab a lock and push the packet into the message queue
         mLock_.lock();
         msgQueues_[senderIP].emplace(packet);
@@ -128,13 +128,13 @@ void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::end
 
 /* PUBLIC methods */
 
-void APSEthernet::init() {
+void APS2Ethernet::init() {
     reset_maps();
 }
 
-vector<std::pair<string,string>> APSEthernet::get_local_IPs() {
+vector<std::pair<string,string>> APS2Ethernet::get_local_IPs() {
 
-    FILE_LOG(logDEBUG) << "APSEthernet::get_local_IPs";
+    FILE_LOG(logDEBUG) << "APS2Ethernet::get_local_IPs";
 
     vector<std::pair<string,string>> IPs;
 
@@ -219,12 +219,12 @@ vector<std::pair<string,string>> APSEthernet::get_local_IPs() {
     return IPs;
 }
 
-set<string> APSEthernet::enumerate() {
+set<string> APS2Ethernet::enumerate() {
 	/*
 	 * Look for all APS units that respond to the broadcast packet
 	 */
 
-	FILE_LOG(logDEBUG) << "APSEthernet::enumerate";
+	FILE_LOG(logDEBUG) << "APS2Ethernet::enumerate";
 
     reset_maps();
 
@@ -243,7 +243,7 @@ set<string> APSEthernet::enumerate() {
           continue;
         }
         //Put together the broadcast status request
-        APSEthernetPacket broadcastPacket = APSEthernetPacket::create_broadcast_packet();
+        APS2EthernetPacket broadcastPacket = APS2EthernetPacket::create_broadcast_packet();
         addrv4 broadcastAddr = addrv4::broadcast(addrv4::from_string(IP.first), addrv4::from_string(IP.second));
         FILE_LOG(logDEBUG1) << "Sending enumerate broadcasts out on: " << broadcastAddr.to_string();
         //Try the old port
@@ -266,12 +266,12 @@ set<string> APSEthernet::enumerate() {
     return deviceSerials;
 }
 
-void APSEthernet::reset_maps() {
+void APS2Ethernet::reset_maps() {
     devInfo_.clear();
     msgQueues_.clear();
 }
 
-void APSEthernet::connect(string serial) {
+void APS2Ethernet::connect(string serial) {
 
   //Check whether we have device info and if not send a ping
   if (devInfo_.find(serial) == devInfo_.end()) {
@@ -287,7 +287,7 @@ void APSEthernet::connect(string serial) {
     }
     //Try the old port
     //Put together the status request for old firmware devices
-    APSEthernetPacket broadcastPacket = APSEthernetPacket::create_broadcast_packet();
+    APS2EthernetPacket broadcastPacket = APS2EthernetPacket::create_broadcast_packet();
     udp::endpoint endpoint(ip_addr, UDP_PORT_OLD);
     udp_socket_old_.send_to(asio::buffer(broadcastPacket.serialize()), endpoint);
     //And the new
@@ -333,12 +333,12 @@ void APSEthernet::connect(string serial) {
     tcp_sockets_.insert(std::make_pair(serial, std::move(sock)));
   } else {
     mLock_.lock();
-    msgQueues_[serial] = queue<APSEthernetPacket>();
+    msgQueues_[serial] = queue<APS2EthernetPacket>();
     mLock_.unlock();
   }
 }
 
-void APSEthernet::disconnect(string serial) {
+void APS2Ethernet::disconnect(string serial) {
   if (devInfo_[serial].supports_tcp) {
     if (tcp_sockets_.find(serial) != tcp_sockets_.end()) {
         tcp_sockets_[serial]->cancel();
@@ -352,12 +352,12 @@ void APSEthernet::disconnect(string serial) {
   }
 }
 
-int APSEthernet::send(string serial, APSEthernetPacket msg, bool checkResponse) {
+int APS2Ethernet::send(string serial, APS2EthernetPacket msg, bool checkResponse) {
     msg.header.dest = devInfo_[serial].macAddr;
-    return send_chunk(serial, vector<APSEthernetPacket>(1, msg), !checkResponse);
+    return send_chunk(serial, vector<APS2EthernetPacket>(1, msg), !checkResponse);
 }
 
-int APSEthernet::send(string serial, vector<APSEthernetPacket> msg, unsigned ackEvery /* see header for default */) {
+int APS2Ethernet::send(string serial, vector<APS2EthernetPacket> msg, unsigned ackEvery /* see header for default */) {
     //Fill out the destination  MAC address
     FILE_LOG(logDEBUG3) << "Sending " << msg.size() << " packets to " << serial;
     auto iter = msg.begin();
@@ -369,7 +369,7 @@ int APSEthernet::send(string serial, vector<APSEthernetPacket> msg, unsigned ack
     // it's nice to have extra status on slow EPROM writes
     bool verbose = (msg[0].header.command.cmd == static_cast<uint32_t>(APS_COMMANDS::EPROMIO));
 
-    vector<APSEthernetPacket> buffer(ackEvery);
+    vector<APS2EthernetPacket> buffer(ackEvery);
 
     while (iter != msg.end()) {
 
@@ -407,7 +407,7 @@ int APSEthernet::send(string serial, vector<APSEthernetPacket> msg, unsigned ack
     return 0;
 }
 
-int APSEthernet::send_chunk(string serial, vector<APSEthernetPacket> chunk, bool noACK) {
+int APS2Ethernet::send_chunk(string serial, vector<APS2EthernetPacket> chunk, bool noACK) {
 
     unsigned seqNum, retryct = 0;
 
@@ -441,7 +441,7 @@ int APSEthernet::send_chunk(string serial, vector<APSEthernetPacket> chunk, bool
 }
 
 
-vector<APSEthernetPacket> APSEthernet::receive(string serial, size_t numPackets, size_t timeoutMS) {
+vector<APS2EthernetPacket> APS2Ethernet::receive(string serial, size_t numPackets, size_t timeoutMS) {
     //Read the packets coming back in up to the timeout
     //Defaults: receive(string serial, size_t numPackets = 1, size_t timeoutMS = 1000);
     std::chrono::time_point<std::chrono::steady_clock> start, end;
@@ -449,7 +449,7 @@ vector<APSEthernetPacket> APSEthernet::receive(string serial, size_t numPackets,
     start = std::chrono::steady_clock::now();
     size_t elapsedTime = 0;
 
-    vector<APSEthernetPacket> outVec;
+    vector<APS2EthernetPacket> outVec;
 
     while (elapsedTime < timeoutMS) {
         if (!msgQueues_[serial].empty()) {
