@@ -97,6 +97,8 @@ TARGET_LINK_LIBRARIES(test_comms aps2)
 ADD_EXECUTABLE(run_tests
 	../test/run_tests.cpp
 	../test/test_Sanity.cpp
+	../test/test_datagram.cpp
+	./lib/APS2Datagram.cpp
 	../test/test_comms.cpp
 )
 TARGET_LINK_LIBRARIES(run_tests aps2 pthread)
