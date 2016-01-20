@@ -14,7 +14,12 @@ void APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
 	if (!isOpen) {
 		ethernetRM_->connect(deviceSerial_);
 		try {
-			read_status_registers();
+			APSStatusBank_t statusRegs = read_status_registers();
+			if ((statusRegs.hostFirmwareVersion & (1 << APS2_HOST_TYPE_BIT)) == (1 << APS2_HOST_TYPE_BIT)) {
+				host_type = TDM;
+			} else {
+				host_type = APS;
+			}
 		}
 		catch(...) {
 			disconnect();
@@ -70,6 +75,9 @@ void APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */)
 }
 
 APS2_STATUS APS2::init(const bool & forceReload, const int & bitFileNum) {
+	if (host_type == TDM) {
+		return APS2_OK;
+	}
 	 //TODO: bitfiles will be stored in flash so all we need to do here is the DACs
 
 	get_sampleRate(); // to update state variable
@@ -118,7 +126,7 @@ int APS2::setup_DACs() {
 	return 0;
 }
 
-APSStatusBank_t APS2::read_status_registers(){
+APSStatusBank_t APS2::read_status_registers() {
 	//Query with the status request command
 	APSCommand_t command = { .packed=0 };
 	command.cmd = static_cast<uint32_t>(APS_COMMANDS::STATUS);
@@ -347,7 +355,7 @@ void APS2::set_markers(const int & dac, const vector<uint8_t> & data) {
 	write_waveform(dac, channels_[dac].prep_waveform());
 }
 
-void APS2::set_trigger_source(const TRIGGER_SOURCE & triggerSource){
+void APS2::set_trigger_source(const APS2_TRIGGER_SOURCE & triggerSource){
 	FILE_LOG(logDEBUG) << "Setting trigger source to " << triggerSource;
 
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
@@ -357,29 +365,52 @@ void APS2::set_trigger_source(const TRIGGER_SOURCE & triggerSource){
 	write_memory(SEQ_CONTROL_ADDR, regVal);
 }
 
-TRIGGER_SOURCE APS2::get_trigger_source() {
+APS2_TRIGGER_SOURCE APS2::get_trigger_source() {
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
-	return TRIGGER_SOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
+	return APS2_TRIGGER_SOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
 }
 
-void APS2::set_trigger_interval(const double & interval){
+void APS2::set_trigger_interval(const double & interval) {
+	int clockCycles;
+	switch (host_type) {
+	case APS:
+		// SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
+		clockCycles = interval*0.25*samplingRate_*1e6;
+		FILE_LOG(logDEBUG) << "Setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
 
-	//SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
-	int clockCycles = interval*0.25*samplingRate_*1e6 - 1;
+		write_memory(TRIGGER_INTERVAL_ADDR, clockCycles);
+		break;
+	case TDM:
+		// TDM operates on a fixed 100 MHz clock
+		clockCycles = (interval * 100e6);
+		FILE_LOG(logDEBUG) << "Setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
 
-	FILE_LOG(logDEBUG) << "Setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
-
-	write_memory(TRIGGER_INTERVAL_ADDR, clockCycles);
+		write_memory(TDM_TRIGGER_INTERVAL_ADDR, clockCycles);
+		break;
+	}
 }
 
 double APS2::get_trigger_interval() {
-
-	uint32_t clockCycles = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
-	// Convert from clock cycles to time
-	return static_cast<double>(clockCycles + 1)/(0.25*samplingRate_*1e6);
+	uint32_t clockCycles;
+	switch (host_type) {
+	case APS:
+		// SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
+		clockCycles = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
+		// Convert from clock cycles to time
+		return static_cast<double>(clockCycles)/(0.25*samplingRate_*1e6);
+		break;
+	case TDM:
+		clockCycles = read_memory(TDM_TRIGGER_INTERVAL_ADDR, 1)[0];
+		// Convert from clock cycles to time
+		// TDM operates on a fixed 100 MHz clock
+		return static_cast<double>(clockCycles)/(100e6);
+		break;
+	}
+	//Shoud never get here;
+	throw APS2_UNKNOWN_ERROR;
 }
 
-void APS2::trigger(){
+void APS2::trigger() {
 	//Apply a software trigger by toggling the trigger line
 	FILE_LOG(logDEBUG) << "Sending software trigger";
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
@@ -390,20 +421,35 @@ void APS2::trigger(){
 }
 
 void APS2::run() {
-	FILE_LOG(logDEBUG1) << "Releasing pulse sequencer state machine...";
-	set_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+	switch (host_type) {
+	case APS:
+		FILE_LOG(logDEBUG1) << "Releasing pulse sequencer state machine...";
+		set_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+		break;
+	case TDM:
+		FILE_LOG(logDEBUG1) << "Enabling TDM trigger";
+		clear_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
+		break;
+	}
 }
 
 void APS2::stop() {
-	//Put the state machine back in reset
-	clear_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+	switch (host_type) {
+	case APS:
+		//Put the state machine back in reset
+		clear_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+		break;
+	case TDM:
+		set_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
+		break;
+	}
 }
 
-RUN_STATE APS2::get_runState(){
+APS2_RUN_STATE APS2::get_runState(){
 	return runState;
 }
 
-void APS2::set_run_mode(const RUN_MODE & mode) {
+void APS2::set_run_mode(const APS2_RUN_MODE & mode) {
 	FILE_LOG(logDEBUG) << "Setting run mode to " << mode;
 
 	vector<uint64_t> instructions = WF_SEQ;

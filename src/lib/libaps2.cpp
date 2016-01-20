@@ -240,7 +240,7 @@ APS2_STATUS stop(const char* deviceSerial) {
 	return aps2_call(deviceSerial, &APS2::stop);
 }
 
-APS2_STATUS get_runState(const char* deviceSerial, RUN_STATE* state) {
+APS2_STATUS get_runState(const char* deviceSerial, APS2_RUN_STATE* state) {
 	return aps2_getter(deviceSerial, &APS2::get_runState, state);
 }
 
@@ -274,11 +274,11 @@ APS2_STATUS set_logging_level(TLogLevel logLevel) {
 	return APS2_OK;
 }
 
-APS2_STATUS set_trigger_source(const char* deviceSerial, TRIGGER_SOURCE src) {
+APS2_STATUS set_trigger_source(const char* deviceSerial, APS2_TRIGGER_SOURCE src) {
 	return aps2_call(deviceSerial, &APS2::set_trigger_source, src);
 }
 
-APS2_STATUS get_trigger_source(const char* deviceSerial, TRIGGER_SOURCE* src) {
+APS2_STATUS get_trigger_source(const char* deviceSerial, APS2_TRIGGER_SOURCE* src) {
 	return aps2_getter(deviceSerial, &APS2::get_trigger_source, src);
 }
 
@@ -314,26 +314,33 @@ APS2_STATUS get_channel_enabled(const char* deviceSerial, int channelNum, int* e
 	return aps2_getter(deviceSerial, &APS2::get_channel_offset, enabled, channelNum);
 }
 
-APS2_STATUS set_run_mode(const char* deviceSerial, RUN_MODE mode) {
+APS2_STATUS set_run_mode(const char* deviceSerial, APS2_RUN_MODE mode) {
 	return aps2_call(deviceSerial, &APS2::set_run_mode, mode);
 }
 
-int write_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
+APS2_STATUS write_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
 	return aps2_call(deviceSerial,
 						static_cast<void(APS2::*)(const uint32_t&, const vector<uint32_t>&)>(&APS2::write_memory),
 						addr, vector<uint32_t>(data, data + numWords));
 }
 
-int read_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
-	auto readData = APSs[string(deviceSerial)].read_memory(addr, numWords);
-	std::copy(readData.begin(), readData.end(), data);
-	return 0;
+APS2_STATUS read_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
+	try {
+		auto readData = APSs[string(deviceSerial)].read_memory(addr, numWords);
+		std::copy(readData.begin(), readData.end(), data);	
+	}
+	catch (APS2_STATUS status) {
+		return status;
+	}
+	catch (...) {
+		return APS2_UNKNOWN_ERROR;
+	}
+	
+	return APS2_OK;
 }
 
-int read_register(const char* deviceSerial, uint32_t addr) {
-	uint32_t buffer[1];
-	read_memory(deviceSerial, addr, buffer, 1);
-	return buffer[0];
+APS2_STATUS read_register(const char* deviceSerial, uint32_t addr, uint32_t* result) {
+	return read_memory(deviceSerial, addr, result, 1);
 }
 
 int program_FPGA(const char* deviceSerial, const char* bitFile) {

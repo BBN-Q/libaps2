@@ -54,6 +54,15 @@ Tested on:
 * Windows 7 Professional with gcc 4.9.2
 * Windows 8.1 with gcc 4.9.2
 
+#### Windows 8 and Windows 10
+The network stack in Windows 8 and Windows 10 is too fast for the APS2 and versions of the driver which compile and run under Windows 7 and below will cause APS2 communication errors in Windows 10.  To get a round this, we add a delay in the APSEthernet send_chunk
+[function](https://github.com/BBN-Q/libaps2/blob/79e0bbbc65e0e8e7bf2c76811cf00af453860c3e/src/lib/APSEthernet.cpp#L297).
+
+If you are compiling on Windows 8 or 10, un-comment this line and recompile.
+
+Tested on:
+* Windows 10 Professional with gcc 5.2.0
+
 ### Linux
 Use your distribution's package manager to install the dependencies and it should work out of the box.
 

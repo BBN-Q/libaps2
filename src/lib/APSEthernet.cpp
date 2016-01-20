@@ -6,7 +6,12 @@
 #include <ifaddrs.h>
 #endif
 
-APSEthernet::APSEthernet() : socket_(ios_, udp::endpoint(udp::v4(), APS_PROTO)) {
+APSEthernet::APSEthernet() : socket_(ios_) {
+    try {
+        socket_ = udp::socket(ios_, udp::endpoint(udp::v4(), APS_PROTO));
+    } catch (...) {
+        throw APS2_SOCKET_FAILURE;
+    }
     FILE_LOG(logDEBUG) << "Creating ethernet interface";
     //enable broadcasting for enumerating
     socket_.set_option(asio::socket_base::broadcast(true));
@@ -24,7 +29,7 @@ APSEthernet::~APSEthernet() {
     receiveThread_.join();
 }
 
-void APSEthernet::setup_receive(){
+void APSEthernet::setup_receive() {
     socket_.async_receive_from(
         asio::buffer(receivedData_, 2048), senderEndpoint_,
         [this](std::error_code ec, std::size_t bytesReceived)
@@ -41,7 +46,7 @@ void APSEthernet::setup_receive(){
     });
 }
 
-void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::endpoint & sender){
+void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::endpoint & sender) {
     //If we have the endpoint address then add it to the queue
     string senderIP = sender.address().to_string();
     if (msgQueues_.find(senderIP) == msgQueues_.end()) {
@@ -76,7 +81,7 @@ void APSEthernet::init() {
     reset_maps();
 }
 
-vector<std::pair<string,string>> APSEthernet::get_local_IPs(){
+vector<std::pair<string,string>> APSEthernet::get_local_IPs() {
     vector<std::pair<string,string>> IPs;
 
     #ifdef _WIN32
@@ -93,45 +98,45 @@ vector<std::pair<string,string>> APSEthernet::get_local_IPs(){
     dwRetVal = GetAdaptersAddresses(family, flags, nullptr, pAddresses, &outBufLen);
 
     if (dwRetVal == NO_ERROR) {
-      for(pCurAddresses = pAddresses; pCurAddresses != nullptr; pCurAddresses = pCurAddresses->Next){
-        FILE_LOG(logDEBUG1) << "Found IPv4 interface.";
-        FILE_LOG(logDEBUG3) << "IfIndex (IPv4 interface): " << pCurAddresses->IfIndex;
-        FILE_LOG(logDEBUG2) << "Adapter name: " << pCurAddresses->AdapterName;
-        FILE_LOG(logDEBUG2) << "Friendly adapter name: " << pCurAddresses->FriendlyName; //TODO figure out unicode printing
+        for (pCurAddresses = pAddresses; pCurAddresses != nullptr; pCurAddresses = pCurAddresses->Next) {
+            FILE_LOG(logDEBUG1) << "Found IPv4 interface.";
+            FILE_LOG(logDEBUG3) << "IfIndex (IPv4 interface): " << pCurAddresses->IfIndex;
+            FILE_LOG(logDEBUG2) << "Adapter name: " << pCurAddresses->AdapterName;
+            FILE_LOG(logDEBUG2) << "Friendly adapter name: " << pCurAddresses->FriendlyName; //TODO figure out unicode printing
 
-        //TODO: since we only support 1GigE should check that here
-        FILE_LOG(logDEBUG2) << "Transmit link speed: " << pCurAddresses->TransmitLinkSpeed;
-        FILE_LOG(logDEBUG2) << "Receive link speed: " << pCurAddresses->ReceiveLinkSpeed;
+            //TODO: since we only support 1GigE should check that here
+            FILE_LOG(logDEBUG2) << "Transmit link speed: " << pCurAddresses->TransmitLinkSpeed;
+            FILE_LOG(logDEBUG2) << "Receive link speed: " << pCurAddresses->ReceiveLinkSpeed;
 
-        for(pUnicast = pCurAddresses->FirstUnicastAddress; pUnicast != nullptr; pUnicast = pUnicast->Next){
-            char IPV4Addr[16]; //should be LPTSTR; 16 is maximum length of null terminated xxx.xxx.xxx.xxx
-            DWORD addrSize = 16;
-            int val;
-            val = WSAAddressToString(pUnicast->Address.lpSockaddr, pUnicast->Address.iSockaddrLength, nullptr, IPV4Addr, &addrSize);
-            if ( val != 0) {
-              val = WSAGetLastError();
-              FILE_LOG(logERROR) << "WSAAddressToString error code: " << val;
-              continue;
+            for (pUnicast = pCurAddresses->FirstUnicastAddress; pUnicast != nullptr; pUnicast = pUnicast->Next) {
+                char IPV4Addr[16]; //should be LPTSTR; 16 is maximum length of null terminated xxx.xxx.xxx.xxx
+                DWORD addrSize = 16;
+                int val;
+                val = WSAAddressToString(pUnicast->Address.lpSockaddr, pUnicast->Address.iSockaddrLength, nullptr, IPV4Addr, &addrSize);
+                if ( val != 0) {
+                  val = WSAGetLastError();
+                  FILE_LOG(logERROR) << "WSAAddressToString error code: " << val;
+                  continue;
+                }
+                //Create a sock_addr for the netmask string prefix to string conversion
+                struct sockaddr_in sin;
+                memset(&sin, 0, sizeof(sin));
+                sin.sin_family = AF_INET;
+                sin.sin_addr.s_addr = htonl(0xffffffff << (32 - pUnicast->OnLinkPrefixLength));
+
+                IPs.push_back(std::pair<string,string>(IPV4Addr, inet_ntoa(sin.sin_addr)));
+                FILE_LOG(logDEBUG1) << "IPv4 address: " << IPs.back().first <<
+                                        "; Prefix length: " << (unsigned) pUnicast->OnLinkPrefixLength <<
+                                        "; Netmask: " << IPs.back().second;
             }
-            //Create a sock_addr for the netmask string prefix to string conversion
-            struct sockaddr_in sin;
-            memset(&sin, 0, sizeof(sin));
-            sin.sin_family = AF_INET;
-            sin.sin_addr.s_addr = htonl(0xffffffff << (32 - pUnicast->OnLinkPrefixLength));
-
-            IPs.push_back(std::pair<string,string>(IPV4Addr, inet_ntoa(sin.sin_addr)));
-            FILE_LOG(logDEBUG1) << "IPv4 address: " << IPs.back().first <<
-                                    "; Prefix length: " << (unsigned) pUnicast->OnLinkPrefixLength << 
-                                    "; Netmask: " << IPs.back().second;
         }
-      }
-      free(pAddresses);
-      pAddresses = nullptr;
+        free(pAddresses);
+        pAddresses = nullptr;
     }
-    else{
-      FILE_LOG(logERROR) << "Call to GetAdaptersAddresses failed.";
-      free(pAddresses);
-      pAddresses = nullptr;
+    else {
+        FILE_LOG(logERROR) << "Call to GetAdaptersAddresses failed.";
+        free(pAddresses);
+        pAddresses = nullptr;
     }
 
     #else
@@ -147,8 +152,8 @@ vector<std::pair<string,string>> APSEthernet::get_local_IPs(){
             string addr = string(inet_ntoa(sa->sin_addr));
             string netmask = "255.255.255.255";
             if (ifa->ifa_netmask != nullptr) {
-              sa = (struct sockaddr_in *) ifa->ifa_netmask;
-              netmask = string(inet_ntoa(sa->sin_addr));
+                sa = (struct sockaddr_in *) ifa->ifa_netmask;
+                netmask = string(inet_ntoa(sa->sin_addr));
             }
             IPs.push_back(std::pair<string,string>(addr, netmask));
             FILE_LOG(logDEBUG1) << "Interface: " << ifa->ifa_name << "; Address: " << IPs.back().first << "; Netmask: " << IPs.back().second;
@@ -171,7 +176,7 @@ set<string> APSEthernet::enumerate() {
 
     vector<std::pair<string,string>> localIPs = get_local_IPs();
 
-    for(auto IP : localIPs){
+    for (auto IP : localIPs) {
         //Skip the loop-back
         if ( IP.first.compare("127.0.0.1") == 0 ) continue;
 
@@ -242,7 +247,7 @@ int APSEthernet::send(string serial, vector<APSEthernetPacket> msg, unsigned ack
 
     vector<APSEthernetPacket> buffer(ackEvery);
 
-    while (iter != msg.end()){
+    while (iter != msg.end()) {
 
         //Copy the next chunk into a buffer
         auto endPoint = iter + ackEvery;
@@ -253,7 +258,7 @@ int APSEthernet::send(string serial, vector<APSEthernetPacket> msg, unsigned ack
         buffer.resize(chunkSize);
         std::copy(iter, endPoint, buffer.begin());
 
-        for (auto & packet : buffer ){
+        for (auto & packet : buffer ) {
             // insert the target MAC address - not really necessary anymore because UDP does filtering
             packet.header.dest = devInfo_[serial].macAddr;
             //NOACK sets the top bit of the command nibble of the command word
@@ -261,12 +266,12 @@ int APSEthernet::send(string serial, vector<APSEthernetPacket> msg, unsigned ack
         }
 
         //Apply acknowledge flag to last element of chunk
-        if (!noACK){
+        if (!noACK) {
             buffer.back().header.command.cmd &= ~(1 << 3);
         }
 
         auto result = send_chunk(serial, buffer, noACK);
-        if (result != 0){
+        if (result != 0) {
             return result;
         }
         std::advance(iter, chunkSize);
@@ -278,24 +283,25 @@ int APSEthernet::send(string serial, vector<APSEthernetPacket> msg, unsigned ack
     return 0;
 }
 
-int APSEthernet::send_chunk(string serial, vector<APSEthernetPacket> chunk, bool noACK){
+int APSEthernet::send_chunk(string serial, vector<APSEthernetPacket> chunk, bool noACK) {
 
     unsigned seqNum, retryct = 0;
 
     while (retryct++ < 3) {
         seqNum = 0;
-        for (auto packet : chunk){
+        for (auto packet : chunk) {
             packet.header.seqNum = seqNum;
             seqNum++;
             FILE_LOG(logDEBUG4) << "Packet command: " << print_APSCommand(packet.header.command);
             socket_.send_to(asio::buffer(packet.serialize()), devInfo_[serial].endpoint);
+            // sleep to make the driver compatible with newer versions of Windows
             // std::this_thread::sleep_for(std::chrono::microseconds(100));
         }
 
-        if(noACK) break;
+        if (noACK) break;
         //Wait for acknowledge
         //TODO: how to check response mode/stat for success?
-        try{
+        try {
             auto response = receive(serial)[0];
             break;
         }
@@ -321,14 +327,14 @@ vector<APSEthernetPacket> APSEthernet::receive(string serial, size_t numPackets,
 
     vector<APSEthernetPacket> outVec;
 
-    while (elapsedTime < timeoutMS){
-        if (!msgQueues_[serial].empty()){
+    while (elapsedTime < timeoutMS) {
+        if (!msgQueues_[serial].empty()) {
             mLock_.lock();
             outVec.push_back(msgQueues_[serial].front());
             msgQueues_[serial].pop();
             mLock_.unlock();
             FILE_LOG(logDEBUG4) << "Received packet command: " << print_APSCommand(outVec.back().header.command);
-            if (outVec.size() == numPackets){
+            if (outVec.size() == numPackets) {
                 FILE_LOG(logDEBUG3) << "Received " << numPackets << " packets from " << serial;
                 return outVec;
             }
@@ -338,5 +344,5 @@ vector<APSEthernetPacket> APSEthernet::receive(string serial, size_t numPackets,
         elapsedTime =  std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
     }
 
-    throw runtime_error("Timed out on receive");
+    throw APS2_RECEIVE_TIMEOUT;
 }

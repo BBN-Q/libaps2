@@ -46,14 +46,26 @@ Analog Jitter             7.5ps RMS
 Digital Jitter            5ps RMS
 Rise/fall time            2ns
 Settling time             2ns to 10%, 10ns to 1%
-Trigger modes             Internal, external, or software triggering
+Trigger modes             Internal, external, system, or software triggering
 Ext. trigger input        1 V minimum into 50 Ω, 5 V maximum; triggered on *rising* edge
+Reference input           10 MHz sine or square, 1V to 3.3V peak to peak (+4 to +14 dBm)
 Waveform cache            128K samples
 Sequence memory           64M instructions
 Min instruction duration  8 samples
 Max instruction duration  8M samples (~7ms at 1.2GS/s)
 Max loop repeats          65,536
 ========================  ==============================================================
+
+Triggering
+------------------------
+
+The APS2 supports four different types of triggers. The *internal* mode
+generates triggers on a programmable interval between 6.66ns and 14s. The
+*external* mode listens for triggers on the front-panel SMA "trigger input"
+port. In this mode, the APS2 is triggered on the rising edge of a 1-5V signal.
+The *system* trigger accepts triggers on the SATA input port from the APS2
+Trigger Distribution Module (TDM). Finally, the *software* mode allows the user
+to trigger the APS2 via the host computer with the `trigger()` API method.
 
 Communications Interface
 ------------------------
@@ -64,7 +76,7 @@ the APS2 IP address are contained in the :ref:`software-installation` section.
 Use of the UDP protocol allows for a large-througput link from the host PC to
 the APS2; however, it does not natively support error checking of the sent
 data. The libaps2 driver adds some error-checking and packet resending to UDP,
-but it is recommended not place too many network hops between the host PC and
+but it is recommended to not place too many network hops between the host PC and
 the APS2.
 
 Status LED's
@@ -77,7 +89,7 @@ L1:
 
 * green breathing - no ethernet connection;
 * green blinks - receiving or transmitting an ethernet packet;
-* red - fatal communication error. Power cycle the module to restore connectivity. 
+* red - fatal communication error. Power cycle the module to restore connectivity.
 
 L2:
 

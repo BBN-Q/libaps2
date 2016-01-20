@@ -26,9 +26,9 @@ extern "C" {
 
 //Typedef the enums for C compatibility
 typedef enum APS2_STATUS APS2_STATUS;
-typedef enum TRIGGER_SOURCE TRIGGER_SOURCE;
-typedef enum RUN_MODE RUN_MODE;
-typedef enum RUN_STATE RUN_STATE;
+typedef enum APS2_TRIGGER_SOURCE APS2_TRIGGER_SOURCE;
+typedef enum APS2_RUN_MODE APS2_RUN_MODE;
+typedef enum APS2_RUN_STATE APS2_RUN_STATE;
 typedef enum TLogLevel TLogLevel;
 
 EXPORT const char* get_error_msg(APS2_STATUS);
@@ -56,8 +56,8 @@ EXPORT APS2_STATUS get_channel_scale(const char*, int, float*);
 EXPORT APS2_STATUS set_channel_enabled(const char*, int, int);
 EXPORT APS2_STATUS get_channel_enabled(const char*, int, int*);
 
-EXPORT APS2_STATUS set_trigger_source(const char*, TRIGGER_SOURCE);
-EXPORT APS2_STATUS get_trigger_source(const char*, TRIGGER_SOURCE*);
+EXPORT APS2_STATUS set_trigger_source(const char*, APS2_TRIGGER_SOURCE);
+EXPORT APS2_STATUS get_trigger_source(const char*, APS2_TRIGGER_SOURCE*);
 EXPORT APS2_STATUS set_trigger_interval(const char*, double);
 EXPORT APS2_STATUS get_trigger_interval(const char*, double*);
 EXPORT APS2_STATUS trigger(const char*);
@@ -68,7 +68,7 @@ EXPORT APS2_STATUS set_markers(const char*, int, char*, int);
 
 EXPORT APS2_STATUS write_sequence(const char*, uint64_t*, unsigned int);
 
-EXPORT APS2_STATUS set_run_mode(const char*, RUN_MODE);
+EXPORT APS2_STATUS set_run_mode(const char*, APS2_RUN_MODE);
 
 EXPORT APS2_STATUS load_sequence_file(const char*, const char*);
 
@@ -76,7 +76,7 @@ EXPORT APS2_STATUS clear_channel_data(const char*);
 
 EXPORT APS2_STATUS run(const char*);
 EXPORT APS2_STATUS stop(const char*);
-EXPORT APS2_STATUS get_runState(const char*, RUN_STATE*);
+EXPORT APS2_STATUS get_runState(const char*, APS2_RUN_STATE*);
 
 EXPORT APS2_STATUS set_log(const char*);
 EXPORT APS2_STATUS set_logging_level(TLogLevel);
@@ -90,9 +90,9 @@ EXPORT APS2_STATUS set_dhcp_enable(const char*, const int*);
 
 /* private API methods */
 
-EXPORT int write_memory(const char*, unsigned int, unsigned int*, unsigned int);
-EXPORT int read_memory(const char*, unsigned int, unsigned int*, unsigned int);
-EXPORT int read_register(const char*, unsigned int);
+EXPORT APS2_STATUS write_memory(const char*, unsigned int, unsigned int*, unsigned int);
+EXPORT APS2_STATUS read_memory(const char*, unsigned int, unsigned int*, unsigned int);
+EXPORT APS2_STATUS read_register(const char*, unsigned int, unsigned int*);
 EXPORT int program_FPGA(const char*, const char*);
 
 EXPORT int write_flash(const char*, unsigned int, unsigned int*, unsigned int);

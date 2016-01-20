@@ -17,7 +17,9 @@ enum APS2_STATUS {
 	APS2_NO_SUCH_BITFILE = -12,
 	APS2_MAC_ADDR_VALIDATION_FAILURE = -13,
 	APS2_IP_ADDR_VALIDATION_FAILURE = -14,
-	APS2_DHCP_VALIDATION_FAILURE = -15
+	APS2_DHCP_VALIDATION_FAILURE = -15,
+	APS2_RECEIVE_TIMEOUT = -16,
+	APS2_SOCKET_FAILURE = -17
 };
 
 
@@ -38,7 +40,9 @@ static std::map<APS2_STATUS, std::string> messages = {
 	{APS2_NO_SUCH_BITFILE, "Could not find bitfile at location specified."},
 	{APS2_MAC_ADDR_VALIDATION_FAILURE, "Failed to validate the update to the MAC address in flash memory."},
 	{APS2_IP_ADDR_VALIDATION_FAILURE, "Failed to validate the update to the IP address in flash memory."},
-	{APS2_DHCP_VALIDATION_FAILURE, "Failed to validate the update to the DHCP enable bit in flash memory."}
+	{APS2_DHCP_VALIDATION_FAILURE, "Failed to validate the update to the DHCP enable bit in flash memory."},
+	{APS2_RECEIVE_TIMEOUT, "Timed out while waiting to receive data."},
+	{APS2_SOCKET_FAILURE, "Failed to open ethernet socket. Verify that no dangling libaps2 processes are running."}
 };
 
 

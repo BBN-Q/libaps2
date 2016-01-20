@@ -213,7 +213,7 @@ enum CONFIGURATION_SOURCE {
 };
 
 
-//FPGA registers
+// APS2 registers
 static const uint32_t CSR_AXI_OFFSET      = 0x44A00000u;
 static const uint32_t PLL_STATUS_ADDR    = CSR_AXI_OFFSET + 0*4;
 static const uint32_t PHASE_COUNT_A_ADDR = CSR_AXI_OFFSET + 1*4;
@@ -236,14 +236,17 @@ static const uint32_t DMA_STATUS_ADDR    = CSR_AXI_OFFSET + 17*4;
 static const uint32_t SATA_STATUS_ADDR   = CSR_AXI_OFFSET + 18*4;
 static const uint32_t INIT_STATUS_ADDR   = CSR_AXI_OFFSET + 19*4;
 
+// TDM registers
+static const uint32_t TDM_RESETS_ADDR           = CSR_AXI_OFFSET + 0*4;
+static const uint32_t TDM_TRIGGER_WORD          = CSR_AXI_OFFSET + 1*4;
+static const uint32_t TDM_TRIGGER_INTERVAL_ADDR = CSR_AXI_OFFSET + 2*4;
+static const uint32_t TDM_TRIGGER_CONTROL_ADDR  = CSR_AXI_OFFSET + 3*4;
 
+// APS2 memory map
 static const uint32_t MEMORY_ADDR = 0x00000000u;
 static const uint32_t WFA_OFFSET  = 0;
 static const uint32_t WFB_OFFSET  = 0x10000000u;
 static const uint32_t SEQ_OFFSET  = 0x20000000u;
-
-//Expected version
-static const int FIRMWARE_VERSION =  0xA03;
 
 // sequencer control bits
 static const int SM_ENABLE_BIT = 0; // state machine enable
@@ -258,6 +261,9 @@ static const int IO_CHB_RST_BIT = 11;
 static const int DAC_BIST_CHA_RST_BIT = 12;
 static const int DAC_BIST_CHB_RST_BIT = 13;
 
+// HOST_STATUS bits
+static const int APS2_HOST_TYPE_BIT = 24;
+
 // USER_STATUS bits
 static const int MMCM_SYS_LOCK_BIT = 31;
 static const int MMCM_CFG_LOCK_BIT = 30;
@@ -268,7 +274,10 @@ static const int MIG_C1_CAL_BIT    = 27;
 static const int AXI_RESET_BIT     = 21;
 static const int AXI_RESETN_BIT    = 20;
 
-//DAC SPI Addresses
+// TDM reset control bits
+static const int TDM_TRIGGER_RESET_BIT = 0;
+
+// DAC SPI Addresses
 static const uint8_t DAC_SYNC_ADDR = 0x0;
 static const uint8_t DAC_INTERRUPT_ADDR = 0x1; // LVDS[7] SYNC[6]
 static const uint8_t DAC_MSDMHD_ADDR = 0x4; // MSD[7:4] MHD[3:0]
@@ -285,10 +294,10 @@ static const uint32_t EPROM_MACIP_ADDR      = 0x00FF0000;
 static const uint32_t EPROM_IP_OFFSET       = 8;
 static const uint32_t EPROM_DHCP_OFFSET     = 12;
 
-//APS ethernet type
+// APS ethernet type
 static const uint16_t APS_PROTO = 0xBB4E;
 
-//PLL/DAC SPI routines go through sets of address/data pairs
+// PLL/DAC SPI routines go through sets of address/data pairs
 typedef std::pair<uint16_t, uint8_t> SPI_AddrData_t;
 
 // Startup sequences
