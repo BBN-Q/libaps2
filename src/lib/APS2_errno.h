@@ -19,7 +19,8 @@ enum APS2_STATUS {
 	APS2_IP_ADDR_VALIDATION_FAILURE = -14,
 	APS2_DHCP_VALIDATION_FAILURE = -15,
 	APS2_RECEIVE_TIMEOUT = -16,
-	APS2_SOCKET_FAILURE = -17
+	APS2_SOCKET_FAILURE = -17,
+	APS2_INVALID_IP_ADDR = -18
 };
 
 
@@ -29,6 +30,7 @@ enum APS2_STATUS {
 #include <string>
 
 static std::map<APS2_STATUS, std::string> messages = {
+	{APS2_NO_DEVICE_FOUND, "Device failed to respond at requested IP address"},
 	{APS2_UNCONNECTED, "Attempt to run library function on unconnected APS2"},
 	{APS2_SEQFILE_FAIL, "Failed to load HDF5 sequence file. Check it is present and correctly formatted."},
 	{APS2_FILELOG_ERROR, "Unable to open log file."},
@@ -42,7 +44,8 @@ static std::map<APS2_STATUS, std::string> messages = {
 	{APS2_IP_ADDR_VALIDATION_FAILURE, "Failed to validate the update to the IP address in flash memory."},
 	{APS2_DHCP_VALIDATION_FAILURE, "Failed to validate the update to the DHCP enable bit in flash memory."},
 	{APS2_RECEIVE_TIMEOUT, "Timed out while waiting to receive data."},
-	{APS2_SOCKET_FAILURE, "Failed to open ethernet socket. Verify that no dangling libaps2 processes are running."}
+	{APS2_SOCKET_FAILURE, "Failed to open ethernet socket. Verify that no dangling libaps2 processes are running."},
+	{APS2_INVALID_IP_ADDR, "Requested conneciton to invalid IPv4 address."}
 };
 
 

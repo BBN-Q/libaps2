@@ -114,7 +114,6 @@ void APSEthernet::sort_packet(const vector<uint8_t> & packetData, const udp::end
             devInfo_[senderIP].supports_tcp = true;
             FILE_LOG(logDEBUG1) << "Adding device info for IP " << senderIP;
           }
-
         }
     }
     else {
@@ -248,14 +247,15 @@ set<string> APSEthernet::enumerate() {
         addrv4 broadcastAddr = addrv4::broadcast(addrv4::from_string(IP.first), addrv4::from_string(IP.second));
         FILE_LOG(logDEBUG1) << "Sending enumerate broadcasts out on: " << broadcastAddr.to_string();
         //Try the old port
-        udp::endpoint broadCastEndPoint(broadcastAddr, APS_PROTO);
+        udp::endpoint broadCastEndPoint(broadcastAddr, UDP_PORT_OLD);
         udp_socket_old_.send_to(asio::buffer(broadcastPacket.serialize()), broadCastEndPoint);
         //And the new
-        broadCastEndPoint.port(0xbb4f);
+        broadCastEndPoint.port(UDP_PORT);
         uint8_t enumerate_request = 0x01;
         udp_socket_.send_to(asio::buffer(&enumerate_request, 1), broadCastEndPoint);
     }
 
+    //Wait 100ms for response
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     set<string> deviceSerials;
@@ -273,19 +273,83 @@ void APSEthernet::reset_maps() {
 
 void APSEthernet::connect(string serial) {
 
+  //Check whether we have device info and if not send a ping
+  if (devInfo_.find(serial) == devInfo_.end()) {
+    FILE_LOG(logDEBUG) << "No device info for " << serial << " ; sending enumerate request";
+
+    //Make sure it is a valid IP
+    typedef asio::ip::address_v4 addrv4;
+    asio::error_code ec;
+    addrv4 ip_addr = addrv4::from_string(serial, ec);
+    if (ec) {
+      FILE_LOG(logERROR) << "Invalid IP address: " << ec.message();
+      throw APS2_INVALID_IP_ADDR;
+    }
+    //Try the old port
+    //Put together the status request for old firmware devices
+    APSEthernetPacket broadcastPacket = APSEthernetPacket::create_broadcast_packet();
+    udp::endpoint endpoint(ip_addr, UDP_PORT_OLD);
+    udp_socket_old_.send_to(asio::buffer(broadcastPacket.serialize()), endpoint);
+    //And the new
+    endpoint.port(UDP_PORT);
+    uint8_t enumerate_request = 0x01;
+    udp_socket_.send_to(asio::buffer(&enumerate_request, 1), endpoint);
+
+    //Wait 100ms for response
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    //Check again
+    if (devInfo_.find(serial) == devInfo_.end()) {
+      FILE_LOG(logERROR) << "APS2 failed to respond at " << serial;
+      throw APS2_NO_DEVICE_FOUND;
+    }
+  }
+
+  if (devInfo_[serial].supports_tcp) {
+    // C++14
+    // tcp_sockets_.insert(serial, std::make_unique<tcp::socket>(ios_));
+    // lowly C++11
+    std::unique_ptr<tcp::socket> sock(new tcp::socket(ios_));
+    asio::error_code ec;
+    sock->connect(tcp::endpoint(asio::ip::address_v4::from_string(serial), TCP_PORT), ec);
+    if (ec) {
+      FILE_LOG(logERROR) << "Failed to connect to " << serial << " with error: " << ec.message();
+      throw APS2_SOCKET_FAILURE;
+    }
+
+    vector<uint32_t> read_req = {0x10000002, 0x44a00050};
+    for (auto & val : read_req) {
+      val = htonl(val);
+    }
+    sock->send(asio::buffer(read_req));
+    vector<uint32_t> resp_header(2);
+    asio::read(*sock, asio::buffer(resp_header));
+    cout << "Response header: " << hexn<8> << ntohl(resp_header[0]) << " " << ntohl(resp_header[1]) << endl;
+    resp_header[0] = ntohl(resp_header[0]);
+    vector<uint32_t> uptime_array(2);
+    asio::read(*sock, asio::buffer(uptime_array));
+    double uptime = static_cast<double>(ntohl(uptime_array[0])) + 1e-9*static_cast<double>(ntohl(uptime_array[1]));
+    cout << "Uptime is " << uptime << endl;
+    tcp_sockets_.insert(std::make_pair(serial, std::move(sock)));
+  } else {
     mLock_.lock();
     msgQueues_[serial] = queue<APSEthernetPacket>();
     mLock_.unlock();
-    if (devInfo_.find(serial) == devInfo_.end()) {
-        devInfo_[serial].endpoint = udp::endpoint(asio::ip::address_v4::from_string(serial), APS_PROTO);
-        devInfo_[serial].macAddr = MACAddr("FF:FF:FF:FF:FF:FF");
-    }
+  }
 }
 
 void APSEthernet::disconnect(string serial) {
+  if (devInfo_[serial].supports_tcp) {
+    if (tcp_sockets_.find(serial) != tcp_sockets_.end()) {
+        tcp_sockets_[serial]->cancel();
+        tcp_sockets_[serial]->close();
+        tcp_sockets_.erase(serial);
+    }
+  } else {
     mLock_.lock();
-	msgQueues_.erase(serial);
+    msgQueues_.erase(serial);
     mLock_.unlock();
+  }
 }
 
 int APSEthernet::send(string serial, APSEthernetPacket msg, bool checkResponse) {

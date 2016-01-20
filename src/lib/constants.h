@@ -39,12 +39,12 @@ typedef union  {
 	struct {
 	uint32_t instr : 16; // SPI instruction for DAC, PLL instruction, or 0
 	uint32_t spicnt_data: 8; // data byte for single byte or SPI insruction
-	uint32_t target : 8; 
+	uint32_t target : 8;
 	};
 	uint32_t packed;
 } APSChipConfigCommand_t;
 
-//PLL commands 
+//PLL commands
 // INSTR<12..0> ......ADDR. Specifies the address of the register to read or write.
 // INSTR<14..13> .....W<1..0>. Specified transfer length. 00 = 1, 01 = 2, 10 = 3, 11 = stream
 // INSTR<15> .........R/W. Read/Write select. Read = 1, Write = 0.
@@ -150,7 +150,7 @@ enum CHIPCONFIG_IO_TARGET_CMD {
 	CHIPCONFIG_IO_TARGET_DAC_0_SINGLE = 0xC8, // single byte payload
 	CHIPCONFIG_IO_TARGET_DAC_1_SINGLE = 0xC9, // single byte payload
 	CHIPCONFIG_IO_TARGET_PLL_SINGLE   = 0xD8, // single byte payload
-	CHIPCONFIG_IO_TARGET_VCXO         = 0xE0, 
+	CHIPCONFIG_IO_TARGET_VCXO         = 0xE0,
 	CHIPCONFIG_IO_TARGET_EOL          = 0xFF, // end of list
 };
 
@@ -296,6 +296,10 @@ static const uint32_t EPROM_DHCP_OFFSET     = 12;
 
 // APS ethernet type
 static const uint16_t APS_PROTO = 0xBB4E;
+
+static const uint16_t UDP_PORT_OLD = 0xbb4e;
+static const uint16_t UDP_PORT = 0xbb4f;
+static const uint16_t TCP_PORT = 0xbb4e;
 
 // PLL/DAC SPI routines go through sets of address/data pairs
 typedef std::pair<uint16_t, uint8_t> SPI_AddrData_t;

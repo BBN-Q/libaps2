@@ -6,6 +6,8 @@
 #ifndef APSETHERNET_H
 #define APSETHERNET_H
 
+#include <memory>
+
 #include "headings.h"
 #include "MACAddr.h"
 #include "APSEthernetPacket.h"
@@ -14,6 +16,7 @@
 #include "asio.hpp"
 
 using asio::ip::udp;
+using asio::ip::tcp;
 
 struct EthernetDevInfo {
 	MACAddr macAddr;
@@ -55,6 +58,7 @@ private:
 	asio::io_service ios_;
 	udp::socket udp_socket_old_;
 	udp::socket udp_socket_;
+	unordered_map<string, std::unique_ptr<tcp::socket>> tcp_sockets_;
 
 	void setup_udp_receive();
 	void setup_udp_receive_old();
