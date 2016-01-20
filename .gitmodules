@@ -1,3 +1,6 @@
 [submodule "asio"]
 	path = asio
 	url = git@github.com:chriskohlhoff/asio.git
+[submodule "deps/Catch"]
+	path = deps/Catch
+	url = git@github.com:philsquared/Catch.git

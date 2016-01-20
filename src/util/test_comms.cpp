@@ -26,7 +26,7 @@ std::ostream& hexn(std::ostream& out)
 }
 
 
-void run_test(string deviceSerial, string memArea, uint32_t memStartAddr, uint32_t memHighAddr, size_t testLength){
+void run_test(string deviceSerial, string memArea, uint32_t memStartAddr, uint32_t memHighAddr, size_t testLength, uint32_t alignmentMask){
 	//Generate a random vector to write
 	std::default_random_engine generator;
 	std::uniform_int_distribution<uint32_t> wordDistribution;
@@ -37,9 +37,9 @@ void run_test(string deviceSerial, string memArea, uint32_t memStartAddr, uint32
 	}
 
 	//Choose a random starting point
-	std::uniform_int_distribution<uint32_t> addrDistribution(memStartAddr, memHighAddr-testLength );
+	std::uniform_int_distribution<uint32_t> addrDistribution(memStartAddr, memHighAddr-testLength);
 	uint32_t testStartAddr = addrDistribution(generator);
-	testStartAddr &= ~(0x3); //align address to 32 bit word
+	testStartAddr &= ~(alignmentMask); //align address
 
 	cout << endl;
 	cout << concol::CYAN << "Testing " << memArea << " memory:" << concol::RESET << endl;
@@ -54,7 +54,7 @@ void run_test(string deviceSerial, string memArea, uint32_t memStartAddr, uint32
 	//Check a few 1kB count entries for correctness
 	addrDistribution = std::uniform_int_distribution<uint32_t>(testStartAddr, testStartAddr+testLength-1024);
 	for (size_t ct=0; ct < 10; ct++){
-		vector<uint32_t> checkVec(256);
+		vector<uint32_t> checkVec(256, 0);
 		uint32_t checkAddr = addrDistribution(generator);
 		checkAddr &= ~(0x3); //align address to 32 bit word
 		cout << "reading 1 kB starting at " << hexn<8> << checkAddr << " ..... ";
@@ -127,12 +127,13 @@ int main(int argc, char const *argv[])
 		cout << concol::RED << " failed" << concol::RESET << endl;
 	}
 
-
-	run_test(deviceSerial, "sequence", 0, 0x1FFFFFFFu, 4*(1<<20));
-	run_test(deviceSerial, "waveform", 0x20000000u, 0x3FFFFFFFu, 4*(1<<20));
-	run_test(deviceSerial, "sequence cache", 0xC2000000u, 0xC2007FFF, 8*(1<<10));
-	run_test(deviceSerial, "waveform A cache", 0xC4000000u, 0xC403FFFF, 64*(1<<10));
-	run_test(deviceSerial, "waveform B cache", 0xC6000000u, 0xC603FFFF, 64*(1<<10));
+  //for DRAM memory we align to 128bits (16 bytes) because of MIG
+  //otherwise we align to 32 bit word (4 bytes)
+	run_test(deviceSerial, "sequence", 0, 0x1FFFFFFFu, 4*(1<<20), 0xf);
+	run_test(deviceSerial, "waveform", 0x20000000u, 0x3FFFFFFFu, 4*(1<<20), 0xf);
+	run_test(deviceSerial, "sequence cache", 0xC2000000u, 0xC2007FFF, 8*(1<<10), 0x3);
+	run_test(deviceSerial, "waveform A cache", 0xC4000000u, 0xC403FFFF, 64*(1<<10), 0x3);
+	run_test(deviceSerial, "waveform B cache", 0xC6000000u, 0xC603FFFF, 64*(1<<10), 0x3);
 
 	disconnect_APS(deviceSerial.c_str());
 
