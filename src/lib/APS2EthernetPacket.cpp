@@ -111,10 +111,10 @@ APS2EthernetPacket APS2EthernetPacket::create_broadcast_packet(){
 
 
 vector<APS2EthernetPacket> APS2EthernetPacket::pack_data(uint32_t addr, const vector<uint32_t> & data, const APS_COMMANDS & cmdtype /* see header for default */) {
-	//Break the data up into ethernet frame sized chunks.
+	//Break the data up into ethernet frame sized chunks with APS2EthernetPacket headers
 	// ethernet frame payload = 1500bytes - 20bytes IPV4 and 8 bytes UDP and 24 bytes APS header (with address field) = 1448bytes = 362 words
 	// for unknown reasons, we see occasional failures when using packets that large. 256 seems to be more stable.
-	static const int maxPayload = 256;
+	static const int MAX_PAYLOAD = 256;
 
 	vector<APS2EthernetPacket> packets;
 
@@ -124,9 +124,9 @@ vector<APS2EthernetPacket> APS2EthernetPacket::pack_data(uint32_t addr, const ve
 	auto idx = data.begin();
 	uint16_t seqNum = 0;
 	uint32_t curAddr = addr;
-	while (idx != data.end()){
-		if (std::distance(idx, data.end()) > maxPayload){
-			newPacket.header.command.cnt = maxPayload;
+	do {
+		if (std::distance(idx, data.end()) > MAX_PAYLOAD){
+			newPacket.header.command.cnt = MAX_PAYLOAD;
 		}
 		else{
 			newPacket.header.command.cnt = std::distance(idx, data.end());
@@ -141,7 +141,7 @@ vector<APS2EthernetPacket> APS2EthernetPacket::pack_data(uint32_t addr, const ve
 
 		packets.push_back(newPacket);
 		idx += newPacket.header.command.cnt;
-	}
+	} while (idx != data.end());
 
 	return packets;
 }

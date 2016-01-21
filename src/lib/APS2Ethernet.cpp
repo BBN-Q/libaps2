@@ -118,6 +118,7 @@ void APS2Ethernet::sort_packet(const vector<uint8_t> & packetData, const udp::en
     }
     else {
         //Turn the byte array into an APS2EthernetPacket
+        FILE_LOG(logDEBUG4) << "Recevied UDP packet to be sorted from IP " << senderIP;
         APS2EthernetPacket packet = APS2EthernetPacket(packetData);
         //Grab a lock and push the packet into the message queue
         mLock_.lock();
@@ -367,6 +368,10 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
       auto packets = APS2EthernetPacket::pack_data(dg.addr, dg.payload, APS_COMMANDS(dg.cmd.cmd));
       //Set the ack every to a maximum of 20
       size_t ack_every{packets.size() >= 20 ? 20 : packets.size()};
+      //For read commands don't let the ack check eat the response packet
+      if (dg.cmd.r_w) {
+        ack_every = 0;
+      }
       send(ipAddr, packets, ack_every);
     }
   }
@@ -460,41 +465,52 @@ int APS2Ethernet::send_chunk(string serial, vector<APS2EthernetPacket> chunk, bo
     return 0;
 }
 
-vector<APS2Datagram> APS2Ethernet::read(string serial, size_t numDGs, std::chrono::milliseconds timeout) {
-  //Read numDGs from socket
-	vector<APS2Datagram> dgs;
+vector<APS2Datagram> APS2Ethernet::read(string ipAddr, size_t numDGs, std::chrono::milliseconds timeout) {
 
-	for (size_t ct = 0; ct < numDGs; ct++) {
-	  //First read header (cmd and addr)
-	  vector<uint32_t> buf(2);
-	  std::future<size_t> read_result = tcp_sockets_[serial]->async_receive(asio::buffer(buf), asio::use_future);
-	  if (read_result.wait_for(timeout) == std::future_status::timeout) {
-	    tcp_sockets_[serial]->cancel();
-	    throw APS2_RECEIVE_TIMEOUT;
-	  }
-	  else {
-	    //TODO: sort out whether there is an address in the reponse
-	    APS2Command cmd;
-	    cmd.packed = ntohl(buf[0]);
-	    uint32_t addr = ntohl(buf[1]);
-	    //Now get the rest of the payload if there is one
-	    if (cmd.cnt > 0) {
-	      buf.resize(cmd.cnt);
-	      read_result = tcp_sockets_[serial]->async_receive(asio::buffer(buf), asio::use_future);
-	      if (read_result.wait_for(timeout) == std::future_status::timeout) {
-	        tcp_sockets_[serial]->cancel();
-	        throw APS2_RECEIVE_TIMEOUT;
-	      }
-	      else {
-	        for (auto & val : buf) {
-	          val = ntohl(val);
-	        }
-	        dgs.push_back({cmd, addr, buf});
-        }
-	    }
-	  }
-	}
-	return dgs;
+  vector<APS2Datagram> dgs;
+
+  if ( devInfo_[ipAddr].supports_tcp) {
+    //Read numDGs from socket
+    vector<uint32_t> buf;
+
+    auto read_with_timeout = [&]() {
+      std::future<size_t> read_result = tcp_sockets_[ipAddr]->async_receive(asio::buffer(buf), asio::use_future);
+      if (read_result.wait_for(timeout) == std::future_status::timeout) {
+        tcp_sockets_[ipAddr]->cancel();
+        throw APS2_RECEIVE_TIMEOUT;
+      }
+    };
+
+  	for (size_t ct = 0; ct < numDGs; ct++) {
+  	  //First read header (cmd and addr)
+      buf.resize(1);
+      read_with_timeout();
+      APS2Command cmd;
+      cmd.packed = ntohl(buf[0]);
+      uint32_t addr;
+      //Status register does not have
+      if (APS_COMMANDS(cmd.cmd) != APS_COMMANDS::STATUS) {
+        read_with_timeout();
+        addr = ntohl(buf[0]);
+      }
+      buf.resize(cmd.cnt);
+      read_with_timeout();
+      for (auto & val : buf) {
+        val = ntohl(val);
+      }
+      dgs.push_back({cmd, addr, buf});
+  	}
+  } else {
+    //The packets should already be in the queue
+    auto packets = receive(ipAddr, numDGs, timeout.count());
+    //strip off the ethernet header
+    for (const auto & pkt : packets) {
+      APS2Command cmd;
+      cmd.packed = pkt.header.command.packed;
+      dgs.push_back({cmd, pkt.header.addr, pkt.payload});
+    }
+  }
+  return dgs;
 }
 
 vector<APS2EthernetPacket> APS2Ethernet::receive(string serial, size_t numPackets, size_t timeoutMS) {

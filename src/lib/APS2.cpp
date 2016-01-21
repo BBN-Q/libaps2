@@ -15,6 +15,7 @@ void APS2::connect(shared_ptr<APS2Ethernet> && ethernetRM) {
 	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
 		ethernetRM_->connect(deviceSerial_);
+		//Report firmware version figure out whether this is an APS2 or TDM and what register map to use
 		try {
 			APSStatusBank_t statusRegs = read_status_registers();
 			if ((statusRegs.hostFirmwareVersion & (1 << APS2_HOST_TYPE_BIT)) == (1 << APS2_HOST_TYPE_BIT)) {
@@ -129,16 +130,24 @@ int APS2::setup_DACs() {
 }
 
 APSStatusBank_t APS2::read_status_registers() {
+	FILE_LOG(logDEBUG1) << "APS2::read_status_registers";
 	//Query with the status request command
-	APSCommand_t command = { .packed=0 };
-	command.cmd = static_cast<uint32_t>(APS_COMMANDS::STATUS);
-	command.r_w = 1;
-	command.mode_stat = APS_STATUS_HOST;
-	APS2EthernetPacket statusPacket = query(command)[0];
+	APS2Command cmd;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::STATUS);
+	cmd.r_w = 1;
+	cmd.sel = 1; //necessary for newer firmware to demux to ApsMsgProc
+	cmd.mode_stat = APS_STATUS_HOST;
+
+	//Send the request
+	ethernetRM_->send(deviceSerial_, {{cmd, 0, {}}});
+
+	//Read the response
+	auto resp_dg = ethernetRM_->read(deviceSerial_, 1, std::chrono::milliseconds(100))[0];
+
 	//Copy the data back into the status type
 	APSStatusBank_t statusRegs;
-	std::copy(statusPacket.payload.begin(), statusPacket.payload.end(), statusRegs.array);
-	FILE_LOG(logDEBUG) << print_status_bank(statusRegs);
+	std::copy(resp_dg.payload.begin(), resp_dg.payload.end(), statusRegs.array);
+	FILE_LOG(logDEBUG1) << print_status_bank(statusRegs);
 	return statusRegs;
 }
 
@@ -1654,15 +1663,17 @@ int APS2::read_state_from_hdf5(H5::H5File & H5StateFile, const string & rootStr)
 string APS2::print_status_bank(const APSStatusBank_t & status) {
 	std::ostringstream ret;
 
-	ret << "Host Firmware Version = " << std::hex << status.hostFirmwareVersion << endl;
-	ret << "User Firmware Version = " << status.userFirmwareVersion << endl;
-	ret << "Configuration Source  = " << status.configurationSource << endl;
-	ret << "User Status           = " << status.userStatus << endl;
-	ret << "DAC 0 Status          = " << status.dac0Status << endl;
-	ret << "DAC 1 Status          = " << status.dac1Status << endl;
-	ret << "PLL Status            = " << status.pllStatus << endl;
-	ret << "VCXO Status           = " << status.vcxoStatus << endl;
-	ret << "Send Packet Count     = " << std::dec << status.sendPacketCount << endl;
+	ret << endl << endl;
+	ret << "Host Firmware Version = " << hexn<8> << status.hostFirmwareVersion << endl;
+	ret << "User Firmware Version = " << hexn<8> << status.userFirmwareVersion << endl;
+	ret << "Configuration Source  = " << hexn<8> << status.configurationSource << endl;
+	ret << "User Status           = " << hexn<8> << status.userStatus << endl;
+	ret << "DAC 0 Status          = " << hexn<8> << status.dac0Status << endl;
+	ret << "DAC 1 Status          = " << hexn<8> << status.dac1Status << endl;
+	ret << "PLL Status            = " << hexn<8> << status.pllStatus << endl;
+	ret << "VCXO Status           = " << hexn<8> << status.vcxoStatus << endl;
+	ret << std::dec;
+	ret << "Send Packet Count     = " << status.sendPacketCount << endl;
 	ret << "Recv Packet Count     = " << status.receivePacketCount << endl;
 	ret << "Seq Skip Count        = " << status.sequenceSkipCount << endl;
 	ret << "Seq Dup.  Count       = " << status.sequenceDupCount << endl;
