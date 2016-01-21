@@ -55,9 +55,10 @@ private:
 public:
   APS2Command cmd;
   uint32_t addr;
-  vector<uint32_t> payload;
+	vector<uint32_t> payload;
+	vector<uint32_t> data();
 
-  vector<APS2Datagram> chunk(unsigned);
+  static vector<APS2Datagram> chunk(APS2Command, uint32_t, const vector<uint32_t>&, uint16_t);
 
 };
 
