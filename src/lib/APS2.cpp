@@ -1,4 +1,5 @@
 #include "APS2.h"
+#include "APS2Datagram.h"
 
 APS2::APS2() :  isOpen{false}, channels_(2), samplingRate_{0} {};
 
@@ -10,6 +11,7 @@ APS2::APS2(string deviceSerial) :  isOpen{false}, deviceSerial_{deviceSerial}, s
 APS2::~APS2() = default;
 
 void APS2::connect(shared_ptr<APS2Ethernet> && ethernetRM) {
+	//Hold on to APS2Ethernet class to keep socket alive
 	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
 		ethernetRM_->connect(deviceSerial_);
@@ -487,31 +489,40 @@ void APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
 	 * data = vector<uint32_t> data
 	 */
 
-	if (data.size() == 0) {
-		return;
-	}
-	//Pack the data into APS2EthernetFrames
-	vector<APS2EthernetPacket> dataPackets = pack_data(addr, data);
+	// //Pack the data into APS2EthernetFrames
+	// vector<APS2EthernetPacket> dataPackets = pack_data(addr, data);
+	//
+	// //Send the packets out
+	// ethernetRM_->send(deviceSerial_, dataPackets, 20);
 
-	//Send the packets out
-	ethernetRM_->send(deviceSerial_, dataPackets, 20);
+	//Convert to datagrams and send
+	APS2Command cmd;
+	cmd.ack = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::USERIO_ACK); //TODO: take out when all TCP comms
+	auto dgs = APS2Datagram::chunk(cmd, addr, data, 0xffff);
+	ethernetRM_->send(deviceSerial_, dgs);
+
+	//We expect dgs.size() responses
+	auto acks = ethernetRM_->read(deviceSerial_, dgs.size(), std::chrono::milliseconds(dgs.size()*100));
+	//TODO: error checking
+
 }
 
 vector<uint32_t> APS2::read_memory(const uint32_t & addr, const uint32_t & numWords){
-	//TODO: handle numWords that require mulitple packets
+	//TODO: handle numWords that require mulitple requests
 
 	//Send the read request
-	APS2EthernetPacket readReq;
-	readReq.header.command.r_w = 1;
-	readReq.header.command.cmd =  static_cast<uint32_t>(APS_COMMANDS::USERIO_ACK);
-	readReq.header.command.cnt = numWords;
-	readReq.header.addr = addr;
-	ethernetRM_->send(deviceSerial_, readReq, false);
+	APS2Command read_cmd;
+	read_cmd.r_w = 1;
+	read_cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::USERIO_ACK); //TODO: take out when all TCP comms
+	read_cmd.cnt = numWords;
+	ethernetRM_->send(deviceSerial_, {{read_cmd, addr, {}}});
 
-	//Retrieve the data packet(s)
-	auto readData = read_packets(1);
-
-	return readData[0].payload;
+	//Read the response
+	//We expect a single datagram back
+	auto result = ethernetRM_->read(deviceSerial_, 1, std::chrono::seconds(1));
+	//TODO: error checking
+	return result[0].payload;
 }
 
 //SPI read/write

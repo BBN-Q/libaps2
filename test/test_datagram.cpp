@@ -26,6 +26,7 @@ TEST_CASE("APS2Datagram data", "[datagram]") {
   for (size_t ct = 0; ct < 100; ct++) {
     payload.push_back(ct);
   }
+  cmd.cnt = payload.size();
   APS2Datagram dg{cmd, addr, payload};
 
   auto data = dg.data();

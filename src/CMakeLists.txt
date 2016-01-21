@@ -59,6 +59,7 @@ SET ( DLL_SRC
 	./lib/Channel.cpp
 	./lib/APS2.cpp
 	./lib/APS2Ethernet.cpp
+	./lib/APS2Datagram.cpp
 	./lib/MACAddr.cpp
 	./lib/APS2EthernetPacket.cpp
 )

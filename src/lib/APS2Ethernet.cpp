@@ -352,6 +352,22 @@ void APS2Ethernet::disconnect(string serial) {
   }
 }
 
+void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
+  if (devInfo_[ipAddr].supports_tcp) {
+    for (auto & dg : datagrams){
+      auto data = dg.data();
+      for (auto & val : data) {
+        val = htonl(val);
+      }
+      tcp_sockets_[ipAddr]->send(asio::buffer(data)); //TODO should this be async?
+    }
+  } else {
+
+
+    //Convert to ethernet packets and send
+  }
+}
+
 int APS2Ethernet::send(string serial, APS2EthernetPacket msg, bool checkResponse) {
     msg.header.dest = devInfo_[serial].macAddr;
     return send_chunk(serial, vector<APS2EthernetPacket>(1, msg), !checkResponse);
@@ -440,6 +456,42 @@ int APS2Ethernet::send_chunk(string serial, vector<APS2EthernetPacket> chunk, bo
     return 0;
 }
 
+vector<APS2Datagram> APS2Ethernet::read(string serial, size_t numDGs, std::chrono::milliseconds timeout) {
+  //Read numDGs from socket
+	vector<APS2Datagram> dgs;
+
+	for (size_t ct = 0; ct < numDGs; ct++) {
+	  //First read header (cmd and addr)
+	  vector<uint32_t> buf(2);
+	  std::future<size_t> read_result = tcp_sockets_[serial]->async_receive(asio::buffer(buf), asio::use_future);
+	  if (read_result.wait_for(timeout) == std::future_status::timeout) {
+	    tcp_sockets_[serial]->cancel();
+	    throw APS2_RECEIVE_TIMEOUT;
+	  }
+	  else {
+	    //TODO: sort out whether there is an address in the reponse
+	    APS2Command cmd;
+	    cmd.packed = ntohl(buf[0]);
+	    uint32_t addr = ntohl(buf[1]);
+	    //Now get the rest of the payload if there is one
+	    if (cmd.cnt > 0) {
+	      buf.resize(cmd.cnt);
+	      read_result = tcp_sockets_[serial]->async_receive(asio::buffer(buf), asio::use_future);
+	      if (read_result.wait_for(timeout) == std::future_status::timeout) {
+	        tcp_sockets_[serial]->cancel();
+	        throw APS2_RECEIVE_TIMEOUT;
+	      }
+	      else {
+	        for (auto & val : buf) {
+	          val = ntohl(val);
+	        }
+	        dgs.push_back({cmd, addr, buf});
+        }
+	    }
+	  }
+	}
+	return dgs;
+}
 
 vector<APS2EthernetPacket> APS2Ethernet::receive(string serial, size_t numPackets, size_t timeoutMS) {
     //Read the packets coming back in up to the timeout

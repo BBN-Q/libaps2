@@ -22,11 +22,10 @@ vector<APS2Datagram> APS2Datagram::chunk(APS2Command cmd, uint32_t addr, const v
   return chunks;
 }
 
-vector<uint32_t> APS2Datagram::data() {
+vector<uint32_t> APS2Datagram::data() const {
   //Construct the datagram
   vector<uint32_t> data;
   data.reserve(2+payload.size());
-  cmd.cnt = payload.size() & 0xffff; //TODO: what if payload is too large?
   data.push_back(cmd.packed);
   data.push_back(addr);
   std::copy(payload.begin(), payload.end(), std::back_inserter(data));

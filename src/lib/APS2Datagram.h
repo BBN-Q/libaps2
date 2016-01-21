@@ -36,7 +36,8 @@ using std::vector;
 // CNT<15:0> ...Number of 32-bit data words to transfer for a read or a write command. Note
 // that the length does NOT include the Address Word. CNT must be at least 1.
 // To meet Ethernet packet length limitations, CNT must not exceed 366.
-typedef union {
+
+union APS2Command {
 	struct {
 	uint32_t cnt : 16;
 	uint32_t mode_stat : 8;
@@ -47,7 +48,9 @@ typedef union {
 	uint32_t ack : 1;
 	};
 	uint32_t packed;
-} APS2Command;
+	//TODO: sort out the default initialization and whether this is necessary
+	APS2Command() {this->packed = 0;};
+};
 
 class APS2Datagram {
 private:
@@ -56,7 +59,7 @@ public:
   APS2Command cmd;
   uint32_t addr;
 	vector<uint32_t> payload;
-	vector<uint32_t> data();
+	vector<uint32_t> data() const;
 
   static vector<APS2Datagram> chunk(APS2Command, uint32_t, const vector<uint32_t>&, uint16_t);
 

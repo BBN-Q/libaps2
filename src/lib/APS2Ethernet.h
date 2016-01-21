@@ -7,14 +7,17 @@
 #define APS2ETHERNET_H
 
 #include <memory>
+#include <future>
+#include <chrono>
 
 #include "headings.h"
 #include "MACAddr.h"
+#include "APS2Datagram.h"
 #include "APS2EthernetPacket.h"
 #include "APS2_errno.h"
 
 #include "asio.hpp"
-
+#include <asio/use_future.hpp>
 using asio::ip::udp;
 using asio::ip::tcp;
 
@@ -36,8 +39,11 @@ public:
 	set<string> enumerate();
 	void connect(string serial);
 	void disconnect(string serial);
+	void send(string, const vector<APS2Datagram> &);
 	int send(string serial, APS2EthernetPacket msg, bool checkResponse=true);
 	int send(string serial, vector<APS2EthernetPacket> msg, unsigned ackEvery=1);
+
+	vector<APS2Datagram> read(string, size_t, std::chrono::milliseconds);
 	vector<APS2EthernetPacket> receive(string serial, size_t numPackets = 1, size_t timeoutMS = 2000);
 
 private:
@@ -74,6 +80,5 @@ private:
 	std::thread receiveThread_;
 	std::mutex mLock_;
 };
-
 
 #endif
