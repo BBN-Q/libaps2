@@ -69,6 +69,9 @@ public:
 	size_t numBytes() const;
 
 	static APS2EthernetPacket create_broadcast_packet();
+
+	static vector<APS2EthernetPacket> pack_data(uint32_t, const vector<uint32_t> &, const APS_COMMANDS & cmdtype = APS_COMMANDS::USERIO_ACK);
+
 };
 
 #endif //APS2ETHERNETPACKET_H_

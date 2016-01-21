@@ -212,7 +212,7 @@ void APS2::store_image(const string & bitFile, const int & position) { /* see he
 	FILE_LOG(logDEBUG1) << "Bit file is " << packedData.size() << " 32-bit words long";
 
 	uint32_t addr = 0; // TODO: make start address depend on position
-	auto packets = pack_data(addr, packedData, APS_COMMANDS::FPGACONFIG_ACK);
+	auto packets = APS2EthernetPacket::pack_data(addr, packedData, APS_COMMANDS::FPGACONFIG_ACK);
 
 	// send in groups of 20
 	ethernetRM_->send(deviceSerial_, packets, 20);
@@ -613,7 +613,7 @@ int APS2::write_flash(const uint32_t & addr, vector<uint32_t> & data) {
 	FILE_LOG(logDEBUG3) << "Flash write: padding payload with " << padwords << " words";
 	data.resize(data.size() + padwords);
 
-	vector<APS2EthernetPacket> packets = pack_data(addr, data, APS_COMMANDS::EPROMIO);
+	vector<APS2EthernetPacket> packets = APS2EthernetPacket::pack_data(addr, data, APS_COMMANDS::EPROMIO);
 
 	FILE_LOG(logDEBUG) << "Writing " << packets.size() << " packets of data to flash address " << myhex << addr;
 	try {
@@ -765,43 +765,6 @@ int APS2::write_command(const APSCommand_t & command, const uint32_t & addr, con
 	ethernetRM_->send(deviceSerial_, packet, checkResponse);
 	return 0;
 }
-
-vector<APS2EthernetPacket> APS2::pack_data(const uint32_t & addr, const vector<uint32_t> & data, const APS_COMMANDS & cmdtype /* see header for default */) {
-	//Break the data up into ethernet frame sized chunks.
-	// ethernet frame payload = 1500bytes - 20bytes IPV4 and 8 bytes UDP and 24 bytes APS header (with address field) = 1448bytes = 362 words
-	// for unknown reasons, we see occasional failures when using packets that large. 256 seems to be more stable.
-	static const int maxPayload = 256;
-
-	vector<APS2EthernetPacket> packets;
-
-	APS2EthernetPacket newPacket;
-	newPacket.header.command.cmd =  static_cast<uint32_t>(cmdtype);
-
-	auto idx = data.begin();
-	uint16_t seqNum = 0;
-	uint32_t curAddr = addr;
-	while (idx != data.end()){
-		if (std::distance(idx, data.end()) > maxPayload){
-			newPacket.header.command.cnt = maxPayload;
-		}
-		else{
-			newPacket.header.command.cnt = std::distance(idx, data.end());
-		}
-
-		newPacket.header.seqNum = seqNum++;
-		newPacket.header.addr = curAddr;
-		curAddr += 4*newPacket.header.command.cnt;
-
-		newPacket.payload.clear();
-		std::copy(idx, idx+newPacket.header.command.cnt, std::back_inserter(newPacket.payload));
-
-		packets.push_back(newPacket);
-		idx += newPacket.header.command.cnt;
-	}
-
-	return packets;
-}
-
 
 vector<APS2EthernetPacket> APS2::read_packets(const size_t & numPackets) {
 	return ethernetRM_->receive(deviceSerial_, numPackets);
