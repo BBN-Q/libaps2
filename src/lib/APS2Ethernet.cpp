@@ -362,9 +362,13 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
       tcp_sockets_[ipAddr]->send(asio::buffer(data)); //TODO should this be async?
     }
   } else {
-
-
     //Convert to ethernet packets and send
+    for (auto dg : datagrams) {
+      auto packets = APS2EthernetPacket::pack_data(dg.addr, dg.payload, APS_COMMANDS(dg.cmd.cmd));
+      //Set the ack every to a maximum of 20
+      size_t ack_every{packets.size() >= 20 ? 20 : packets.size()};
+      send(ipAddr, packets, ack_every);
+    }
   }
 }
 
