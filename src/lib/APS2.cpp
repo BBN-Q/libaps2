@@ -155,14 +155,17 @@ APSStatusBank_t APS2::read_status_registers() {
 }
 
 uint32_t APS2::get_firmware_version() {
+	/*
+	* Return the board firmware encoded bottom 16 bits of the firmware register
+	*/
 	uint32_t version;
 	if (legacy_firmware) {
 		// Reads version information from status registers
 		APSStatusBank_t statusRegs = read_status_registers();
 		version = statusRegs.userFirmwareVersion;
 	} else {
+		// Reads version information from CSR register
 		version = read_memory(FIRMWARE_VERSION_ADDR, 1)[0];
-		// Reads version information from CSR
 	}
 
 	FILE_LOG(logDEBUG) << "Firmware version on FPGA is " << print_firmware_version(version);
@@ -174,11 +177,23 @@ double APS2::get_uptime(){
 	/*
 	* Return the board uptime in seconds.
 	*/
-	//Read the status registers
-	APSStatusBank_t statusRegs = read_status_registers();
-	//Put together the seconds and nanoseconds parts
-	double intPart; //dummy integer part
-	return static_cast<double>(statusRegs.uptimeSeconds) + modf(static_cast<double>(statusRegs.uptimeNanoSeconds)/1e9, &intPart);
+	FILE_LOG(logDEBUG1) << "APS2::get_uptime";
+	uint32_t uptime_seconds, uptime_nanoseconds;
+	if ( legacy_firmware ) {
+		//Read the status registers
+		APSStatusBank_t statusRegs = read_status_registers();
+		//Put together the seconds and nanoseconds parts
+		//In the APS2MsgProc the nanoseconds doesn't reset at 1s so take fractional part
+		uptime_seconds = statusRegs.uptimeSeconds;
+		uptime_nanoseconds = statusRegs.uptimeNanoSeconds;
+	} else {
+		// Reads uptime from adjacent CSR registers
+		auto uptime_vec = read_memory(UPTIME_SECONDS_ADDR, 2);
+		uptime_seconds = uptime_vec[0];
+		uptime_nanoseconds = uptime_vec[1];
+	}
+	auto uptime = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::seconds(uptime_seconds) + std::chrono::nanoseconds(uptime_nanoseconds));
+	return uptime.count();
 }
 
 double APS2::get_fpga_temperature(){
