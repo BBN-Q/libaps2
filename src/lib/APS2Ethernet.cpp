@@ -318,19 +318,6 @@ void APS2Ethernet::connect(string serial) {
       throw APS2_SOCKET_FAILURE;
     }
 
-    vector<uint32_t> read_req = {0x10000002, 0x44a00050};
-    for (auto & val : read_req) {
-      val = htonl(val);
-    }
-    sock->send(asio::buffer(read_req));
-    vector<uint32_t> resp_header(2);
-    asio::read(*sock, asio::buffer(resp_header));
-    cout << "Response header: " << hexn<8> << ntohl(resp_header[0]) << " " << ntohl(resp_header[1]) << endl;
-    resp_header[0] = ntohl(resp_header[0]);
-    vector<uint32_t> uptime_array(2);
-    asio::read(*sock, asio::buffer(uptime_array));
-    double uptime = static_cast<double>(ntohl(uptime_array[0])) + 1e-9*static_cast<double>(ntohl(uptime_array[1]));
-    cout << "Uptime is " << uptime << endl;
     tcp_sockets_.insert(std::make_pair(serial, std::move(sock)));
   } else {
     mLock_.lock();
