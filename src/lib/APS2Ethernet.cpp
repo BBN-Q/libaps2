@@ -341,7 +341,8 @@ void APS2Ethernet::disconnect(string serial) {
 }
 
 void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
-  if (devInfo_[ipAddr].supports_tcp) {
+  if (devInfo_[ipAddr].supports_tcp) {\
+    // If we have TCP just send it out
     for (auto & dg : datagrams){
       auto data = dg.data();
       for (auto & val : data) {
@@ -350,16 +351,22 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
       tcp_sockets_[ipAddr]->send(asio::buffer(data)); //TODO should this be async?
     }
   } else {
-    //Convert to ethernet packets and send
+    //Without TCP convert to APS2EthernetPacket packets and send
     for (auto dg : datagrams) {
       auto packets = APS2EthernetPacket::pack_data(dg.addr, dg.payload, APS_COMMANDS(dg.cmd.cmd));
       //Set the ack every to a maximum of 20
-      size_t ack_every{packets.size() >= 20 ? 20 : packets.size()};
-      //For read commands don't let the ack check eat the response packet
+      size_t ack_every;
+      //For read commands don't let the ack check eat the response packet and copy in count
       if (dg.cmd.r_w) {
         ack_every = 0;
+        //Should only be one packet for read requests
+        packets[0].header.command.r_w = 1;
+        packets[0].header.command.cnt = dg.cmd.cnt;
+        send(ipAddr, packets[0], false);
+      } else {
+        ack_every = packets.size() >= 20 ? 20 : packets.size();
+        send(ipAddr, packets, ack_every);
       }
-      send(ipAddr, packets, ack_every);
     }
   }
 }
@@ -370,7 +377,6 @@ int APS2Ethernet::send(string serial, APS2EthernetPacket msg, bool checkResponse
 }
 
 int APS2Ethernet::send(string serial, vector<APS2EthernetPacket> msg, unsigned ackEvery /* see header for default */) {
-    //Fill out the destination  MAC address
     FILE_LOG(logDEBUG3) << "Sending " << msg.size() << " packets to " << serial;
     auto iter = msg.begin();
     bool noACK = false;
