@@ -31,9 +31,12 @@ int main(int argc, char* argv[])
 		connect_APS(serialBuffer[ct]);
 		uint32_t firmware_version;
 		get_firmware_version(serialBuffer[ct], &firmware_version);
-		disconnect_APS(serialBuffer[ct]);
+		double uptime;
+		get_uptime(serialBuffer[ct], &uptime);
     cout << concol::CYAN << "Device " << ct << " at IPv4 address " << serialBuffer[ct] <<
-		" running firmware version " << print_firmware_version(firmware_version) << concol::RESET << endl;
+		" running firmware version " << print_firmware_version(firmware_version) <<
+		" has been up " << uptime << concol::RESET << endl;
+		disconnect_APS(serialBuffer[ct]);
   }
 	cout << endl;
 
