@@ -32,6 +32,10 @@ bind(udp_sock, ip"0.0.0.0", 0xbb4f)
 send(udp_sock, ip"192.168.2.2", 0xbb4f, [0x01])
 resp = bytestring(recv(udp_sock))
 @test resp == "I am an APS2"
+
+#TCP reset
+# send(udp_sock, ip"192.168.2.2", 0xbb4f, [0x02])
+
 close(udp_sock)
 
 tcp_sock = connect(ip_addr, 0xbb4e)
@@ -80,11 +84,16 @@ resp_header = map(ntoh, read(tcp_sock, UInt32, 2))
 read_vals = map(ntoh, read(tcp_sock, UInt32, 1000))
 @test read_vals == write_vals[1:1000]
 
-# flash read the IP and MAC address
+#Test status register request to wrapped ApsMsgProc
+read_req = UInt32[0x37000010, 0x00000000]
+write(tcp_sock, map(hton, read_req))
+result = map(ntoh, read(tcp_sock, UInt32, 17))
+@test result[1:5] == UInt32[0x97000010; 0x00000a20 ; 0xbadda555; 0xeeeeeeee; 0x0ddba111]
+
+#Test flash read
 read_req = UInt32[0x32000004, 0x00ff0000]
 write(tcp_sock, map(hton, read_req))
 result = map(ntoh, read(tcp_sock, UInt32, 5))
 @test result == UInt32[0x92000004; 0x4651db00; 0x002e0000; 0xc0a80202; 0x00000000]
-
 
 close(tcp_sock)
