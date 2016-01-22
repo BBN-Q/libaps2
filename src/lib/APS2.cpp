@@ -1,9 +1,9 @@
 #include "APS2.h"
 #include "APS2Datagram.h"
 
-APS2::APS2() :  isOpen{false}, channels_(2), samplingRate_{0} {};
+APS2::APS2() :  isOpen{false}, legacy_firmware{false}, channels_(2), samplingRate_{0} {};
 
-APS2::APS2(string deviceSerial) :  isOpen{false}, deviceSerial_{deviceSerial}, samplingRate_{0} {
+APS2::APS2(string deviceSerial) :  isOpen{false}, legacy_firmware{false}, deviceSerial_{deviceSerial}, samplingRate_{0} {
 	channels_.reserve(2);
 	for(size_t ct=0; ct<2; ct++) channels_.push_back(Channel(ct));
 };
@@ -15,9 +15,12 @@ void APS2::connect(shared_ptr<APS2Ethernet> && ethernetRM) {
 	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
 		ethernetRM_->connect(deviceSerial_);
-		//Report firmware version figure out whether this is an APS2 or TDM and what register map to use
+		//Figure out whether this is an APS2 or TDM and what register map to use
 		try {
 			APSStatusBank_t statusRegs = read_status_registers();
+			if ( statusRegs.userFirmwareVersion != 0xbadda555 ) {
+				legacy_firmware = true;
+			}
 			if ((statusRegs.hostFirmwareVersion & (1 << APS2_HOST_TYPE_BIT)) == (1 << APS2_HOST_TYPE_BIT)) {
 				host_type = TDM;
 			} else {
@@ -152,11 +155,17 @@ APSStatusBank_t APS2::read_status_registers() {
 }
 
 uint32_t APS2::get_firmware_version() {
-	// Reads version information from status registers
-	APSStatusBank_t statusRegs = read_status_registers();
-	uint32_t version = statusRegs.userFirmwareVersion;
+	uint32_t version;
+	if (legacy_firmware) {
+		// Reads version information from status registers
+		APSStatusBank_t statusRegs = read_status_registers();
+		version = statusRegs.userFirmwareVersion;
+	} else {
+		version = read_memory(FIRMWARE_VERSION_ADDR, 1)[0];
+		// Reads version information from CSR
+	}
 
-	FILE_LOG(logDEBUG) << "Firmware version on FPGA is " << myhex << version;
+	FILE_LOG(logDEBUG) << "Firmware version on FPGA is " << print_firmware_version(version);
 
 	return version;
 }
@@ -1684,8 +1693,6 @@ string APS2::print_status_bank(const APSStatusBank_t & status) {
 	return ret.str();
 }
 
-
-
 string APS2::printAPSChipCommand(APSChipConfigCommand_t & cmd) {
     std::ostringstream ret;
 
@@ -1694,4 +1701,23 @@ string APS2::printAPSChipCommand(APSChipConfigCommand_t & cmd) {
     ret << " SPICNT_DATA: " << cmd.spicnt_data;
     ret << " INSTR: " << cmd.instr;
     return ret.str();
+}
+
+string APS2::print_firmware_version(uint32_t version_reg) {
+	std::ostringstream ret;
+
+	uint32_t minor{version_reg & 0xff};
+	uint32_t major{(version_reg >> 8) & 0xf};
+	uint32_t note_nibble{(version_reg >> 12) & 0xf};
+	string note;
+	switch (note_nibble) {
+		case 0xa:
+			note = "alpha";
+			break;
+		case 0xb:
+			note = "beta";
+			break;
+	}
+	ret << major << "." << minor << " " << note;
+	return ret.str();
 }

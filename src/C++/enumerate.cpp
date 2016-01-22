@@ -27,8 +27,13 @@ int main(int argc, char* argv[])
   const char ** serialBuffer = new const char*[numDevices];
   get_deviceSerials(serialBuffer);
 
-  for (unsigned cnt=0; cnt < numDevices; cnt++) {
-    cout << concol::CYAN << "Device " << cnt << " IPv4 address: " << serialBuffer[cnt] << concol::RESET << endl;
+  for (unsigned ct=0; ct < numDevices; ct++) {
+		connect_APS(serialBuffer[ct]);
+		uint32_t firmware_version;
+		get_firmware_version(serialBuffer[ct], &firmware_version);
+		disconnect_APS(serialBuffer[ct]);
+    cout << concol::CYAN << "Device " << ct << " at IPv4 address " << serialBuffer[ct] <<
+		" running firmware version " << print_firmware_version(firmware_version) << concol::RESET << endl;
   }
 	cout << endl;
 

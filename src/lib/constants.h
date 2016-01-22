@@ -235,6 +235,9 @@ static const uint32_t DAC_BIST_CHB_PH2_ADDR = CSR_AXI_OFFSET + 16*4;
 static const uint32_t DMA_STATUS_ADDR    = CSR_AXI_OFFSET + 17*4;
 static const uint32_t SATA_STATUS_ADDR   = CSR_AXI_OFFSET + 18*4;
 static const uint32_t INIT_STATUS_ADDR   = CSR_AXI_OFFSET + 19*4;
+static const uint32_t UPTIME_SECONDS_ADDR = CSR_AXI_OFFSET + 20*4;
+static const uint32_t UPTIME_NANOSECONDS_ADDR = CSR_AXI_OFFSET + 21*4;
+static const uint32_t FIRMWARE_VERSION_ADDR = CSR_AXI_OFFSET + 22*4;
 
 // TDM registers
 static const uint32_t TDM_RESETS_ADDR           = CSR_AXI_OFFSET + 0*4;

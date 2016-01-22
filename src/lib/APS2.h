@@ -87,10 +87,12 @@ public:
 
 	APS2_RUN_STATE runState;
 	APS2_HOST_TYPE host_type;
+	bool legacy_firmware;
 
 	//Pretty printers
 	static string print_status_bank(const APSStatusBank_t & status);
 	static string printAPSChipCommand(APSChipConfigCommand_t & command);
+	static string print_firmware_version(uint32_t);
 
 	//Memory read/write
 	void write_memory(const uint32_t & addr, const vector<uint32_t> & data);
@@ -186,7 +188,6 @@ private:
 	void write_macip_flash(const uint64_t &, const uint32_t &, const bool &);
 
 }; //end class APS2
-
 
 
 
