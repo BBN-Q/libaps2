@@ -145,7 +145,7 @@ APSStatusBank_t APS2::read_status_registers() {
 	ethernetRM_->send(deviceSerial_, {{cmd, 0, {}}});
 
 	//Read the response
-	auto resp_dg = ethernetRM_->read(deviceSerial_, 1, std::chrono::milliseconds(100))[0];
+	auto resp_dg = ethernetRM_->read(deviceSerial_, std::chrono::milliseconds(100));
 
 	//Copy the data back into the status type
 	APSStatusBank_t statusRegs;
@@ -534,11 +534,6 @@ void APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
 	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::USERIO_ACK); //TODO: take out when all TCP comms
 	auto dgs = APS2Datagram::chunk(cmd, addr, data, 0xfffc); //max chunk_size is limited by 128bit data alignment in SDRAM
 	ethernetRM_->send(deviceSerial_, dgs);
-
-	//We expect dgs.size() responses
-	auto acks = ethernetRM_->read(deviceSerial_, dgs.size(), std::chrono::milliseconds(dgs.size()*100));
-	//TODO: error checking
-
 }
 
 vector<uint32_t> APS2::read_memory(const uint32_t & addr, const uint32_t & numWords){
@@ -553,9 +548,9 @@ vector<uint32_t> APS2::read_memory(const uint32_t & addr, const uint32_t & numWo
 
 	//Read the response
 	//We expect a single datagram back
-	auto result = ethernetRM_->read(deviceSerial_, 1, std::chrono::seconds(1));
+	auto result = ethernetRM_->read(deviceSerial_, std::chrono::milliseconds(1000));
 	//TODO: error checking
-	return result[0].payload;
+	return result.payload;
 }
 
 //SPI read/write

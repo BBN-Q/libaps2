@@ -341,15 +341,35 @@ void APS2Ethernet::disconnect(string serial) {
 }
 
 void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
-  if (devInfo_[ipAddr].supports_tcp) {\
+  FILE_LOG(logDEBUG1) << "APS2Ethernet::send";
+  if (devInfo_[ipAddr].supports_tcp) {
     // If we have TCP just send it out
-    for (auto & dg : datagrams){
+    for (const auto & dg : datagrams){
       auto data = dg.data();
       for (auto & val : data) {
         val = htonl(val);
       }
-      tcp_sockets_[ipAddr]->send(asio::buffer(data)); //TODO should this be async?
+      FILE_LOG(logDEBUG3) << "Sending datagram with command word " << hexn<8> << dg.cmd.packed <<
+        " to address " << dg.addr << " with payload size " << std::dec << dg.payload.size() << " for total size " << data.size();
+      std::error_code ec;
+      asio::write(*tcp_sockets_[ipAddr], asio::buffer(data), ec); //TODO should this be async?
+      if ( ec ) {
+        FILE_LOG(logERROR) << "Failed to send datagram with error: " << ec.message();
+      }
+
     }
+    //Block until the acks come back
+    for (const auto & dg : datagrams){
+      if ( dg.cmd.ack ) {
+        auto ack = read(ipAddr, std::chrono::seconds(1));
+        FILE_LOG(logDEBUG3) << "APS2 acknowledge datagram: "  << hexn<8> << ack.cmd.packed << " " << ack.addr;
+        if ( ack.cmd.mode_stat != (0x80 | dg.cmd.cmd) ) {
+          FILE_LOG(logERROR) << "APS2 datamover reported error/tag code: " << hexn<2> << ack.cmd.mode_stat;
+          throw APS2_COMMS_ERROR;
+        }
+      }
+    }
+
   } else {
     //Without TCP convert to APS2EthernetPacket packets and send
     for (auto dg : datagrams) {
@@ -458,9 +478,7 @@ int APS2Ethernet::send_chunk(string serial, vector<APS2EthernetPacket> chunk, bo
     return 0;
 }
 
-vector<APS2Datagram> APS2Ethernet::read(string ipAddr, size_t numDGs, std::chrono::milliseconds timeout) {
-
-  vector<APS2Datagram> dgs;
+APS2Datagram APS2Ethernet::read(string ipAddr, std::chrono::milliseconds timeout) {
 
   if ( devInfo_[ipAddr].supports_tcp) {
     //Read numDGs from socket
@@ -470,40 +488,43 @@ vector<APS2Datagram> APS2Ethernet::read(string ipAddr, size_t numDGs, std::chron
       std::future<size_t> read_result = tcp_sockets_[ipAddr]->async_receive(asio::buffer(buf), asio::use_future);
       if (read_result.wait_for(timeout) == std::future_status::timeout) {
         tcp_sockets_[ipAddr]->cancel();
+        FILE_LOG(logERROR) << "TCP receive timed out!";
         throw APS2_RECEIVE_TIMEOUT;
       }
     };
 
-  	for (size_t ct = 0; ct < numDGs; ct++) {
-  	  //First read header (cmd and addr)
-      buf.resize(1);
+	  //First read header (cmd and addr)
+    buf.resize(1);
+    read_with_timeout();
+    APS2Command cmd;
+    cmd.packed = ntohl(buf[0]);
+    uint32_t addr;
+    //Status register does not have address
+    if (APS_COMMANDS(cmd.cmd) != APS_COMMANDS::STATUS) {
       read_with_timeout();
-      APS2Command cmd;
-      cmd.packed = ntohl(buf[0]);
-      uint32_t addr;
-      //Status register does not have
-      if (APS_COMMANDS(cmd.cmd) != APS_COMMANDS::STATUS) {
-        read_with_timeout();
-        addr = ntohl(buf[0]);
-      }
+      addr = ntohl(buf[0]);
+    }
+    //If it is a write ack then the count doesn't matter
+    if ( cmd.ack && !cmd.r_w ) {
+      buf.clear();
+    } else {
       buf.resize(cmd.cnt);
       read_with_timeout();
       for (auto & val : buf) {
         val = ntohl(val);
       }
-      dgs.push_back({cmd, addr, buf});
-  	}
+    }
+    FILE_LOG(logDEBUG3) << "Read APS2Datagram " << hexn<8> << cmd.packed << " " << addr << " and payload length " << std::dec << buf.size();
+    return {cmd, addr, buf};
+
   } else {
     //The packets should already be in the queue
-    auto packets = receive(ipAddr, numDGs, timeout.count());
+    auto pkt = receive(ipAddr, 1, timeout.count()).front();
     //strip off the ethernet header
-    for (const auto & pkt : packets) {
-      APS2Command cmd;
-      cmd.packed = pkt.header.command.packed;
-      dgs.push_back({cmd, pkt.header.addr, pkt.payload});
-    }
+    APS2Command cmd;
+    cmd.packed = pkt.header.command.packed;
+    return {cmd, pkt.header.addr, pkt.payload};
   }
-  return dgs;
 }
 
 vector<APS2EthernetPacket> APS2Ethernet::receive(string serial, size_t numPackets, size_t timeoutMS) {
