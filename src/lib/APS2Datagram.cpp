@@ -15,9 +15,11 @@ vector<APS2Datagram> APS2Datagram::chunk(APS2Command cmd, uint32_t addr, const v
   auto start_it = data.begin();
   while (start_it != data.end()) {
     auto end_it = (std::distance(start_it, data.end()) > chunk_size) ? start_it + chunk_size : data.end();
-    cmd.cnt = chunk_size;
+    auto cur_chunk_size = std::distance(start_it, end_it);
+    cmd.cnt = cur_chunk_size;
     chunks.push_back(APS2Datagram{cmd, addr, vector<uint32_t>(start_it, end_it)});
-    std::advance(start_it, std::distance(start_it, end_it));
+    std::advance(start_it, cur_chunk_size);
+    addr += 4*cur_chunk_size;
   }
   return chunks;
 }
