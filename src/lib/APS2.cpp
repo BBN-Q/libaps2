@@ -532,7 +532,7 @@ void APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
 	APS2Command cmd;
 	cmd.ack = 1;
 	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::USERIO_ACK); //TODO: take out when all TCP comms
-	auto dgs = APS2Datagram::chunk(cmd, addr, data, 0xffff);
+	auto dgs = APS2Datagram::chunk(cmd, addr, data, 0xfffc); //max chunk_size is limited by 128bit data alignment in SDRAM
 	ethernetRM_->send(deviceSerial_, dgs);
 
 	//We expect dgs.size() responses
