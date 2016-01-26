@@ -40,13 +40,13 @@ bool test_mem_write_read(uint32_t memStartAddr, uint32_t memHighAddr, size_t tes
 	testStartAddr &= ~(alignmentMask); //align address
 
   if ( printSpeed ) {
-    cout << endl;
-    cout << "writing " << std::dec << testLength/(1 << 10) << " kB starting at " << hexn<8> << testStartAddr << " ..... ";
+    cout << "writing " << std::dec << testLength/(1 << 10) << " kB starting at " << hexn<8> << testStartAddr << "..... ";
+    cout.flush();
     auto start = std::chrono::steady_clock::now();
     write_memory(ip_addr.c_str(), testStartAddr, testVec.data(), testVec.size());
     auto stop = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop-start).count();
-    cout << " at " << static_cast<double>(testLength)/duration << " MB/s." << concol::RESET << endl;
+    cout << "at " << static_cast<double>(testLength)/duration << " MB/s." << concol::RESET << endl;
   } else {
     write_memory(ip_addr.c_str(), testStartAddr, testVec.data(), testVec.size());
   }
@@ -122,6 +122,34 @@ TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
     //Set it back
     write_memory(ip_addr.c_str(), TRIGGER_INTERVAL_ADDR, &cur_val, 1);
 	}
+
+  SECTION("variable write sizes") {
+    //Variable write sizes from 4 to 256 words
+    vector<uint32_t> outData, inData;
+  	size_t idx=0;
+  	std::default_random_engine generator;
+  	std::uniform_int_distribution<uint32_t> wordDistribution;
+  	for (unsigned writeSize=4; writeSize<=256; writeSize+=4){
+  		for (unsigned ct=0; ct<writeSize; ct++){
+  			outData.push_back(wordDistribution(generator));
+  		}
+  		write_memory(ip_addr.c_str(), idx*4, outData.data()+idx, writeSize);
+  		idx += writeSize;
+  	}
+    //Read data back in 128 words at a time to support legacy firmware
+  	inData.resize(idx);
+  	idx = 0;
+  	while (idx < inData.size()){
+  		read_memory(ip_addr.c_str(),  idx*4, inData.data()+idx, 128);
+  		idx += 128;
+  	}
+
+  	bool passed = true;
+  	for (size_t ct=0; ct<inData.size(); ct++){
+  		passed &= (inData[ct] == outData[ct]);
+  	}
+    REQUIRE(passed);
+  }
 
   SECTION("CACHE BRAMs write/read") {
     bool passed;
