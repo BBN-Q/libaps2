@@ -90,11 +90,6 @@ ADD_EXECUTABLE(play_sequence
 )
 TARGET_LINK_LIBRARIES(play_sequence aps2)
 
-ADD_EXECUTABLE(test_comms
-	./util/test_comms.cpp
-)
-TARGET_LINK_LIBRARIES(test_comms aps2)
-
 ADD_EXECUTABLE(run_tests
 	../test/run_tests.cpp
 	../test/test_Sanity.cpp
