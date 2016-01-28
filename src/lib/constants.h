@@ -212,7 +212,6 @@ enum CONFIGURATION_SOURCE {
 	USER_EPROM_IMAGE = 0xEEEEEEEE
 };
 
-
 // APS2 registers
 static const uint32_t CSR_AXI_OFFSET      = 0x44A00000u;
 static const uint32_t PLL_STATUS_ADDR    = CSR_AXI_OFFSET + 0*4;

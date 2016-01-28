@@ -30,10 +30,6 @@ public:
 	APS2_STATUS init(const bool & = false, const int & bitFileNum = 0);
 	void reset(const APS_RESET_MODE_STAT & resetMode = APS_RESET_MODE_STAT::SOFT_RESET);
 
-	void store_image(const string & bitFile, const int & position = 0);
-	int select_image(const int &);
-	int program_FPGA(const string &);
-
 	int setup_VCXO() const;
 	int setup_PLL() const;
 	int setup_DACs();
@@ -121,12 +117,12 @@ public:
 	bool get_dhcp_enable();
 	void set_dhcp_enable(const bool &);
 
-	//CLPD DRAM
-	int write_bitfile(const uint32_t &, const string &);
-	int load_bitfile(const uint32_t &);
-
 	//Create/restore setup SPI sequence
 	int write_SPI_setup();
+
+	//bitfile loading
+	void write_bitfile(const string &, uint32_t, BITFILE_STORAGE_MEDIA);
+	void program_bitfile(uint32_t);
 
 	// DAC BIST test
 	int run_DAC_BIST(const int &, const vector<int16_t> &, vector<uint32_t> &);

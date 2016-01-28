@@ -348,8 +348,8 @@ APS2_STATUS read_register(const char* deviceSerial, uint32_t addr, uint32_t* res
 	return read_memory(deviceSerial, addr, result, 1);
 }
 
-int program_FPGA(const char* deviceSerial, const char* bitFile) {
-	return aps2_call(deviceSerial, &APS2::program_FPGA, string(bitFile));
+APS2_STATUS write_bitfile(const char* deviceSerial, const char* bitFile, uint32_t addr, BITFILE_STORAGE_MEDIA media) {
+	return aps2_call(deviceSerial, &APS2::write_bitfile, string(bitFile), addr, media);
 }
 
 APS2_STATUS write_configuration_SDRAM(const char* ip_addr, uint32_t addr, uint32_t* data, uint32_t num_words){

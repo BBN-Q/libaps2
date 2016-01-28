@@ -213,83 +213,92 @@ double APS2::get_fpga_temperature(){
 	return temp;
 }
 
-void APS2::store_image(const string & bitFile, const int & position) { /* see header for position default = 0 */
-	FILE_LOG(logDEBUG) << "Opening bitfile: " << bitFile;
+void APS2::write_bitfile(const string & bitFile, uint32_t addr, BITFILE_STORAGE_MEDIA media) {
+	//Write a bitfile to either configuration DRAM or ERPOM starting at specified address
+	FILE_LOG(logDEBUG1) << "APS2::write_bitfile";
 
-	std::ifstream FID(bitFile, std::ios::in | std::ios::binary);
-	if (!FID.is_open()){
+	//byte alignment of storage media
+	uint32_t alignment;
+	switch (media) {
+		case BITFILE_MEDIA_DRAM:
+			alignment = 8;
+			break;
+		case BITFILE_MEDIA_EPROM:
+			alignment = 256;
+			break;
+	}
+
+	//Get the file size in bytes
+	std::ifstream FID (bitFile, std::ios::in|std::ios::binary);
+  if (!FID.is_open()){
 		FILE_LOG(logERROR) << "Unable to open bitfile: " << bitFile;
-		throw APS2_NO_SUCH_BITFILE;
+    throw APS2_NO_SUCH_BITFILE;
+  }
+
+  FID.seekg(0, std::ios::end);
+  size_t file_size = FID.tellg();
+	FILE_LOG(logDEBUG) << "Opened bitfile: " << bitFile << " with " << file_size << " bytes";
+  FID.seekg(0, std::ios::beg);
+
+	//Figure out padding size for alignment
+	size_t padding_bytes = (alignment - (file_size % alignment)) % alignment;
+	FILE_LOG(logDEBUG1) << "Padding bitfile byte vector with " << padding_bytes << " bytes.";
+  //Copy the file data to a 32bit word vector
+  vector<uint32_t> bitfile_words((file_size+padding_bytes)/4, 0xffffffff);
+  FID.read(reinterpret_cast<char *>(bitfile_words.data()), file_size);
+
+	//Swap bytes because we want to preserve bytes order in file it will be byte-swapped again when the packet is serialized
+	for (auto & val : bitfile_words) {
+		val = htonl(val);
 	}
 
-	//Read the file into a byte array
-	vector<uint8_t> fileData((std::istreambuf_iterator<char>(FID)), std::istreambuf_iterator<char>());
-	FILE_LOG(logDEBUG1) << "Read " << fileData.size() << " bytes in bitfile.";
-
-	//Pad out to align with a multiple of 8 bytes
-	//This is because DRAM writes must be mulitples of 8 bytes and 8 bytes aligned
-	int padBytes = (8 - (fileData.size() % 8)) % 8;
-	FILE_LOG(logDEBUG1) << "Padding bitfile byte vector with " << padBytes << " bytes.";
-	fileData.resize(fileData.size() + padBytes, 0xff);
-
-	//Copy over the file data to a 32 bit data vector
-	vector<uint32_t> packedData;
-	packedData.resize(fileData.size()/4);
-	memcpy(packedData.data(), fileData.data(), fileData.size());
-
-	//Convert to big endian byte order - basically because it will be byte-swapped again when the packet is serialized
-	for (auto & packet : packedData) {
-		packet = htonl(packet);
+	switch (media) {
+		case BITFILE_MEDIA_DRAM:
+			write_configuration_SDRAM(addr, bitfile_words);
+			break;
+		case BITFILE_MEDIA_EPROM:
+			write_flash(addr, bitfile_words);
+			break;
 	}
-
-	FILE_LOG(logDEBUG1) << "Bit file is " << packedData.size() << " 32-bit words long";
-
-	uint32_t addr = 0; // TODO: make start address depend on position
-	auto packets = APS2EthernetPacket::pack_data(addr, packedData, APS_COMMANDS::FPGACONFIG_ACK);
-
-	// send in groups of 20
-	ethernetRM_->send(deviceSerial_, packets, 20);
 }
 
-int APS2::select_image(const int & bitFileNum) {
-	FILE_LOG(logINFO) << "Selecting bitfile number " << bitFileNum;
+void APS2::program_bitfile(uint32_t addr) {
+	//Program the bitfile from configuration SDRAM at the specified address
+	//FPGA will reset so connection will be dropped
+	FILE_LOG(logDEBUG1) << "APS2::program_bitfile";
+	FILE_LOG(logINFO) << "Programming bitfile starting at address " << hexn<8> << addr;
 
-	uint32_t addr = 0; // todo: make start address depend on bitFileNum
-
-	APS2EthernetPacket packet;
-	packet.header.command.r_w = 0;
-	packet.header.command.cmd =  static_cast<uint32_t>(APS_COMMANDS::FPGACONFIG_CTRL);
-	packet.header.command.cnt = 0;
-	packet.header.addr = addr;
-
-	return ethernetRM_->send(deviceSerial_, packet, false);
+	APS2Command cmd;
+	cmd.sel = 1; //necessary for newer firmware to demux to ApsMsgProc
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::FPGACONFIG_CTRL);
+	ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
 }
 
-int APS2::program_FPGA(const string & bitFile) {
-	/**
-	 * @param bitFile path to a Xilinx bit file
-	 * @param expectedVersion - checks whether version register matches this value after programming. -1 = skip the check
-	 */
-	store_image(bitFile);
-	int success = select_image(0);
-	if (success != 0)
-		return success;
-
-	std::this_thread::sleep_for(std::chrono::seconds(4));
-
-	int retrycnt = 0;
-	while (retrycnt < 3) {
-		try {
-			// poll status to see device reset
-			read_status_registers();
-			return APS2_OK;
-		} catch (std::exception &e) {
-			FILE_LOG(logDEBUG) << "Status timeout; retrying...";
-		}
-		retrycnt++;
-	}
-	return APS2_RESET_TIMEOUT;
-}
+// int APS2::program_FPGA(const string & bitFile) {
+// 	/**
+// 	 * @param bitFile path to a Xilinx bit file
+// 	 * @param expectedVersion - checks whether version register matches this value after programming. -1 = skip the check
+// 	 */
+// 	store_image(bitFile);
+// 	int success = select_image(0);
+// 	if (success != 0)
+// 		return success;
+//
+// 	std::this_thread::sleep_for(std::chrono::seconds(4));
+//
+// 	int retrycnt = 0;
+// 	while (retrycnt < 3) {
+// 		try {
+// 			// poll status to see device reset
+// 			read_status_registers();
+// 			return APS2_OK;
+// 		} catch (std::exception &e) {
+// 			FILE_LOG(logDEBUG) << "Status timeout; retrying...";
+// 		}
+// 		retrycnt++;
+// 	}
+// 	return APS2_RESET_TIMEOUT;
+// }
 
 void APS2::set_sampleRate(const unsigned int & freq){
 	if (samplingRate_ != freq){

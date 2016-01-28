@@ -93,7 +93,9 @@ EXPORT APS2_STATUS set_dhcp_enable(const char*, const int);
 EXPORT APS2_STATUS write_memory(const char*, uint32_t, uint32_t*, uint32_t);
 EXPORT APS2_STATUS read_memory(const char*, uint32_t, uint32_t*, uint32_t);
 EXPORT APS2_STATUS read_register(const char*, uint32_t, uint32_t*);
-EXPORT int program_FPGA(const char*, const char*);
+
+EXPORT APS2_STATUS write_bitfile(const char*, const char*, uint32_t, BITFILE_STORAGE_MEDIA);
+EXPORT APS2_STATUS program_bitfile(const char*, uint32_t);
 
 EXPORT APS2_STATUS write_configuration_SDRAM(const char*, uint32_t, uint32_t*, uint32_t);
 EXPORT APS2_STATUS read_configuration_SDRAM(const char*, uint32_t, uint32_t, uint32_t*);
