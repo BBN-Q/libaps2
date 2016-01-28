@@ -522,12 +522,6 @@ void APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
 	 * data = vector<uint32_t> data
 	 */
 
-	// //Pack the data into APS2EthernetFrames
-	// vector<APS2EthernetPacket> dataPackets = pack_data(addr, data);
-	//
-	// //Send the packets out
-	// ethernetRM_->send(deviceSerial_, dataPackets, 20);
-
 	//Convert to datagrams and send
 	APS2Command cmd;
 	cmd.ack = 1;
@@ -536,15 +530,15 @@ void APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
 	ethernetRM_->send(deviceSerial_, dgs);
 }
 
-vector<uint32_t> APS2::read_memory(const uint32_t & addr, const uint32_t & numWords){
+vector<uint32_t> APS2::read_memory(uint32_t addr, uint32_t numWords){
 	//TODO: handle numWords that require mulitple requests
 
 	//Send the read request
-	APS2Command read_cmd;
-	read_cmd.r_w = 1;
-	read_cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::USERIO_ACK); //TODO: take out when all TCP comms
-	read_cmd.cnt = numWords;
-	ethernetRM_->send(deviceSerial_, {{read_cmd, addr, {}}});
+	APS2Command cmd;
+	cmd.r_w = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::USERIO_ACK); //TODO: take out when all TCP comms
+	cmd.cnt = numWords;
+	ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
 
 	//Read the response
 	//We expect a single datagram back
@@ -552,6 +546,47 @@ vector<uint32_t> APS2::read_memory(const uint32_t & addr, const uint32_t & numWo
 	//TODO: error checking
 	return result.payload;
 }
+
+void APS2::write_configuration_SDRAM(uint32_t addr, const vector<uint32_t> & data) {
+	FILE_LOG(logDEBUG1) << "APS2::write_configuration_SDRAM";
+	//Write data to configuratoin SDRAM
+
+	//SDRAM writes must be 8 byte aligned
+	if ( (addr & 0x7) != 0) {
+		FILE_LOG(logERROR) << "Attempted to write configuration SDRAM at an address not aligned to 8 bytes";
+		throw APS2_UNALIGNED_MEMORY_ACCESS;
+	}
+	if ( (data.size() % 2) != 0) {
+		FILE_LOG(logERROR) << "Attempted to write configuration SDRAM with data not a multiple of 8 bytes";
+		throw APS2_UNALIGNED_MEMORY_ACCESS;
+	}
+
+	//Convert to datagrams.  For the now the ApsMsgProc needs maximum of 1kB chunks
+	APS2Command cmd;
+	cmd.ack = 1;
+	cmd.sel = 1; //necessary for newer firmware to demux to ApsMsgProc
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::FPGACONFIG_ACK);
+	auto dgs = APS2Datagram::chunk(cmd, addr, data, 0x100); //1kB chunks to fit in fake ethernet packet to ApsMsgProc
+	ethernetRM_->send(deviceSerial_, dgs);
+}
+
+vector<uint32_t> APS2::read_configuration_SDRAM(uint32_t addr, uint32_t num_words) {
+	FILE_LOG(logDEBUG1) << "APS2::read_configuration_SDRAM";
+	//Send the read request
+	APS2Command cmd;
+	cmd.r_w = 1;
+	cmd.sel = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::FPGACONFIG_ACK);
+	cmd.cnt = num_words;
+	ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
+
+	//Read the response
+	//We expect a single datagram back
+	auto result = ethernetRM_->read(deviceSerial_, std::chrono::milliseconds(1000));
+	//TODO: error checking
+	return result.payload;
+}
+
 
 //SPI read/write
 void APS2::write_SPI(vector<uint32_t> & msg) {

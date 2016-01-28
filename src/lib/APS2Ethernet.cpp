@@ -343,6 +343,7 @@ void APS2Ethernet::disconnect(string serial) {
 void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
   FILE_LOG(logDEBUG1) << "APS2Ethernet::send";
   if (devInfo_[ipAddr].supports_tcp) {
+    FILE_LOG(logDEBUG2) << "Sending " << datagrams.size() << " datagram" << (datagrams.size() > 1 ? "s" : "") << " over TCP";
     // If we have TCP just send it out
     for (const auto & dg : datagrams){
       auto data = dg.data();
@@ -350,7 +351,7 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
         val = htonl(val);
       }
       FILE_LOG(logDEBUG3) << "Sending datagram with command word " << hexn<8> << dg.cmd.packed <<
-        " to address " << dg.addr << " with payload size " << std::dec << dg.payload.size() << " for total size " << data.size();
+        " to address " << hexn<8> << dg.addr << " with payload size " << std::dec << dg.payload.size() << " for total size " << data.size();
       std::error_code ec;
       asio::write(*tcp_sockets_[ipAddr], asio::buffer(data), ec); //TODO should this be async?
       if ( ec ) {
@@ -361,16 +362,32 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
     //Block until the acks come back
     for (const auto & dg : datagrams){
       if ( dg.cmd.ack ) {
-        auto ack = read(ipAddr, std::chrono::seconds(1));
+        auto ack = read(ipAddr, std::chrono::milliseconds(500));
         FILE_LOG(logDEBUG3) << "APS2 acknowledge datagram: "  << hexn<8> << ack.cmd.packed << " " << ack.addr;
-        if ( ack.cmd.mode_stat != (0x80 | dg.cmd.cmd) ) {
-          FILE_LOG(logERROR) << "APS2 datamover reported error/tag code: " << hexn<2> << ack.cmd.mode_stat;
-          throw APS2_COMMS_ERROR;
+
+        //Error checking
+
+        //axi memory writes mode_stat reports datamover status/tag
+        if ( (dg.cmd.r_w == 0) && (dg.cmd.cmd == 0x1) ) {
+          if ( (ack.cmd.mode_stat != 0x81) || (dg.addr != ack.addr) ) {
+            FILE_LOG(logERROR) << "APS2 datamover reported error/tag code: " << hexn<2> << ack.cmd.mode_stat;
+            throw APS2_COMMS_ERROR;
+          }
         }
+
+        //configuration SDRAM and EPROM writes
+        if ( (dg.cmd.r_w == 0) && (dg.cmd.cmd == 0x5) ) {
+          if ( ack.cmd.mode_stat != 0x00 ) {
+            FILE_LOG(logERROR) << "APS2 CPLD reported error mode/stat " << hexn<2> << ack.cmd.mode_stat;
+            throw APS2_COMMS_ERROR;
+          }
+        }
+
       }
     }
 
   } else {
+    FILE_LOG(logDEBUG2) << "Sending " << datagrams.size() << " datagram" << (datagrams.size() > 1 ? "s" : "") << " over UDP";
     //Without TCP convert to APS2EthernetPacket packets and send
     for (auto dg : datagrams) {
       auto packets = APS2EthernetPacket::pack_data(dg.addr, dg.payload, APS_COMMANDS(dg.cmd.cmd));
@@ -498,9 +515,11 @@ APS2Datagram APS2Ethernet::read(string ipAddr, std::chrono::milliseconds timeout
     read_with_timeout();
     APS2Command cmd;
     cmd.packed = ntohl(buf[0]);
-    uint32_t addr;
-    //Status register does not have address
-    if (APS_COMMANDS(cmd.cmd) != APS_COMMANDS::STATUS) {
+    uint32_t addr{0};
+    if (!(
+      (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::STATUS) ||   //Status register response has no address
+      (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::FPGACONFIG_ACK) //configuration SDRAM write/reads have no adddress
+      )) {
       read_with_timeout();
       addr = ntohl(buf[0]);
     }

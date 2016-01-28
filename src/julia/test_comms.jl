@@ -102,6 +102,22 @@ if result[4] == 0xdddddddd
 else
   @test result[1:5] == UInt32[0x97000010; 0x00000a20 ; 0xbadda555; 0xeeeeeeee; 0x0ddba111]
 end
+
+#Test configuration DRAM read/write
+num_words = 1 << 8
+write_vals = rand(UInt32, num_words)
+cmd = 0x25000000
+datagram = UInt32[cmd+num_words; 0; write_vals]
+write(tcp_sock, map(hton, datagram))
+write_resp = ntoh(read(tcp_sock, UInt32))
+@test write_resp == 0x85000000
+read_req = UInt32[0x35000000 + num_words, 0x0]
+write(tcp_sock, map(hton, read_req))
+resp_header = ntoh(read(tcp_sock, UInt32))
+@test resp_header == UInt32(0x95000000 + num_words)
+read_vals = map(ntoh, read(tcp_sock, UInt32, num_words))
+@test read_vals == write_vals
+
 #
 # #Test flash read
 # read_req = UInt32[0x32000004, 0x00ff0000]

@@ -352,6 +352,24 @@ int program_FPGA(const char* deviceSerial, const char* bitFile) {
 	return aps2_call(deviceSerial, &APS2::program_FPGA, string(bitFile));
 }
 
+APS2_STATUS write_configuration_SDRAM(const char* ip_addr, uint32_t addr, uint32_t* data, uint32_t num_words){
+	return aps2_call(ip_addr, &APS2::write_configuration_SDRAM, addr, vector<uint32_t>(data, data + num_words));
+}
+
+APS2_STATUS read_configuration_SDRAM(const char* ip_addr, uint32_t addr, uint32_t num_words, uint32_t* data){
+	try {
+		auto read_data = APSs[string(ip_addr)].read_configuration_SDRAM(addr, num_words);
+		std::copy(read_data.begin(), read_data.end(), data);
+	}
+	catch (APS2_STATUS status) {
+		return status;
+	}
+	catch (...) {
+		return APS2_UNKNOWN_ERROR;
+	}
+	return APS2_OK;
+}
+
 int write_flash(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
 	return aps2_call(deviceSerial, &APS2::write_flash, addr, vector<uint32_t>(data, data + numWords));
 }

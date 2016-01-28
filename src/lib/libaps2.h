@@ -95,6 +95,9 @@ EXPORT APS2_STATUS read_memory(const char*, uint32_t, uint32_t*, uint32_t);
 EXPORT APS2_STATUS read_register(const char*, uint32_t, uint32_t*);
 EXPORT int program_FPGA(const char*, const char*);
 
+EXPORT APS2_STATUS write_configuration_SDRAM(const char*, uint32_t, uint32_t*, uint32_t);
+EXPORT APS2_STATUS read_configuration_SDRAM(const char*, uint32_t, uint32_t, uint32_t*);
+
 EXPORT int write_flash(const char*, uint32_t, uint32_t*, uint32_t);
 EXPORT int read_flash(const char*, uint32_t, uint32_t, uint32_t*);
 

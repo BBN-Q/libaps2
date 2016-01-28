@@ -97,11 +97,15 @@ public:
 	//Memory read/write
 	void write_memory(const uint32_t & addr, const vector<uint32_t> & data);
 	void write_memory(const uint32_t & addr, const uint32_t & data);
-	vector<uint32_t> read_memory(const uint32_t &, const uint32_t &);
+	vector<uint32_t> read_memory(uint32_t, uint32_t);
 
 	//SPI read/write
 	void write_SPI(vector<uint32_t> &);
 	uint32_t read_SPI(const CHIPCONFIG_IO_TARGET &, const uint16_t &);
+
+	//Configuration SDRAM read/write
+	void write_configuration_SDRAM(uint32_t addr, const vector<uint32_t> & data);
+	vector<uint32_t> read_configuration_SDRAM(uint32_t, uint32_t);
 
 	//Flash read/write
 	int write_flash(const uint32_t &, vector<uint32_t> &);
