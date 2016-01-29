@@ -7,6 +7,8 @@
 #include "concol.h"
 #include "helpers.h"
 
+#include <chrono>
+
 int main(int argc, char* argv[])
 {
 
@@ -33,9 +35,24 @@ int main(int argc, char* argv[])
 		get_firmware_version(serialBuffer[ct], &firmware_version);
 		double uptime;
 		get_uptime(serialBuffer[ct], &uptime);
+		std::chrono::duration<float> uptime_seconds(uptime);
+		auto uptime_days = std::chrono::duration_cast<std::chrono::duration<int, std::ratio<24*3600>>>(uptime_seconds);
+
+		std::ostringstream uptime_pretty;
+		if (uptime_days.count()) {
+			uptime_pretty << uptime_days.count() << " day" << (uptime_days.count() > 1 ? "s" : "") << " ";
+		}
+		uptime_seconds -= uptime_days;
+		auto uptime_hours = std::chrono::duration_cast<std::chrono::hours>(uptime_seconds);
+		if (uptime_hours.count()) {
+			uptime_pretty << uptime_hours.count() << " hours ";
+		}
+		uptime_seconds -= uptime_hours;
+		uptime_pretty << uptime_seconds.count() << " seconds";
+
     cout << concol::CYAN << "Device " << ct << " at IPv4 address " << serialBuffer[ct] <<
 		" running firmware version " << print_firmware_version(firmware_version) <<
-		" has been up " << uptime << concol::RESET << endl;
+		" has been up " << uptime_pretty.str() << concol::RESET << endl;
 		disconnect_APS(serialBuffer[ct]);
   }
 	cout << endl;
