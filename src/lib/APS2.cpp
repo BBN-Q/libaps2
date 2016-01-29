@@ -551,7 +551,7 @@ vector<uint32_t> APS2::read_memory(uint32_t addr, uint32_t numWords){
 
 	//Read the response
 	//We expect a single datagram back
-	auto result = ethernetRM_->read(deviceSerial_, std::chrono::milliseconds(1000));
+	auto result = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
 	//TODO: error checking
 	return result.payload;
 }
@@ -591,7 +591,7 @@ vector<uint32_t> APS2::read_configuration_SDRAM(uint32_t addr, uint32_t num_word
 
 	//Read the response
 	//We expect a single datagram back
-	auto result = ethernetRM_->read(deviceSerial_, std::chrono::milliseconds(1000));
+	auto result = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
 	//TODO: error checking
 	return result.payload;
 }
@@ -676,79 +676,79 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & ad
 }
 
 //Flash read/write
-int APS2::write_flash(const uint32_t & addr, vector<uint32_t> & data) {
+void APS2::write_flash(uint32_t addr, vector<uint32_t> & data) {
+	FILE_LOG(logDEBUG1) << "APS2::write_flash";
+
 	// erase before write
 	erase_flash(addr, sizeof(uint32_t) * data.size());
 
 	// resize data to a multiple of 64 words (256 bytes)
-	int padwords = (64 - (data.size() % 64)) % 64;
-	FILE_LOG(logDEBUG3) << "Flash write: padding payload with " << padwords << " words";
-	data.resize(data.size() + padwords);
+	int pad_words = (64 - (data.size() % 64)) % 64;
+	FILE_LOG(logDEBUG1) << "Flash write: padding payload with " << pad_words << " words";
+	data.resize(data.size() + pad_words, 0xffffffff);
 
-	vector<APS2EthernetPacket> packets = APS2EthernetPacket::pack_data(addr, data, APS_COMMANDS::EPROMIO);
+	APS2Command cmd;
+	cmd.ack = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::EPROMIO);
+	cmd.mode_stat = EPROM_RW;
+	auto dgs = APS2Datagram::chunk(cmd, addr, data, 0x0100); //max chunk_size is limited wrapping in Ethernet frames
 
-	FILE_LOG(logDEBUG) << "Writing " << packets.size() << " packets of data to flash address " << myhex << addr;
-	try {
-		ethernetRM_->send(deviceSerial_, packets);
-		// APS2EthernetPacket p = read_packets(packets.size())[0];
-		// return p.header.command.mode_stat;
-		return 0;
-	} catch (std::exception &e) {
-		FILE_LOG(logERROR) << "Flash write failed!";
-		return -1;
+	//Write 1 at a time so we can update progress
+	for (size_t ct = 0; ct < dgs.size(); ct++) {
+		ethernetRM_->send(deviceSerial_, {dgs[ct]});
+		flash_write_percent_done = 100*(static_cast<double>(ct)/static_cast<double>(dgs.size()));
 	}
 }
 
-int APS2::erase_flash(uint32_t addr, uint32_t numBytes) {
+void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
+	FILE_LOG(logDEBUG1) << "APS2::erase_flash";
+
 	// each erase command erases 64 KB of data starting at addr
-	FILE_LOG(logINFO) << "Erasing " << numBytes << " bytes starting at " << myhex << addr;
-	//TODO: check 64KB alignment
-	if ((addr % 65536) != 0){
-		FILE_LOG(logERROR) << "Flash memory erase command was not 64KB aligned!";
-		return -1;
+	if ((start_addr % (1 << 16)) != 0){
+		FILE_LOG(logERROR) << "EPROM memory erase command addr was not 64KB aligned!";
+		throw APS2_UNALIGNED_MEMORY_ACCESS;
 	}
 
-	APSCommand_t command = { .packed=0 };
-	command.r_w = 0;
-	command.cmd = static_cast<uint32_t>(APS_COMMANDS::EPROMIO);
-	command.mode_stat = EPROM_ERASE;
+	FILE_LOG(logDEBUG) << "Erasing " << num_bytes << " bytes starting at EPROM address " << hexn<8> << start_addr;
 
-	uint32_t erasedBytes = 0;
+	APS2Command cmd;
+	cmd.sel = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::EPROMIO);
+	cmd.mode_stat = EPROM_ERASE;
 
-	//Since erasing can take a while throw up some info if we have are erasing more than 1MB
-	bool verbose = numBytes > 1048576 ? true : false;
-
-	while(erasedBytes < numBytes) {
-		if (verbose && !mymod(erasedBytes, 1048576)){
-			FILE_LOG(logDEBUG) << "Flash erase " << 100*erasedBytes / numBytes << "% complete";
+	uint32_t addr{start_addr};
+	uint32_t end_addr{start_addr+num_bytes};
+	flash_erase_percent_done = 0;
+	do {
+		FILE_LOG(logDEBUG2) << "Erasing 64kB page at EPROM addr " << hexn<8> << addr;
+		ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
+		//Check for ack with success status
+		auto ack = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
+		if (ack.cmd.mode_stat == EPROM_OPERATION_FAILED) {
+			FILE_LOG(logERROR) << "EPROM erase command failed";
+			throw APS2_ERPOM_ERASE_FAILURE;
 		}
-		FILE_LOG(logDEBUG2) << "Erasing a 64 KB page at addr: " << myhex << addr;
-		write_command(command, addr, false);
-		APS2EthernetPacket p = read_packets(1)[0];
-		if (p.header.command.mode_stat == EPROM_OPERATION_FAILED){
-			FILE_LOG(logERROR) << "Flash memory erase command failed!";
-		}
-		erasedBytes += 65536;
-		addr += 65536;
-	}
-	return 0;
+		addr += (1<<16);
+		flash_erase_percent_done = (addr <= end_addr) ? 100 * ( (addr - start_addr) / num_bytes ) : 100;
+	} while(addr < end_addr);
 }
 
-vector<uint32_t> APS2::read_flash(const uint32_t & addr, const uint32_t & numWords) {
+vector<uint32_t> APS2::read_flash(uint32_t addr, uint32_t num_words) {
 	//TODO: handle reads that require multiple packets
-	APSCommand_t command = { .packed=0 };
-	command.r_w = 1;
-	command.cmd = static_cast<uint32_t>(APS_COMMANDS::EPROMIO);
-	command.mode_stat = EPROM_RW;
-	command.cnt = std::min(numWords, static_cast<const uint32_t>(365));
 
-	vector<uint32_t> data;
-	// TODO: loop sending write and read commands, until received at least numWords
-	APS2EthernetPacket p = query(command, addr)[0];
-	// TODO: Check status bits
-	data.insert(data.end(), p.payload.begin(), p.payload.end());
+	//Send the read request
+	APS2Command cmd;
+	cmd.r_w = 1;
+	cmd.sel = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::EPROMIO);
+	cmd.cnt = num_words;
+	ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
 
-	return data;
+	//Read the response
+	//We expect a single datagram back
+	auto result = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
+	//TODO: error checking
+	return result.payload;
 }
 
 void APS2::write_macip_flash(const uint64_t & mac,
@@ -808,7 +808,7 @@ void APS2::set_dhcp_enable(const bool & dhcp_enable) {
 }
 
 //Create/restore setup SPI sequence
-int APS2::write_SPI_setup() {
+void APS2::write_SPI_setup() {
 	FILE_LOG(logINFO) << "Writing SPI startup sequence";
 	vector<uint32_t> msg = build_VCXO_SPI_msg(VCXO_INIT);
 	vector<uint32_t> pll_msg = build_PLL_SPI_msg(PLL_INIT);
@@ -819,7 +819,7 @@ int APS2::write_SPI_setup() {
 	APSChipConfigCommand_t cmd = {.packed=0};
 	cmd.target = CHIPCONFIG_IO_TARGET_EOL;
 	msg.push_back(cmd.packed);
-	return write_flash(0x0, msg);
+	write_flash(0x0, msg);
 }
 
 

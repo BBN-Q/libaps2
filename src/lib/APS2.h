@@ -104,8 +104,11 @@ public:
 	vector<uint32_t> read_configuration_SDRAM(uint32_t, uint32_t);
 
 	//Flash read/write
-	int write_flash(const uint32_t &, vector<uint32_t> &);
-	vector<uint32_t> read_flash(const uint32_t &, const uint32_t &);
+	void write_flash(uint32_t, vector<uint32_t> &);
+	vector<uint32_t> read_flash(uint32_t, uint32_t);
+
+	double flash_erase_percent_done;
+	double flash_write_percent_done;
 
 	//MAC and IP addresses
 	uint64_t get_mac_addr();
@@ -118,7 +121,7 @@ public:
 	void set_dhcp_enable(const bool &);
 
 	//Create/restore setup SPI sequence
-	int write_SPI_setup();
+	void write_SPI_setup();
 
 	//bitfile loading
 	void write_bitfile(const string &, uint32_t, BITFILE_STORAGE_MEDIA);
@@ -127,6 +130,8 @@ public:
 	// DAC BIST test
 	int run_DAC_BIST(const int &, const vector<int16_t> &, vector<uint32_t> &);
 	void set_DAC_SD(const int &, const uint8_t &);
+
+
 
 private:
 
@@ -140,7 +145,7 @@ private:
 	int write_command(const APSCommand_t &, const uint32_t & addr = 0, const bool & checkResponse = true);
 	vector<APS2EthernetPacket> read_packets(const size_t &);
 
-	int erase_flash(uint32_t, uint32_t);
+	void erase_flash(uint32_t, uint32_t);
 
 	//Single packet query
 	vector<APS2EthernetPacket> query(const APSCommand_t &, const uint32_t & addr = 0);
