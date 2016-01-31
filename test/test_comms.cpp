@@ -189,41 +189,85 @@ TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 		REQUIRE(passed);
 	}
 
-	SECTION("bitfile configuration SDRAM write/read") {
-		//Older firmware is too slow for long write tests
-		uint32_t firmware_version;
-		get_firmware_version(ip_addr.c_str(), &firmware_version);
-		size_t testLength = ( (firmware_version & 0x00000fff) >= 0x300) ? (1 << 22) : (1 << 18);
-		//write to configuration memory
-		auto test_vec = random_data(testLength/4);
-		uint32_t alignment = 0x7; //8byte
-		auto start_addr = random_address(0, 0x07ffffff-testLength, alignment); //128MB
-		cout << "config. memory: writing " << std::dec << testLength/(1 << 10) << " kB starting at " << hexn<8> << start_addr << "..... ";
-		cout.flush();
-		auto start = std::chrono::steady_clock::now();
-		write_configuration_SDRAM(ip_addr.c_str(), start_addr, test_vec.data(), test_vec.size());
-		auto stop = std::chrono::steady_clock::now();
-		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop-start).count();
-		cout << "at " << static_cast<double>(testLength)/duration << " MB/s." << concol::RESET << endl;
+	disconnect_APS(ip_addr.c_str());
 
-		//Check a few 1kB chunks
-		bool passed = true;
-		std::uniform_int_distribution<uint32_t> addr_distribution(start_addr, start_addr+testLength-1024);
-		for (size_t ct = 0; ct < 10; ct++) {
-			uint32_t check_addr = addr_distribution(generator);
-			check_addr &= ~(alignment);
-			vector<uint32_t> check_vec(256, 0xdeadbeef);
-			read_configuration_SDRAM(ip_addr.c_str(), check_addr, check_vec.size(), check_vec.data());
-			for (auto val : check_vec){
-				if (val != test_vec[(check_addr-start_addr)/4]) {
-					passed &= false;
-				}
-				check_addr += 4;
+}
+
+TEST_CASE("configuration SDRAM writing and reading", "[configuration SDRAM]") {
+
+	connect_APS(ip_addr.c_str());
+
+	//Older firmware is too slow for long write tests
+	uint32_t firmware_version;
+	get_firmware_version(ip_addr.c_str(), &firmware_version);
+	size_t testLength = ( (firmware_version & 0x00000fff) >= 0x300) ? (1 << 22) : (1 << 18);
+	//write to configuration memory
+	auto test_vec = random_data(testLength/4);
+	uint32_t alignment = 0x7; //8byte
+	auto start_addr = random_address(0, 0x07ffffff-testLength, alignment); //128MB
+	cout << "config. memory: writing " << std::dec << testLength/(1 << 10) << " kB starting at " << hexn<8> << start_addr << "..... ";
+	cout.flush();
+	auto start = std::chrono::steady_clock::now();
+	write_configuration_SDRAM(ip_addr.c_str(), start_addr, test_vec.data(), test_vec.size());
+	auto stop = std::chrono::steady_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop-start).count();
+	cout << "at " << static_cast<double>(testLength)/duration << " MB/s." << concol::RESET << endl;
+
+	//Check a few 1kB chunks
+	bool passed = true;
+	std::uniform_int_distribution<uint32_t> addr_distribution(start_addr, start_addr+testLength-1024);
+	for (size_t ct = 0; ct < 10; ct++) {
+		uint32_t check_addr = addr_distribution(generator);
+		check_addr &= ~(alignment);
+		vector<uint32_t> check_vec(256, 0xdeadbeef);
+		read_configuration_SDRAM(ip_addr.c_str(), check_addr, check_vec.size(), check_vec.data());
+		for (auto val : check_vec){
+			if (val != test_vec[(check_addr-start_addr)/4]) {
+				passed &= false;
 			}
+			check_addr += 4;
 		}
-		REQUIRE(passed);
 	}
+	REQUIRE(passed);
 
+	disconnect_APS(ip_addr.c_str());
+}
+
+TEST_CASE("eprom read/write", "[eprom]") {
+
+	connect_APS(ip_addr.c_str());
+	set_logging_level(logDEBUG3);
+
+	//test writing/reading 128kB
+	size_t test_length = 128*(1<<10);
+	auto test_vec = random_data(test_length/4);
+	//backup image starts at 16MB or 0x01000000 and should be no more than 10MB
+	//so test between 28 and 32MB
+	uint32_t alignment = 0xffff; //64kB aligned for erase
+	auto start_addr = random_address(0x01c00000, 0x01ffffff-test_length, alignment);
+	cout << "ERPOM: writing " << std::dec << test_length/(1 << 10) << " kB starting at " << hexn<8> << start_addr << "..... ";
+	cout.flush();
+	auto start = std::chrono::steady_clock::now();
+	write_flash(ip_addr.c_str(), start_addr, test_vec.data(), test_vec.size());
+	auto stop = std::chrono::steady_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop-start).count();
+	cout << "at " << static_cast<double>(test_length)/duration << " MB/s." << concol::RESET << endl;
+
+	//Check the data
+	bool passed = true;
+	uint32_t check_addr{start_addr};
+	for (size_t ct = 0; ct < test_length/(1<<10); ct++) {
+		//Read 1kB at a time
+		vector<uint32_t> check_vec(256, 0xdeadbeef);
+		read_flash(ip_addr.c_str(), check_addr, 256, check_vec.data());
+		for (auto val : check_vec){
+			if (val != test_vec[(check_addr-start_addr)/4]) {
+				passed &= false;
+			}
+			check_addr += 4;
+		}
+	}
+	REQUIRE(passed);
 	disconnect_APS(ip_addr.c_str());
 
 }

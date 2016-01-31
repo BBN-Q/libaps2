@@ -689,10 +689,11 @@ void APS2::write_flash(uint32_t addr, vector<uint32_t> & data) {
 
 	APS2Command cmd;
 	cmd.ack = 1;
+	cmd.sel = 1;
 	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::EPROMIO);
 	cmd.mode_stat = EPROM_RW;
 	auto dgs = APS2Datagram::chunk(cmd, addr, data, 0x0100); //max chunk_size is limited wrapping in Ethernet frames
-
+	FILE_LOG(logDEBUG1) << "Flash write chunked into " << dgs.size() << " datagrams.";
 	//Write 1 at a time so we can update progress
 	for (size_t ct = 0; ct < dgs.size(); ct++) {
 		ethernetRM_->send(deviceSerial_, {dgs[ct]});
@@ -709,7 +710,7 @@ void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
 		throw APS2_UNALIGNED_MEMORY_ACCESS;
 	}
 
-	FILE_LOG(logDEBUG) << "Erasing " << num_bytes << " bytes starting at EPROM address " << hexn<8> << start_addr;
+	FILE_LOG(logDEBUG) << "Erasing " << num_bytes / (1<10) << " kbytes starting at EPROM address " << hexn<8> << start_addr;
 
 	APS2Command cmd;
 	cmd.sel = 1;
