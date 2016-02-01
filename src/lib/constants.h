@@ -239,6 +239,7 @@ static const uint32_t INIT_STATUS_ADDR   = CSR_AXI_OFFSET + 19*4;
 static const uint32_t UPTIME_SECONDS_ADDR = CSR_AXI_OFFSET + 20*4;
 static const uint32_t UPTIME_NANOSECONDS_ADDR = CSR_AXI_OFFSET + 21*4;
 static const uint32_t FIRMWARE_VERSION_ADDR = CSR_AXI_OFFSET + 22*4;
+static const uint32_t TEMPERATURE_ADDR = CSR_AXI_OFFSET + 23*4;
 
 // TDM registers
 static const uint32_t TDM_RESETS_ADDR           = CSR_AXI_OFFSET + 0*4;

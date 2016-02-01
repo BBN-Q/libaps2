@@ -131,6 +131,15 @@ TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 		write_memory(ip_addr.c_str(), TRIGGER_INTERVAL_ADDR, &cur_val, 1);
 	}
 
+	SECTION("fpga temperature") {
+		double temp;
+		APS2_STATUS status;
+		status = get_fpga_temperature(ip_addr.c_str(), &temp);
+		REQUIRE( status == APS2_OK );
+		REQUIRE ( temp > 0 );
+		REQUIRE ( temp < 70 );
+	}
+
 	SECTION("variable write sizes") {
 		//Variable write sizes from 4 to 256 words
 		vector<uint32_t> outData, inData;
@@ -175,7 +184,16 @@ TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 		REQUIRE(passed);
 	}
 
-	SECTION("sequencer SDRAM write/read") {
+	disconnect_APS(ip_addr.c_str());
+
+}
+
+TEST_CASE("sequencer SDRAM write/read", "[sequencer SDRAM]") {
+
+	set_logging_level(logDEBUG3);
+	connect_APS(ip_addr.c_str());
+
+	SECTION("basic write/read") {
 		//Older firmware is too slow for long write tests
 		uint32_t firmware_version;
 		get_firmware_version(ip_addr.c_str(), &firmware_version);
@@ -192,8 +210,8 @@ TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 	}
 
 	disconnect_APS(ip_addr.c_str());
-
 }
+
 
 TEST_CASE("configuration SDRAM writing and reading", "[configuration SDRAM]") {
 

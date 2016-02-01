@@ -200,11 +200,18 @@ double APS2::get_fpga_temperature(){
 	/*
 	* Return the FGPA die temperature in C.
 	*/
-	//Read the status registers
-	APSStatusBank_t statusRegs = read_status_registers();
+	uint32_t temperature_reg;
+	if ( legacy_firmware ) {
+		//Read the status registers
+		APSStatusBank_t statusRegs = read_status_registers();
+		temperature_reg = statusRegs.userStatus;
+	} else {
+		//Read CSR register
+		temperature_reg = read_memory(TEMPERATURE_ADDR, 1).front();
+	}
 
 	//Temperature is return in bottom 12bits of user status and needs to be converted from the 12bit ADC value
-	double temp = static_cast<double>((statusRegs.userStatus & 0xfff))*503.975/4096 - 273.15;
+	double temp = static_cast<double>((temperature_reg & 0xfff))*503.975/4096 - 273.15;
 
 	//Don't return a stupid number of digits
 	//It seems the scale goes from 0-504K with 12bits = 0.12 degrees precision at best
