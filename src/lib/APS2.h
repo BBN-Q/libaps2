@@ -141,15 +141,7 @@ private:
 	unsigned samplingRate_;
 	MACAddr macAddr_;
 
-	//Read/Write commands
-	int write_command(const APSCommand_t &, const uint32_t & addr = 0, const bool & checkResponse = true);
-	vector<APS2EthernetPacket> read_packets(const size_t &);
-
 	void erase_flash(uint32_t, uint32_t);
-
-	//Single packet query
-	vector<APS2EthernetPacket> query(const APSCommand_t &, const uint32_t & addr = 0);
-	vector<APS2EthernetPacket> query(const APS2EthernetPacket &);
 
 	vector<uint32_t> build_DAC_SPI_msg(const CHIPCONFIG_IO_TARGET &, const vector<SPI_AddrData_t> &);
 	vector<uint32_t> build_PLL_SPI_msg(const vector<SPI_AddrData_t> &);

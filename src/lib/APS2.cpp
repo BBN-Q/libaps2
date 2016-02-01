@@ -827,32 +827,6 @@ void APS2::write_SPI_setup() {
  * Private Functions
  */
 
-int APS2::write_command(const APSCommand_t & command, const uint32_t & addr, const bool & checkResponse /* see header for default values*/){
-	/*
-	* Write a single command
-	*/
-	//TODO: figure out move constructor
-	APS2EthernetPacket packet(command, addr);
-	ethernetRM_->send(deviceSerial_, packet, checkResponse);
-	return 0;
-}
-
-vector<APS2EthernetPacket> APS2::read_packets(const size_t & numPackets) {
-	return ethernetRM_->receive(deviceSerial_, numPackets);
-}
-
-vector<APS2EthernetPacket> APS2::query(const APSCommand_t & command, const uint32_t & addr /* see header for default value = 0 */) {
-	//write-read ping-pong
-	write_command(command, addr, false);
-	return read_packets(1);
-}
-
-vector<APS2EthernetPacket> APS2::query(const APS2EthernetPacket & pkt) {
-	//write-read ping-pong
-	ethernetRM_->send(deviceSerial_, pkt, false);
-	return read_packets(1);
-}
-
 vector<uint32_t> APS2::build_DAC_SPI_msg(const CHIPCONFIG_IO_TARGET & target, const vector<SPI_AddrData_t> & addrData) {
 	vector<uint32_t> msg;
 	APSChipConfigCommand_t cmd;
