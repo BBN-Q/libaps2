@@ -1050,8 +1050,9 @@ void APS2::check_clocks_status() {
 	/*
 	 * Reads the locked status of the clock distribution PLL and the FPGA MMCM's (SYS_CLK, CFG_CLK and MEM_CLK)
 	 */
-	FILE_LOG(logDEBUG1) << "Entering APS2::check_clocks_status";
+	FILE_LOG(logDEBUG1) << "APS2::check_clocks_status";
 
+	//PLL chips are reported through status registers
 	APSStatusBank_t statusRegs = read_status_registers();
 
 	//First check the clock distribution PLL (the bottom three bits should be high)
@@ -1060,16 +1061,20 @@ void APS2::check_clocks_status() {
  		throw APS2_PLL_LOST_LOCK;
  	}
 
- 	//Now check the FPGA clocks
- 	if (statusRegs.userFirmwareVersion >= 0x212) {
-		FILE_LOG(logDEBUG1) << "User status: " << hexn<8> << statusRegs.userStatus;
-	 	bool clocksGood = true;
-	 	for (auto bit : {MMCM_SYS_LOCK_BIT, MMCM_CFG_LOCK_BIT, MIG_C0_LOCK_BIT, MIG_C0_CAL_BIT, MIG_C1_LOCK_BIT, MIG_C1_CAL_BIT}) {
-	 		clocksGood &= (statusRegs.userStatus >> bit) & 0x1;
-	 	}
-	 	if (!clocksGood) {
-	 		throw APS2_MMCM_LOST_LOCK;
-	 	}
+	//On board MMCM PLL's are reported either through user status or the PLL_STATUS_ADDR CSR register
+	uint32_t pll_status;
+	if (legacy_firmware) {
+		if (statusRegs.userFirmwareVersion < 0x212) return; //nothing to read
+		pll_status = statusRegs.userStatus;
+	 } else {
+		 pll_status = read_memory(PLL_STATUS_ADDR, 1).front();
+	 }
+	 bool clocksGood = true;
+	 for (auto bit : {MMCM_SYS_LOCK_BIT, MMCM_CFG_LOCK_BIT, MIG_C0_LOCK_BIT, MIG_C0_CAL_BIT, MIG_C1_LOCK_BIT, MIG_C1_CAL_BIT}) {
+		 clocksGood &= (pll_status >> bit) & 0x1;
+	 }
+	 if (!clocksGood) {
+		 throw APS2_MMCM_LOST_LOCK;
 	 }
 }
 
