@@ -69,8 +69,8 @@ void APS2Datagram::check_ack(const APS2Datagram & ack, bool legacy_firmware) con
 
 	//EPROM erases and writes
 	if ( (cmd.r_w == 0) && (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::EPROMIO) ) {
-		if ( ack.cmd.mode_stat != 0x00 ) {
-			FILE_LOG(logERROR) << "APS2 CPLD reported error mode/stat " << hexn<2> << ack.cmd.mode_stat;
+		if ( ack.cmd.mode_stat != EPROM_SUCCESS ) {
+			FILE_LOG(logERROR) << "APS2 CPLD reported error in EPROMIO mode/stat = " << hexn<2> << ack.cmd.mode_stat;
 			if ( cmd.mode_stat == 0x01 ) {
 				throw APS2_ERPOM_ERASE_FAILURE;
 			}
@@ -80,11 +80,20 @@ void APS2Datagram::check_ack(const APS2Datagram & ack, bool legacy_firmware) con
 
 	//chip config SPI writes
 	if ( (cmd.r_w == 0) && (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::CHIPCONFIGIO) ) {
-		if ( ack.cmd.mode_stat != 0x00 ) {
-			FILE_LOG(logERROR) << "APS2 CPLD reported error mode/stat " << hexn<2> << ack.cmd.mode_stat;
+		if ( ack.cmd.mode_stat != CHIPCONFIG_SUCCESS ) {
+			FILE_LOG(logERROR) << "APS2 CPLD reported error in CHIPCONFIGIO.  mode/stat = " << hexn<2> << ack.cmd.mode_stat;
 			throw APS2_COMMS_ERROR;
 		}
 	}
+
+	//chip config run
+	if ( (cmd.r_w == 0) && (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::RUNCHIPCONFIG) ) {
+		if ( ack.cmd.mode_stat != RUNCHIPCONFIG_SUCCESS ) {
+			FILE_LOG(logERROR) << "APS2 CPLD reported error in RUNCHIPCONFIG.  mode/stat =  " << hexn<2> << ack.cmd.mode_stat;
+			throw APS2_COMMS_ERROR;
+		}
+	}
+
 
 
 }

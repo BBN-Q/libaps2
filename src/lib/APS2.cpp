@@ -75,7 +75,6 @@ APS2_STATUS APS2::init(const bool & forceReload, const int & bitFileNum) {
 	if (host_type == TDM) {
 		return APS2_OK;
 	}
-	 //TODO: bitfiles will be stored in flash so all we need to do here is the DACs
 
 	get_sampleRate(); // to update state variable
 
@@ -271,6 +270,8 @@ void APS2::program_bitfile(uint32_t addr) {
 	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::FPGACONFIG_CTRL);
 	ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
 }
+
+
 
 // int APS2::program_FPGA(const string & bitFile) {
 // 	/**
@@ -1295,22 +1296,13 @@ void APS2::set_DAC_SD(const int & dac, const uint8_t & sd) {
 	write_SPI(msg);
 }
 
-int APS2::run_chip_config(const uint32_t & addr /* default = 0 */) {
+void APS2::run_chip_config(uint32_t addr /* default = 0 */) {
 	FILE_LOG(logINFO) << "Running chip config from address " << hexn<8> << addr;
 	// construct the chip config command
-	APS2EthernetPacket packet;
-	packet.header.command.r_w = 0;
-	packet.header.command.cmd =  static_cast<uint32_t>(APS_COMMANDS::RUNCHIPCONFIG);
-	packet.header.command.cnt = 0;
-	packet.header.addr = addr;
-	ethernetRM_->send(deviceSerial_, packet, false);
-
-	//Retrieve the data packet(s)
-	auto response = read_packets(1)[0];
-	if (response.header.command.mode_stat == RUNCHIPCONFIG_SUCCESS) {
-		FILE_LOG(logDEBUG1) << "Chip config successful";
-	}
-	return response.header.command.mode_stat;
+	APS2Command cmd;
+	cmd.ack = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::RUNCHIPCONFIG);
+	ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
 }
 
 void APS2::enable_DAC_FIFO(const int & dac) {
