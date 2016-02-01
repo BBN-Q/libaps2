@@ -37,40 +37,46 @@ static const int MAX_PHASE_TEST_CNT = 20;
 // 0xD0/0xD8 .......PLL Clock Generator Access (AD518-1)
 // 0xE0 ............VCXO Controller Access (CDC7005)
 // 0xFF ............End of list
-typedef union  {
+union APSChipConfigCommand_t {
 	struct {
 	uint32_t instr : 16; // SPI instruction for DAC, PLL instruction, or 0
 	uint32_t spicnt_data: 8; // data byte for single byte or SPI insruction
 	uint32_t target : 8;
 	};
 	uint32_t packed;
-} APSChipConfigCommand_t;
+	//TODO: sort out the default initialization and whether this is necessary
+	APSChipConfigCommand_t() {this->packed = 0;};
+};
 
 //PLL commands
 // INSTR<12..0> ......ADDR. Specifies the address of the register to read or write.
 // INSTR<14..13> .....W<1..0>. Specified transfer length. 00 = 1, 01 = 2, 10 = 3, 11 = stream
 // INSTR<15> .........R/W. Read/Write select. Read = 1, Write = 0.
-typedef union  {
+union PLLCommand_t {
 	struct {
 	uint16_t addr : 13;
 	uint16_t W  :  2;
 	uint16_t r_w : 1;
 	};
 	uint16_t packed;
-} PLLCommand_t;
+	//TODO: sort out the default initialization and whether this is necessary
+	PLLCommand_t() {this->packed = 0;};
+};
 
 //DAC Commands
 // INSTR<4..0> ......ADDR. Specifies the address of the register to read or write.
 // INSTR<6..5> ......N<1..0>. Specified transfer length. Only 00 = single byte mode supported.
 // INSTR<7> ..........R/W. Read/Write select. Read = 1, Write = 0.
-typedef union {
+union DACCommand_t {
 	struct {
 	uint8_t addr : 5;
 	uint8_t N  :  2;
 	uint8_t r_w : 1;
 	};
 	uint8_t packed;
-} DACCommand_t;
+	//TODO: sort out the default initialization and whether this is necessary
+	DACCommand_t() {this->packed = 0;};
+};
 
 static const uint16_t NUM_STATUS_REGISTERS = 16;
 

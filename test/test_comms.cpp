@@ -296,3 +296,21 @@ TEST_CASE("eprom read/write", "[eprom]") {
 	disconnect_APS(ip_addr.c_str());
 
 }
+
+TEST_CASE("SPI", "[SPI]") {
+
+	set_logging_level(logDEBUG3);
+	connect_APS(ip_addr.c_str());
+
+	SECTION("get_sampleRate") {
+		unsigned sample_rate;
+		APS2_STATUS status;
+		status = get_sampleRate(ip_addr.c_str(), &sample_rate);
+		REQUIRE( status == APS2_OK );
+		//expect 1200 for now
+		REQUIRE( sample_rate == 1200 );
+	}
+
+	disconnect_APS(ip_addr.c_str());
+
+}

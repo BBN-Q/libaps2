@@ -320,7 +320,7 @@ void APS2::set_sampleRate(const unsigned int & freq){
 }
 
 unsigned int APS2::get_sampleRate() {
-	FILE_LOG(logDEBUG2) << "get_sampleRate";
+	FILE_LOG(logDEBUG1) << "APS2::get_sampleRate";
 	samplingRate_ = get_PLL_freq();
 	return samplingRate_;
 }
@@ -603,32 +603,33 @@ vector<uint32_t> APS2::read_configuration_SDRAM(uint32_t addr, uint32_t num_word
 	return result.payload;
 }
 
-
 //SPI read/write
 void APS2::write_SPI(vector<uint32_t> & msg) {
+	FILE_LOG(logDEBUG1) << "APS2::write_SPI";
+
 	// push on "end of message"
-	APSChipConfigCommand_t cmd = {.packed=0};
+	APSChipConfigCommand_t cmd;
 	cmd.target = CHIPCONFIG_IO_TARGET_EOL;
 	msg.push_back(cmd.packed);
 
-	// build packet
-	APS2EthernetPacket packet;
-	packet.header.command.r_w = 0;
-	packet.header.command.cmd =  static_cast<uint32_t>(APS_COMMANDS::CHIPCONFIGIO);
-	packet.header.command.cnt = msg.size();
-	packet.payload = msg;
-
-	APS2EthernetPacket p = query(packet)[0];
-	// TODO: check ACK packet status
+	// build datagram
+	APS2Command cmd_bis;
+	cmd_bis.ack = 1;
+	cmd_bis.sel = 1; //necessary for newer firmware to demux to ApsMsgProc
+	cmd_bis.cmd = static_cast<uint32_t>(APS_COMMANDS::CHIPCONFIGIO);
+	auto dgs = APS2Datagram::chunk(cmd_bis, 0, msg, 0x100); //1kB chunks to fit in fake ethernet packet to ApsMsgProc
+	ethernetRM_->send(deviceSerial_, dgs);
 }
 
 uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & addr) {
-	// reads a single 32-bit word from the target SPI device
+	// reads a single byte from the target SPI device
+	FILE_LOG(logDEBUG1) << "APS2::read_SPI";
 
 	// build message
 	APSChipConfigCommand_t cmd;
-	DACCommand_t dacinstr = {.packed = 0};
-	PLLCommand_t pllinstr = {.packed = 0};
+	DACCommand_t dacinstr;
+	PLLCommand_t pllinstr;
+
 	// config target and instruction
 	switch (target) {
 		case CHIPCONFIG_TARGET_DAC_0:
@@ -657,29 +658,32 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & ad
 			return 0;
 	}
 	cmd.spicnt_data = 1; // request 1 byte
-	vector<uint32_t> msg = {cmd.packed};
-	// interface logic requires at least 3 bytes of data to return anything, so push on the same instruction twice more
-	msg.push_back(cmd.packed);
-	msg.push_back(cmd.packed);
-	msg.push_back(cmd.packed);
+
+	// interface logic requires at least 3 bytes of data to return anything, so push on the same instruction three more times more
+	vector<uint32_t> msg = {cmd.packed, cmd.packed, cmd.packed, cmd.packed};
 
 	// write the SPI read instruction
 	write_SPI(msg);
 
-	// build read packet
-	APS2EthernetPacket packet;
-	packet.header.command.r_w = 1;
-	packet.header.command.cmd = static_cast<uint32_t>(APS_COMMANDS::CHIPCONFIGIO);
-	packet.header.command.cnt = 1; // single word read
+	// build read datagram
+	APS2Command cmd_bis;
+	cmd_bis.r_w = 1;
+	cmd_bis.sel = 1; //necessary for newer firmware to demux to ApsMsgProc
+	cmd_bis.cmd = static_cast<uint32_t>(APS_COMMANDS::CHIPCONFIGIO);
+	cmd_bis.cnt = 1;
+	ethernetRM_->send(deviceSerial_, {{cmd_bis, 0, {}}});
 
-	APS2EthernetPacket response = query(packet)[0];
-	// TODO: Check status bits
-	if (response.payload.size() == 0) {
-		return 0;
-	} else {
-		FILE_LOG(logDEBUG4) << "read_SPI response payload = " << hexn<8> << response.payload[0] << endl;
-		return response.payload[0] >> 24; // first response is in MSB of 32-bit word
+	//Read the response
+	//We expect a single datagram back with a single word
+	auto result = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
+	if ( result.cmd.mode_stat != 0x00 ) {
+		FILE_LOG(logERROR) << "read_SPI response datagram reported error: " << result.cmd.mode_stat;
+		throw APS2_COMMS_ERROR;
 	}
+	if ( result.payload.size() != 1 ) {
+		FILE_LOG(logERROR) << "read_SPI response datagram unexpected size: expected 1, got " << result.payload.size();
+	}
+	return result.payload[0] >> 24; // first response is in MSB of 32-bit word
 }
 
 //Flash read/write
@@ -819,7 +823,7 @@ void APS2::write_SPI_setup() {
 	// push on "sleep" for 8*256*100ns = 0.205ms
 	msg.push_back(0x00000800);
 	// push on "end of message"
-	APSChipConfigCommand_t cmd = {.packed=0};
+	APSChipConfigCommand_t cmd;
 	cmd.target = CHIPCONFIG_IO_TARGET_EOL;
 	msg.push_back(cmd.packed);
 	write_flash(0x0, msg);
@@ -1104,13 +1108,12 @@ void APS2::check_clocks_status() {
 }
 
 int APS2::get_PLL_freq() {
-	// Poll APS2 PLL chip to determine current frequency
+	// Poll APS2 PLL chip to determine current frequency in MHz
+	FILE_LOG(logDEBUG1) << "APS2::get_PLL_freq";
 
 	int freq = 0;
 	uint16_t pll_cycles_addr = 0x190;
 	uint16_t pll_bypass_addr = 0x191;
-
-	FILE_LOG(logDEBUG3) << "get_PLL_freq";
 
 	uint32_t pll_cycles_val = read_SPI(CHIPCONFIG_TARGET_PLL, pll_cycles_addr);
 	uint32_t pll_bypass_val = read_SPI(CHIPCONFIG_TARGET_PLL, pll_bypass_addr);
@@ -1132,11 +1135,11 @@ int APS2::get_PLL_freq() {
 			case 0x11: freq = 300; break;
 			case 0x00: freq = 600; break;
 			default:
-				return -2;
+				return -1;
 		}
 	}
 
-	FILE_LOG(logDEBUG) << "PLL frequency for FPGA:  Freq: " << freq;
+	FILE_LOG(logDEBUG1) << "PLL frequency " << freq;
 
 	return freq;
 }
@@ -1590,7 +1593,7 @@ int APS2::set_offset_register(const int & dac, const float & offset) {
 }
 
 void APS2::set_bit(const uint32_t & addr, std::initializer_list<int> bits) {
-	uint32_t curReg = read_memory(addr, 1)[0];
+	uint32_t curReg = read_memory(addr, 1).front();
 	for (int bit : bits) {
 		curReg |= (1 << bit);
 	}
@@ -1598,7 +1601,7 @@ void APS2::set_bit(const uint32_t & addr, std::initializer_list<int> bits) {
 }
 
 void APS2::clear_bit(const uint32_t & addr, std::initializer_list<int> bits) {
-	uint32_t curReg = read_memory(addr, 1)[0];
+	uint32_t curReg = read_memory(addr, 1).front();
 	for (int bit : bits) {
 		curReg &= ~(1 << bit);
 	}

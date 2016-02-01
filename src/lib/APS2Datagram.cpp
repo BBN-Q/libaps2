@@ -59,7 +59,7 @@ void APS2Datagram::check_ack(const APS2Datagram & ack, bool legacy_firmware) con
 		}
 	}
 
-	//configuration SDRAM and EPROM writes
+	//configuration SDRAM  writes
 	if ( (cmd.r_w == 0) && (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::FPGACONFIG_ACK) ) {
 		if ( ack.cmd.mode_stat != 0x00 ) {
 			FILE_LOG(logERROR) << "APS2 CPLD reported error mode/stat " << hexn<2> << ack.cmd.mode_stat;
@@ -67,6 +67,7 @@ void APS2Datagram::check_ack(const APS2Datagram & ack, bool legacy_firmware) con
 		}
 	}
 
+	//EPROM erases and writes
 	if ( (cmd.r_w == 0) && (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::EPROMIO) ) {
 		if ( ack.cmd.mode_stat != 0x00 ) {
 			FILE_LOG(logERROR) << "APS2 CPLD reported error mode/stat " << hexn<2> << ack.cmd.mode_stat;
@@ -77,6 +78,13 @@ void APS2Datagram::check_ack(const APS2Datagram & ack, bool legacy_firmware) con
 		}
 	}
 
+	//chip config SPI writes
+	if ( (cmd.r_w == 0) && (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::CHIPCONFIGIO) ) {
+		if ( ack.cmd.mode_stat != 0x00 ) {
+			FILE_LOG(logERROR) << "APS2 CPLD reported error mode/stat " << hexn<2> << ack.cmd.mode_stat;
+			throw APS2_COMMS_ERROR;
+		}
+	}
 
 
 }

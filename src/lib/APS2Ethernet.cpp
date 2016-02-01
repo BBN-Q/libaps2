@@ -492,7 +492,8 @@ APS2Datagram APS2Ethernet::read(string ipAddr, std::chrono::milliseconds timeout
     if (!(
       (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::STATUS) ||   //Status register response has no address
       (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::FPGACONFIG_ACK) || //configuration SDRAM write/reads have no adddress
-      (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::EPROMIO) //configuration EPROM write/reads have no adddress
+      (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::EPROMIO) || //configuration EPROM write/reads have no adddress
+      (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::CHIPCONFIGIO) //chip config SPI commands have no address (built into command words)
       )) {
       read_with_timeout();
       addr = ntohl(buf[0]);
