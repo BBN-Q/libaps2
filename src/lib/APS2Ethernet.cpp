@@ -362,13 +362,15 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
     //Block until the acks come back
     for (const auto & dg : datagrams){
       if ( dg.cmd.ack ) {
-        auto ack = read(ipAddr, std::chrono::milliseconds(500));
+        //ERPOM writes take a long time otherwise should be able to get at least 1MB/s
+        auto timeout = (APS_COMMANDS(dg.cmd.cmd) == APS_COMMANDS::EPROMIO) ? std::chrono::milliseconds(1000) : std::chrono::milliseconds(250);
+        auto ack = read(ipAddr, timeout);
         FILE_LOG(logDEBUG3) << "APS2 acknowledge datagram: "  << hexn<8> << ack.cmd.packed << " " << ack.addr;
 
         //Error checking
 
         //axi memory writes mode_stat reports datamover status/tag
-        if ( (dg.cmd.r_w == 0) && (dg.cmd.cmd == 0x1) ) {
+        if ( (dg.cmd.r_w == 0) && (APS_COMMANDS(dg.cmd.cmd) == APS_COMMANDS::USERIO_ACK) ) {
           if ( (ack.cmd.mode_stat != 0x81) || (dg.addr != ack.addr) ) {
             FILE_LOG(logERROR) << "APS2 datamover reported error/tag code: " << hexn<2> << ack.cmd.mode_stat;
             throw APS2_COMMS_ERROR;
@@ -376,7 +378,7 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
         }
 
         //configuration SDRAM and EPROM writes
-        if ( (dg.cmd.r_w == 0) && (dg.cmd.cmd == 0x5) ) {
+        if ( (dg.cmd.r_w == 0) && ( (APS_COMMANDS(dg.cmd.cmd) == APS_COMMANDS::FPGACONFIG_ACK) || ((APS_COMMANDS(dg.cmd.cmd) == APS_COMMANDS::EPROMIO)) ) ) {
           if ( ack.cmd.mode_stat != 0x00 ) {
             FILE_LOG(logERROR) << "APS2 CPLD reported error mode/stat " << hexn<2> << ack.cmd.mode_stat;
             throw APS2_COMMS_ERROR;
@@ -504,7 +506,6 @@ APS2Datagram APS2Ethernet::read(string ipAddr, std::chrono::milliseconds timeout
     auto read_with_timeout = [&]() {
       std::future<size_t> read_result = tcp_sockets_[ipAddr]->async_receive(asio::buffer(buf), asio::use_future);
       if (read_result.wait_for(timeout) == std::future_status::timeout) {
-        tcp_sockets_[ipAddr]->cancel();
         FILE_LOG(logERROR) << "TCP receive timed out!";
         throw APS2_RECEIVE_TIMEOUT;
       }
