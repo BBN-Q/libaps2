@@ -176,8 +176,8 @@ APS2_STATUS disconnect_APS(const char* deviceSerial) {
 	return status;
 }
 
-APS2_STATUS reset(const char* deviceSerial, int resetMode) {
-	return aps2_call(deviceSerial, &APS2::reset, static_cast<APS_RESET_MODE_STAT>(resetMode));
+APS2_STATUS reset(const char* deviceSerial, int mode) {
+	return aps2_call(deviceSerial, &APS2::reset, static_cast<APS_RESET_MODE_STAT>(mode));
 }
 
 //Initialize an APS unit

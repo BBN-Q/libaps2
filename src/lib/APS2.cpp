@@ -50,34 +50,25 @@ void APS2::disconnect() {
 	}
 }
 
-void APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */) {
+void APS2::reset(APS_RESET_MODE_STAT mode /* default SOFT_RESET */) {
+	FILE_LOG(logDEBUG1) << "APS2::reset";
 
-	APSCommand_t command = { .packed=0 };
+	APS2Command cmd;
+	cmd.sel = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::RESET);
+	cmd.mode_stat = static_cast<uint32_t>(mode);
 
-	command.cmd = static_cast<uint32_t>(APS_COMMANDS::RESET);
-	command.mode_stat = static_cast<uint32_t>(resetMode);
-
-	uint32_t addr = 0;
-	if (resetMode == APS_RESET_MODE_STAT::RECONFIG_EPROM) {
+	//For EPROM reset we can specify the image to load
+	//Use user image for now
+	uint32_t addr{0};
+	if (mode == APS_RESET_MODE_STAT::RECONFIG_EPROM) {
 		addr = EPROM_USER_IMAGE_ADDR;
 	}
 
-	write_command(command, addr, false);
-	// After being reset the board should send an acknowledge packet with status bytes
-	std::this_thread::sleep_for(std::chrono::seconds(4));
-	int retrycnt = 0;
-	while (retrycnt < 3) {
-		try {
-			// poll status to see device reset
-			read_status_registers();
-			return;
-		} catch (std::exception &e) {
-			FILE_LOG(logDEBUG) << "Status timeout; retrying...";
-		}
-		retrycnt++;
-	}
+	//Send the command
+	ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
 
-	throw APS2_RESET_TIMEOUT;
+	//we expect to loose the connection at this point...
 }
 
 APS2_STATUS APS2::init(const bool & forceReload, const int & bitFileNum) {
