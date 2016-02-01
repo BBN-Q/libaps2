@@ -63,6 +63,8 @@ public:
 
   static vector<APS2Datagram> chunk(APS2Command, uint32_t, const vector<uint32_t>&, uint16_t);
 
+	void check_ack(const APS2Datagram &, bool legacy_firmware) const;
+
 };
 
 

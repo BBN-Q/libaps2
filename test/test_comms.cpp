@@ -103,7 +103,9 @@ TEST_CASE("enumeration", "[enumerate]"){
 
 TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 
+	set_logging_level(logDEBUG3);
 	connect_APS(ip_addr.c_str());
+
 	// init_APS(ip_addr.c_str(), 1);
 
 	SECTION("CSR register read"){
@@ -235,8 +237,8 @@ TEST_CASE("configuration SDRAM writing and reading", "[configuration SDRAM]") {
 
 TEST_CASE("eprom read/write", "[eprom]") {
 
-	connect_APS(ip_addr.c_str());
 	set_logging_level(logDEBUG3);
+	connect_APS(ip_addr.c_str());
 
 	SECTION("basic write/read") {
 		//test writing/reading 128kB

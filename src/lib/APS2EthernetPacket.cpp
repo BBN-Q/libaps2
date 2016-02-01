@@ -29,6 +29,7 @@ APS2EthernetPacket::APS2EthernetPacket(const vector<uint8_t> & packetData){
 		myOffset = 24;
 	}
 	else{
+		header.addr = 0;
 		myOffset = 20;
 	}
 	payload.clear();

@@ -362,29 +362,10 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
     //Block until the acks come back
     for (const auto & dg : datagrams){
       if ( dg.cmd.ack ) {
-        //ERPOM writes take a long time otherwise should be able to get at least 1MB/s
+        //ERPOM IO take a long time otherwise should be able to get at least 1MB/s
         auto timeout = (APS_COMMANDS(dg.cmd.cmd) == APS_COMMANDS::EPROMIO) ? std::chrono::milliseconds(1000) : std::chrono::milliseconds(250);
         auto ack = read(ipAddr, timeout);
-        FILE_LOG(logDEBUG3) << "APS2 acknowledge datagram: "  << hexn<8> << ack.cmd.packed << " " << ack.addr;
-
-        //Error checking
-
-        //axi memory writes mode_stat reports datamover status/tag
-        if ( (dg.cmd.r_w == 0) && (APS_COMMANDS(dg.cmd.cmd) == APS_COMMANDS::USERIO_ACK) ) {
-          if ( (ack.cmd.mode_stat != 0x81) || (dg.addr != ack.addr) ) {
-            FILE_LOG(logERROR) << "APS2 datamover reported error/tag code: " << hexn<2> << ack.cmd.mode_stat;
-            throw APS2_COMMS_ERROR;
-          }
-        }
-
-        //configuration SDRAM and EPROM writes
-        if ( (dg.cmd.r_w == 0) && ( (APS_COMMANDS(dg.cmd.cmd) == APS_COMMANDS::FPGACONFIG_ACK) || ((APS_COMMANDS(dg.cmd.cmd) == APS_COMMANDS::EPROMIO)) ) ) {
-          if ( ack.cmd.mode_stat != 0x00 ) {
-            FILE_LOG(logERROR) << "APS2 CPLD reported error mode/stat " << hexn<2> << ack.cmd.mode_stat;
-            throw APS2_COMMS_ERROR;
-          }
-        }
-
+        dg.check_ack(ack, false);
       }
     }
 
@@ -412,10 +393,12 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
 
 int APS2Ethernet::send(string serial, APS2EthernetPacket msg, bool checkResponse) {
     msg.header.dest = devInfo_[serial].macAddr;
-    return send_chunk(serial, vector<APS2EthernetPacket>(1, msg), !checkResponse);
+    send_chunk(serial, vector<APS2EthernetPacket>(1, msg), !checkResponse);
+    return 0;
 }
 
 int APS2Ethernet::send(string serial, vector<APS2EthernetPacket> msg, unsigned ackEvery /* see header for default */) {
+    FILE_LOG(logDEBUG1) << "APS2Ethernet::send";
     FILE_LOG(logDEBUG3) << "Sending " << msg.size() << " packets to " << serial;
     auto iter = msg.begin();
     bool noACK = false;
@@ -451,10 +434,7 @@ int APS2Ethernet::send(string serial, vector<APS2EthernetPacket> msg, unsigned a
             buffer.back().header.command.cmd &= ~(1 << 3);
         }
 
-        auto result = send_chunk(serial, buffer, noACK);
-        if (result != 0) {
-            return result;
-        }
+        send_chunk(serial, buffer, noACK);
         std::advance(iter, chunkSize);
 
         if (verbose && (std::distance(msg.begin(), iter) % 1000 == 0)) {
@@ -464,37 +444,29 @@ int APS2Ethernet::send(string serial, vector<APS2EthernetPacket> msg, unsigned a
     return 0;
 }
 
-int APS2Ethernet::send_chunk(string serial, vector<APS2EthernetPacket> chunk, bool noACK) {
+void APS2Ethernet::send_chunk(string serial, vector<APS2EthernetPacket> chunk, bool noACK) {
+    FILE_LOG(logDEBUG1) << "APS2Ethernet::send_chunk";
 
-    unsigned seqNum, retryct = 0;
+    unsigned seqNum{0};
 
-    while (retryct++ < 3) {
-        seqNum = 0;
-        for (auto packet : chunk) {
-            packet.header.seqNum = seqNum;
-            seqNum++;
-            FILE_LOG(logDEBUG4) << "Packet command: " << print_APSCommand(packet.header.command);
-            udp_socket_old_.send_to(asio::buffer(packet.serialize()), devInfo_[serial].endpoint);
-            // sleep to make the driver compatible with newer versions of Windows
-            // std::this_thread::sleep_for(std::chrono::microseconds(100));
-        }
-
-        if (noACK) break;
-        //Wait for acknowledge
-        //TODO: how to check response mode/stat for success?
-        try {
-            auto response = receive(serial)[0];
-            break;
-        }
-        catch (std::exception& e) {
-            FILE_LOG(logDEBUG) << "No acknowledge received, retrying ...";
-        }
+    seqNum = 0;
+    for (auto packet : chunk) {
+        packet.header.seqNum = seqNum;
+        seqNum++;
+        FILE_LOG(logDEBUG4) << "Packet command: " << print_APSCommand(packet.header.command);
+        udp_socket_old_.send_to(asio::buffer(packet.serialize()), devInfo_[serial].endpoint);
+        // sleep to make the driver compatible with newer versions of Windows
+        // std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
 
-    if (retryct == 3) {
-        return -1;
-    }
-    return 0;
+    if (noACK) return;
+
+    //Wait for acknowledge from final packet in chunk and error check
+    auto ack = read(serial, std::chrono::seconds(1));
+    APS2Datagram dg;
+    dg.cmd.packed = chunk.back().header.command.packed;
+    dg.addr = chunk.back().header.addr;
+    dg.check_ack(ack, true);
 }
 
 APS2Datagram APS2Ethernet::read(string ipAddr, std::chrono::milliseconds timeout) {

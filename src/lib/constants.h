@@ -6,8 +6,10 @@
  */
 
 #include <vector>
-
 using std::vector;
+#include <cstdlib> //size_t
+
+#include "logger.h"
 
 #ifndef CONSTANTS_H_
 #define CONSTANTS_H_

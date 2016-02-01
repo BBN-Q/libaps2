@@ -71,7 +71,7 @@ private:
 
 	void sort_packet(const vector<uint8_t> &, const udp::endpoint &);
 
-	int send_chunk(string, vector<APS2EthernetPacket>, bool);
+	void send_chunk(string, vector<APS2EthernetPacket>, bool);
 
 	// storage for received packets
  	uint8_t receivedData_[2048];

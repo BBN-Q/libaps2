@@ -713,6 +713,7 @@ void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
 	FILE_LOG(logDEBUG) << "Erasing " << num_bytes / (1<10) << " kbytes starting at EPROM address " << hexn<8> << start_addr;
 
 	APS2Command cmd;
+	cmd.ack = 1;
 	cmd.sel = 1;
 	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::EPROMIO);
 	cmd.mode_stat = EPROM_ERASE;
@@ -723,12 +724,6 @@ void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
 	do {
 		FILE_LOG(logDEBUG2) << "Erasing 64kB page at EPROM addr " << hexn<8> << addr;
 		ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
-		//Check for ack with success status
-		auto ack = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
-		if (ack.cmd.mode_stat == EPROM_OPERATION_FAILED) {
-			FILE_LOG(logERROR) << "EPROM erase command failed";
-			throw APS2_ERPOM_ERASE_FAILURE;
-		}
 		addr += (1<<16);
 		flash_erase_percent_done = (addr <= end_addr) ? 100 * ( (addr - start_addr) / num_bytes ) : 100;
 	} while(addr < end_addr);
