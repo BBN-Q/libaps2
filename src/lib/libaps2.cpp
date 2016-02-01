@@ -370,14 +370,22 @@ APS2_STATUS read_configuration_SDRAM(const char* ip_addr, uint32_t addr, uint32_
 	return APS2_OK;
 }
 
-int write_flash(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
+APS2_STATUS write_flash(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
 	return aps2_call(deviceSerial, &APS2::write_flash, addr, vector<uint32_t>(data, data + numWords));
 }
 
-int read_flash(const char* deviceSerial, uint32_t addr, uint32_t numWords, uint32_t* data) {
-	auto readData = APSs[string(deviceSerial)].read_flash(addr, numWords);
-	std::copy(readData.begin(), readData.end(), data);
-	return 0;
+APS2_STATUS read_flash(const char* deviceSerial, uint32_t addr, uint32_t numWords, uint32_t* data) {
+	try {
+		auto readData = APSs[string(deviceSerial)].read_flash(addr, numWords);
+		std::copy(readData.begin(), readData.end(), data);
+	}
+	catch (APS2_STATUS status) {
+		return status;
+	}
+	catch (...) {
+		return APS2_UNKNOWN_ERROR;
+	}
+	return APS2_OK;
 }
 
 uint64_t get_mac_addr(const char* deviceSerial) {

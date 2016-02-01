@@ -238,36 +238,41 @@ TEST_CASE("eprom read/write", "[eprom]") {
 	connect_APS(ip_addr.c_str());
 	set_logging_level(logDEBUG3);
 
-	//test writing/reading 128kB
-	size_t test_length = 128*(1<<10);
-	auto test_vec = random_data(test_length/4);
-	//backup image starts at 16MB or 0x01000000 and should be no more than 10MB
-	//so test between 28 and 32MB
-	uint32_t alignment = 0xffff; //64kB aligned for erase
-	auto start_addr = random_address(0x01c00000, 0x01ffffff-test_length, alignment);
-	cout << "ERPOM: writing " << std::dec << test_length/(1 << 10) << " kB starting at " << hexn<8> << start_addr << "..... ";
-	cout.flush();
-	auto start = std::chrono::steady_clock::now();
-	write_flash(ip_addr.c_str(), start_addr, test_vec.data(), test_vec.size());
-	auto stop = std::chrono::steady_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop-start).count();
-	cout << "at " << static_cast<double>(test_length)/duration << " MB/s." << concol::RESET << endl;
+	SECTION("basic write/read") {
+		//test writing/reading 128kB
+		size_t test_length = 128*(1<<10);
+		auto test_vec = random_data(test_length/4);
+		//backup image starts at 16MB or 0x01000000 and should be no more than 10MB
+		//so test between 28 and 32MB
+		uint32_t alignment = 0xffff; //64kB aligned for erase
+		auto start_addr = random_address(0x01c00000, 0x01ffffff-test_length, alignment);
+		cout << "ERPOM: writing " << std::dec << test_length/(1 << 10) << " kB starting at " << hexn<8> << start_addr << "..... ";
+		cout.flush();
+		auto start = std::chrono::steady_clock::now();
+		APS2_STATUS status;
+		status = write_flash(ip_addr.c_str(), start_addr, test_vec.data(), test_vec.size());
+		REQUIRE(status == APS2_OK);
+		auto stop = std::chrono::steady_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop-start).count();
+		cout << "at " << static_cast<double>(test_length)/duration << " MB/s." << concol::RESET << endl;
 
-	//Check the data
-	bool passed = true;
-	uint32_t check_addr{start_addr};
-	for (size_t ct = 0; ct < test_length/(1<<10); ct++) {
-		//Read 1kB at a time
-		vector<uint32_t> check_vec(256, 0xdeadbeef);
-		read_flash(ip_addr.c_str(), check_addr, 256, check_vec.data());
-		for (auto val : check_vec){
-			if (val != test_vec[(check_addr-start_addr)/4]) {
-				passed &= false;
+		//Check the data
+		bool passed = true;
+		uint32_t check_addr{start_addr};
+		for (size_t ct = 0; ct < test_length/(1<<10); ct++) {
+			//Read 1kB at a time
+			vector<uint32_t> check_vec(256, 0xdeadbeef);
+			read_flash(ip_addr.c_str(), check_addr, 256, check_vec.data());
+			for (auto val : check_vec){
+				if (val != test_vec[(check_addr-start_addr)/4]) {
+					passed &= false;
+				}
+				check_addr += 4;
 			}
-			check_addr += 4;
 		}
+		REQUIRE(passed);
 	}
-	REQUIRE(passed);
+
 	disconnect_APS(ip_addr.c_str());
 
 }
