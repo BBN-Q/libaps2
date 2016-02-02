@@ -107,8 +107,9 @@ public:
 	void write_flash(uint32_t, vector<uint32_t> &);
 	vector<uint32_t> read_flash(uint32_t, uint32_t);
 
-	double flash_erase_percent_done;
-	double flash_write_percent_done;
+	double flash_erase_done;
+	double flash_write_done;
+	double flash_validate_done;
 
 	//MAC and IP addresses
 	uint64_t get_mac_addr();

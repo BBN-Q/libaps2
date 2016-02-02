@@ -273,6 +273,7 @@ void APS2Ethernet::reset_maps() {
 }
 
 void APS2Ethernet::connect(string serial) {
+  FILE_LOG(logDEBUG) << "APS2Ethernet::connect";
 
   //Check whether we have device info and if not send a ping
   if (devInfo_.find(serial) == devInfo_.end()) {
@@ -312,6 +313,7 @@ void APS2Ethernet::connect(string serial) {
     // lowly C++11
     std::unique_ptr<tcp::socket> sock(new tcp::socket(ios_));
     asio::error_code ec;
+    FILE_LOG(logDEBUG1) << "Trying to connect to TCP port";
     sock->connect(tcp::endpoint(asio::ip::address_v4::from_string(serial), TCP_PORT), ec);
     if (ec) {
       FILE_LOG(logERROR) << "Failed to connect to " << serial << " with error: " << ec.message();

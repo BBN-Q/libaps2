@@ -352,6 +352,10 @@ APS2_STATUS write_bitfile(const char* deviceSerial, const char* bitFile, uint32_
 	return aps2_call(deviceSerial, &APS2::write_bitfile, string(bitFile), addr, media);
 }
 
+APS2_STATUS program_bitfile(const char* deviceSerial, uint32_t addr) {
+	return aps2_call(deviceSerial, &APS2::program_bitfile, addr);
+}
+
 APS2_STATUS write_configuration_SDRAM(const char* ip_addr, uint32_t addr, uint32_t* data, uint32_t num_words){
 	return aps2_call(ip_addr, &APS2::write_configuration_SDRAM, addr, vector<uint32_t>(data, data + num_words));
 }
@@ -387,6 +391,19 @@ APS2_STATUS read_flash(const char* deviceSerial, uint32_t addr, uint32_t numWord
 	}
 	return APS2_OK;
 }
+
+double get_flash_erase_done(const char* deviceSerial){
+	return APSs[string(deviceSerial)].flash_erase_done;
+}
+
+double get_flash_write_done(const char* deviceSerial){
+	return APSs[string(deviceSerial)].flash_write_done;
+}
+
+double get_flash_validate_done(const char* deviceSerial){
+	return APSs[string(deviceSerial)].flash_validate_done;
+}
+
 
 uint64_t get_mac_addr(const char* deviceSerial) {
 	return APSs[string(deviceSerial)].get_mac_addr();

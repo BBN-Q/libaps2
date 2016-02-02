@@ -23,7 +23,8 @@ enum APS2_STATUS {
 	APS2_INVALID_IP_ADDR = -18,
 	APS2_COMMS_ERROR = -19,
 	APS2_UNALIGNED_MEMORY_ACCESS = -20,
-	APS2_ERPOM_ERASE_FAILURE = -21
+	APS2_ERPOM_ERASE_FAILURE = -21,
+	APS2_BITFILE_VALIDATION_FAILURE = -22,
 };
 
 
@@ -50,7 +51,9 @@ static std::map<APS2_STATUS, std::string> messages = {
 	{APS2_SOCKET_FAILURE, "Failed to open ethernet socket. Verify that no dangling libaps2 processes are running."},
 	{APS2_INVALID_IP_ADDR, "Requested conneciton to invalid IPv4 address."},
 	{APS2_COMMS_ERROR, "Ethernet communications failed."},
-	{APS2_UNALIGNED_MEMORY_ACCESS, "SDRAM memory must be accessed at 8 (configuration) or 16 (sequence/waveform) byte boundaries."}
+	{APS2_UNALIGNED_MEMORY_ACCESS, "SDRAM memory must be accessed at 8 (configuration) or 16 (sequence/waveform) byte boundaries."},
+	{APS2_ERPOM_ERASE_FAILURE, "ERPOM erase command failed"},
+	{APS2_BITFILE_VALIDATION_FAILURE, "bitfile validation failed"}
 };
 
 

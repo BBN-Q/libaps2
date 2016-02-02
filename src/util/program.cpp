@@ -1,5 +1,6 @@
 #include <iostream>
-#include <stdexcept>
+#include <thread>
+#include <future>
 
 #include "headings.h"
 #include "libaps2.h"
@@ -57,6 +58,20 @@ PROGRAM_TARGET get_target() {
   }
 }
 
+void progress_bar(string label, double percent ){
+  std::string bar(50, ' ');
+
+  size_t str_pos = static_cast<size_t>(percent*50);
+  bar.replace(0, str_pos, str_pos, '=');
+  if (str_pos < bar.size()) {
+    bar.replace(str_pos, 1, 1, '>');
+  }
+
+  cout << label;
+  cout << std::setw(3) << static_cast<int>(100*percent) << "% [" << bar << "] ";
+  cout << "\r" << std::flush;
+}
+
 int main (int argc, char* argv[])
 {
 
@@ -83,9 +98,9 @@ int main (int argc, char* argv[])
   for (int i = 0; i < parse.nonOptionsCount(); ++i)
    std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
-  string bit_file;
+  string bitfile;
   if (options[BIT_FILE]) {
-    bit_file = string(options[BIT_FILE].arg);
+    bitfile = string(options[BIT_FILE].arg);
   }
   else {
     std::cerr << "Bitfile option is required." << endl;
@@ -97,7 +112,6 @@ int main (int argc, char* argv[])
   if (options[LOG_LEVEL]) {
     logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
   }
-  set_log("stdout");
   set_logging_level(logLevel);
 
   string deviceSerial;
@@ -130,29 +144,117 @@ int main (int argc, char* argv[])
 
   connect_APS(deviceSerial.c_str());
 
+  uint32_t target_addr;
   switch (target) {
     case TARGET_EPROM:
       cout << concol::RED << "Reprogramming user EPROM image" << concol::RESET << endl;
-      write_bitfile(deviceSerial.c_str(), bit_file.c_str(), EPROM_USER_IMAGE_ADDR, BITFILE_MEDIA_EPROM);
+      target_addr = EPROM_USER_IMAGE_ADDR;
       break;
     case TARGET_EPROM_BACKUP:
       cout << concol::RED << "Reprogramming backup EPROM image" << concol::RESET << endl;
-      write_bitfile(deviceSerial.c_str(), bit_file.c_str(), EPROM_BASE_IMAGE_ADDR, BITFILE_MEDIA_EPROM);
+      target_addr = EPROM_BASE_IMAGE_ADDR;
       break;
     case TARGET_DRAM:
       cout << concol::RED << "Reprogramming DRAM image" << concol::RESET << endl;
-      write_bitfile(deviceSerial.c_str(), bit_file.c_str(), 0, BITFILE_MEDIA_DRAM);
+      //default to address 0 for now
+      target_addr = 0;
       break;
   }
 
-  //TODO: disconnect and reconnect
-  
-  uint32_t newVersion;
-  get_firmware_version(deviceSerial.c_str(), &newVersion);
-  cout << concol::RED << "Device came up with firmware version: " << hexn<4> << newVersion << endl;
+  switch (target) {
+    case TARGET_EPROM:
+    case TARGET_EPROM_BACKUP:
+    {
+      auto thread_future = std::async(std::launch::async, [deviceSerial, bitfile, target_addr]() {
+        return write_bitfile(deviceSerial.c_str(), bitfile.c_str(), target_addr, BITFILE_MEDIA_EPROM);
+      });
+
+      //First report erase percentage
+      double percentage;
+      do {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        //Make sure we haven't return prematurely
+        auto thread_status = thread_future.wait_for(std::chrono::milliseconds(0));
+        if ( thread_status == std::future_status::ready ) {
+          auto status = thread_future.get();
+          if ( status == APS2_OK ) {
+            break;
+          } else {
+            std::cerr << "Writing bit file failed with error message: " << get_error_msg(status) << endl;
+            disconnect_APS(deviceSerial.c_str());
+            return -1;
+          }
+        }
+        percentage = get_flash_erase_done(deviceSerial.c_str());
+        progress_bar("Erasing: ", percentage);
+      } while(percentage < (1-1e-6));
+      cout << endl;
+
+      //Now write percentage
+      do {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        //Make sure we haven't return prematurely
+        auto thread_status = thread_future.wait_for(std::chrono::milliseconds(0));
+        if ( thread_status == std::future_status::ready ) {
+          auto status = thread_future.get();
+          if ( status == APS2_OK ) {
+            break;
+          } else {
+            std::cerr << "Writing bit file failed with error message: " << get_error_msg(status) << endl;
+            disconnect_APS(deviceSerial.c_str());
+            return -1;
+          }
+        }
+        percentage = get_flash_write_done(deviceSerial.c_str());
+        progress_bar("Writing: ", percentage);
+      } while(percentage < (1-1e-6));
+      cout << endl;
+
+      //Now validation percentage
+      do {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        //Make sure we haven't return prematurely
+        auto thread_status = thread_future.wait_for(std::chrono::milliseconds(0));
+        if ( thread_status == std::future_status::ready ) {
+          auto status = thread_future.get();
+          if ( status == APS2_OK ) {
+            break;
+          } else {
+            std::cerr << "Writing bit file failed with error message: " << get_error_msg(status) << endl;
+            disconnect_APS(deviceSerial.c_str());
+            return -1;
+          }
+        }
+        percentage = get_flash_validate_done(deviceSerial.c_str());
+        progress_bar("Validating: ", percentage);
+      } while(percentage < (1-1e-6));
+      cout << endl;
+      break;
+    }
+    case TARGET_DRAM:
+      write_bitfile(deviceSerial.c_str(), bitfile.c_str(), target_addr, BITFILE_MEDIA_DRAM);
+      cout << concol::RED << "Booting from DRAM image" << endl;
+      program_bitfile(deviceSerial.c_str(), target_addr);
+      //APS will drop connection so disconnect wait and reconnect
+      disconnect_APS(deviceSerial.c_str());
+      std::this_thread::sleep_for(std::chrono::seconds(5));
+
+      APS2_STATUS status;
+      status = connect_APS(deviceSerial.c_str());
+
+      if ( status != APS2_OK ) {
+        std::cerr << "APS2 failed to come back up after programming!" << endl;
+        return -1;
+      }
+
+      uint32_t newVersion;
+      get_firmware_version(deviceSerial.c_str(), &newVersion);
+      cout << concol::RED << "Device came up with firmware version: " << hexn<4> << newVersion << endl;
+      break;
+    }
+
 
   disconnect_APS(deviceSerial.c_str());
-
   cout << concol::RED << "Finished!" << concol::RESET << endl;
 
   return 0;

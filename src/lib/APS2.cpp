@@ -11,6 +11,7 @@ APS2::APS2(string deviceSerial) :  isOpen{false}, legacy_firmware{false}, device
 APS2::~APS2() = default;
 
 void APS2::connect(shared_ptr<APS2Ethernet> && ethernetRM) {
+	FILE_LOG(logDEBUG) << "APS2::connect";
 	//Hold on to APS2Ethernet class to keep socket alive
 	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
@@ -210,7 +211,7 @@ double APS2::get_fpga_temperature(){
 	return temp;
 }
 
-void APS2::write_bitfile(const string & bitFile, uint32_t addr, BITFILE_STORAGE_MEDIA media) {
+void APS2::write_bitfile(const string & bitFile, uint32_t start_addr, BITFILE_STORAGE_MEDIA media) {
 	//Write a bitfile to either configuration DRAM or ERPOM starting at specified address
 	FILE_LOG(logDEBUG1) << "APS2::write_bitfile";
 
@@ -251,11 +252,36 @@ void APS2::write_bitfile(const string & bitFile, uint32_t addr, BITFILE_STORAGE_
 
 	switch (media) {
 		case BITFILE_MEDIA_DRAM:
-			write_configuration_SDRAM(addr, bitfile_words);
+			write_configuration_SDRAM(start_addr, bitfile_words);
 			break;
 		case BITFILE_MEDIA_EPROM:
-			write_flash(addr, bitfile_words);
+			write_flash(start_addr, bitfile_words);
 			break;
+	}
+
+	//Now validate bitfile data (EPROM only for now)
+	//TODO: DRAM as well?
+	flash_validate_done = 0;
+	if (media == BITFILE_MEDIA_EPROM) {
+		uint32_t end_addr = start_addr + 4*bitfile_words.size();
+		uint32_t addr{start_addr};
+		do {
+			uint16_t read_length;
+			//Read up to 1kB at a time
+			if ((end_addr - addr) >= (1 << 10)) {
+				read_length = 256;
+			} else {
+				read_length = (end_addr - addr)/4;
+			}
+			auto check_vec = read_flash(addr, read_length);
+			for (size_t ct = 0; ct < read_length; ct++) {
+				if (check_vec[ct] != bitfile_words[(addr-start_addr)/4]) {
+					throw APS2_BITFILE_VALIDATION_FAILURE;
+				}
+				addr += 4;
+			}
+			flash_validate_done = static_cast<double>(addr - start_addr) / (end_addr-start_addr);
+		} while(addr < end_addr);
 	}
 }
 
@@ -270,34 +296,6 @@ void APS2::program_bitfile(uint32_t addr) {
 	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::FPGACONFIG_CTRL);
 	ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
 }
-
-
-
-// int APS2::program_FPGA(const string & bitFile) {
-// 	/**
-// 	 * @param bitFile path to a Xilinx bit file
-// 	 * @param expectedVersion - checks whether version register matches this value after programming. -1 = skip the check
-// 	 */
-// 	store_image(bitFile);
-// 	int success = select_image(0);
-// 	if (success != 0)
-// 		return success;
-//
-// 	std::this_thread::sleep_for(std::chrono::seconds(4));
-//
-// 	int retrycnt = 0;
-// 	while (retrycnt < 3) {
-// 		try {
-// 			// poll status to see device reset
-// 			read_status_registers();
-// 			return APS2_OK;
-// 		} catch (std::exception &e) {
-// 			FILE_LOG(logDEBUG) << "Status timeout; retrying...";
-// 		}
-// 		retrycnt++;
-// 	}
-// 	return APS2_RESET_TIMEOUT;
-// }
 
 void APS2::set_sampleRate(const unsigned int & freq){
 	if (samplingRate_ != freq){
@@ -681,6 +679,7 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & ad
 //Flash read/write
 void APS2::write_flash(uint32_t addr, vector<uint32_t> & data) {
 	FILE_LOG(logDEBUG1) << "APS2::write_flash";
+	flash_write_done = 0;
 
 	// erase before write
 	erase_flash(addr, sizeof(uint32_t) * data.size());
@@ -700,12 +699,13 @@ void APS2::write_flash(uint32_t addr, vector<uint32_t> & data) {
 	//Write 1 at a time so we can update progress
 	for (size_t ct = 0; ct < dgs.size(); ct++) {
 		ethernetRM_->send(deviceSerial_, {dgs[ct]});
-		flash_write_percent_done = 100*(static_cast<double>(ct)/static_cast<double>(dgs.size()));
+		flash_write_done = static_cast<double>(ct+1)/static_cast<double>(dgs.size());
 	}
 }
 
 void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
 	FILE_LOG(logDEBUG1) << "APS2::erase_flash";
+	flash_erase_done = 0;
 
 	// each erase command erases 64 KB of data starting at addr
 	if ((start_addr % (1 << 16)) != 0){
@@ -723,12 +723,11 @@ void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
 
 	uint32_t addr{start_addr};
 	uint32_t end_addr{start_addr+num_bytes};
-	flash_erase_percent_done = 0;
 	do {
 		FILE_LOG(logDEBUG2) << "Erasing 64kB page at EPROM addr " << hexn<8> << addr;
 		ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
 		addr += (1<<16);
-		flash_erase_percent_done = (addr <= end_addr) ? 100 * ( (addr - start_addr) / num_bytes ) : 100;
+		flash_erase_done = static_cast<double>(addr - start_addr) / num_bytes;
 	} while(addr < end_addr);
 }
 
