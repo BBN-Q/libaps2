@@ -510,7 +510,7 @@ APS2Datagram APS2Ethernet::read(string ipAddr, std::chrono::milliseconds timeout
         val = ntohl(val);
       }
     }
-    FILE_LOG(logDEBUG3) << "Read APS2Datagram " << hexn<8> << cmd.packed << " " << addr << " and payload length " << std::dec << buf.size();
+    FILE_LOG(logDEBUG3) << "Read APS2Datagram " << hexn<8> << cmd.packed << " " << hexn<8> << addr << " and payload length " << std::dec << buf.size();
     return {cmd, addr, buf};
 
   } else {
@@ -519,6 +519,7 @@ APS2Datagram APS2Ethernet::read(string ipAddr, std::chrono::milliseconds timeout
     //strip off the ethernet header
     APS2Command cmd;
     cmd.packed = pkt.header.command.packed;
+    FILE_LOG(logDEBUG3) << "Read APS2Datagram " << hexn<8> << cmd.packed << " " << hexn<8> << pkt.header.addr << " and payload length " << std::dec << pkt.payload.size();
     return {cmd, pkt.header.addr, pkt.payload};
   }
 }
