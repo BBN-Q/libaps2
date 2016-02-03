@@ -277,20 +277,16 @@ TEST_CASE("eprom read/write", "[eprom]") {
 		cout << "at " << static_cast<double>(test_length)/duration << " MB/s." << concol::RESET << endl;
 
 		//Check the data
-		bool passed = true;
 		uint32_t check_addr{start_addr};
-		for (size_t ct = 0; ct < test_length/(1<<10); ct++) {
-			//Read 1kB at a time
-			vector<uint32_t> check_vec(256, 0xdeadbeef);
-			read_flash(ip_addr.c_str(), check_addr, 256, check_vec.data());
-			for (auto val : check_vec){
-				if (val != test_vec[(check_addr-start_addr)/4]) {
-					passed &= false;
-				}
-				check_addr += 4;
-			}
+		vector<uint32_t> check_vec(test_vec.size(), 0xdeadbeef);
+		auto it = check_vec.begin();
+		while (check_addr < start_addr + test_length) {
+			read_flash(ip_addr.c_str(), check_addr, 256, &*it); //ugly maybe std::pointer_from will exist some day
+			vector<uint32_t> chunk(it, it+256);
+			std::advance(it, 256);
+			check_addr += 256*4;
 		}
-		REQUIRE(passed);
+		REQUIRE( check_vec == test_vec );
 	}
 
 	disconnect_APS(ip_addr.c_str());
