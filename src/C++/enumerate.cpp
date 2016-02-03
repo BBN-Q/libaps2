@@ -31,23 +31,28 @@ int main(int argc, char* argv[])
 
   for (unsigned ct=0; ct < numDevices; ct++) {
 		connect_APS(serialBuffer[ct]);
-		uint32_t firmware_version;
+		uint32_t firmware_version{0};
 		get_firmware_version(serialBuffer[ct], &firmware_version);
-		double uptime;
+		double uptime{0};
 		get_uptime(serialBuffer[ct], &uptime);
 		std::chrono::duration<float> uptime_seconds(uptime);
 		auto uptime_days = std::chrono::duration_cast<std::chrono::duration<int, std::ratio<24*3600>>>(uptime_seconds);
 
 		std::ostringstream uptime_pretty;
 		if (uptime_days.count()) {
-			uptime_pretty << uptime_days.count() << " day" << (uptime_days.count() > 1 ? "s" : "") << " ";
+			uptime_pretty << uptime_days.count() << " day" << (uptime_days.count() > 1 ? "s " : " ");
 		}
 		uptime_seconds -= uptime_days;
 		auto uptime_hours = std::chrono::duration_cast<std::chrono::hours>(uptime_seconds);
 		if (uptime_hours.count()) {
-			uptime_pretty << uptime_hours.count() << " hours ";
+			uptime_pretty << uptime_hours.count() << " hour" << (uptime_hours.count() > 1 ? "s " : " ");
 		}
 		uptime_seconds -= uptime_hours;
+		auto uptime_minutes = std::chrono::duration_cast<std::chrono::minutes>(uptime_seconds);
+		if (uptime_minutes.count()) {
+			uptime_pretty << uptime_minutes.count() << " minute" << (uptime_minutes.count() > 1 ? "s " : " ");
+		}
+		uptime_seconds -= uptime_minutes;
 		uptime_pretty << uptime_seconds.count() << " seconds";
 
     cout << concol::CYAN << "Device " << ct << " at IPv4 address " << serialBuffer[ct] <<
