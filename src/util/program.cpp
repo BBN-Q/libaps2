@@ -233,12 +233,15 @@ int main (int argc, char* argv[])
     }
     case TARGET_DRAM:
       write_bitfile(deviceSerial.c_str(), bitfile.c_str(), target_addr, BITFILE_MEDIA_DRAM);
-      cout << concol::RED << "Booting from DRAM image" << endl;
+      cout << concol::RED << "Booting from DRAM image... ";
       program_bitfile(deviceSerial.c_str(), target_addr);
       //APS will drop connection so disconnect wait and reconnect
       disconnect_APS(deviceSerial.c_str());
-      std::this_thread::sleep_for(std::chrono::seconds(5));
-
+      for (size_t ct = 0; ct < 5; ct++) {
+        cout << 5-ct << " " << std::flush;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+      }
+      cout << endl;
       APS2_STATUS status;
       status = connect_APS(deviceSerial.c_str());
 
@@ -247,9 +250,9 @@ int main (int argc, char* argv[])
         return -1;
       }
 
-      uint32_t newVersion;
+      uint32_t newVersion{0};
       get_firmware_version(deviceSerial.c_str(), &newVersion);
-      cout << concol::RED << "Device came up with firmware version: " << hexn<4> << newVersion << endl;
+      cout << concol::RED << "Device came up with firmware version: " << print_firmware_version(newVersion) << endl;
       break;
     }
 
