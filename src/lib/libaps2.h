@@ -30,6 +30,7 @@ typedef enum APS2_TRIGGER_SOURCE APS2_TRIGGER_SOURCE;
 typedef enum APS2_RUN_MODE APS2_RUN_MODE;
 typedef enum APS2_RUN_STATE APS2_RUN_STATE;
 typedef enum TLogLevel TLogLevel;
+typedef enum APS2_BITFILE_STORAGE_MEDIA APS2_BITFILE_STORAGE_MEDIA;
 
 EXPORT const char* get_error_msg(APS2_STATUS);
 
@@ -94,7 +95,7 @@ EXPORT APS2_STATUS write_memory(const char*, uint32_t, uint32_t*, uint32_t);
 EXPORT APS2_STATUS read_memory(const char*, uint32_t, uint32_t*, uint32_t);
 EXPORT APS2_STATUS read_register(const char*, uint32_t, uint32_t*);
 
-EXPORT APS2_STATUS write_bitfile(const char*, const char*, uint32_t, BITFILE_STORAGE_MEDIA);
+EXPORT APS2_STATUS write_bitfile(const char*, const char*, uint32_t, APS2_BITFILE_STORAGE_MEDIA);
 EXPORT APS2_STATUS program_bitfile(const char*, uint32_t);
 
 EXPORT APS2_STATUS write_configuration_SDRAM(const char*, uint32_t, uint32_t*, uint32_t);

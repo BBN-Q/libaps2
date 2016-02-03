@@ -348,7 +348,7 @@ APS2_STATUS read_register(const char* deviceSerial, uint32_t addr, uint32_t* res
 	return read_memory(deviceSerial, addr, result, 1);
 }
 
-APS2_STATUS write_bitfile(const char* deviceSerial, const char* bitFile, uint32_t addr, BITFILE_STORAGE_MEDIA media) {
+APS2_STATUS write_bitfile(const char* deviceSerial, const char* bitFile, uint32_t addr, APS2_BITFILE_STORAGE_MEDIA media) {
 	return aps2_call(deviceSerial, &APS2::write_bitfile, string(bitFile), addr, media);
 }
 

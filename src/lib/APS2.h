@@ -125,7 +125,7 @@ public:
 	void write_SPI_setup();
 
 	//bitfile loading
-	void write_bitfile(const string &, uint32_t, BITFILE_STORAGE_MEDIA);
+	void write_bitfile(const string &, uint32_t, APS2_BITFILE_STORAGE_MEDIA);
 	void program_bitfile(uint32_t);
 
 	// DAC BIST test

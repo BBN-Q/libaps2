@@ -211,7 +211,7 @@ double APS2::get_fpga_temperature(){
 	return temp;
 }
 
-void APS2::write_bitfile(const string & bitFile, uint32_t start_addr, BITFILE_STORAGE_MEDIA media) {
+void APS2::write_bitfile(const string & bitFile, uint32_t start_addr, APS2_BITFILE_STORAGE_MEDIA media) {
 	//Write a bitfile to either configuration DRAM or ERPOM starting at specified address
 	FILE_LOG(logDEBUG1) << "APS2::write_bitfile";
 
