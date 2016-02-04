@@ -1,5 +1,5 @@
 /*
-Tests the analog output data integrity in three different domains. 
+Tests the analog output data integrity in three different domains.
 
 FPGA: before serialization on the FPGA
 LVDS: arriving at DAC
@@ -97,7 +97,7 @@ int main(int argc, char const *argv[])
 		cout << endl;
 		cout << "Testing random waveform... ";
 		testVec.clear();
-		for (int ct = 0; ct < 65536; ++ct)
+		for (int ct = 0; ct < (1 << 17); ++ct)
 		{
 			testVec.push_back(randWord());
 		}
