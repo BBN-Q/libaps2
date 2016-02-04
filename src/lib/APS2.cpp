@@ -554,7 +554,7 @@ vector<uint32_t> APS2::read_memory(uint32_t addr, uint32_t numWords){
 }
 
 void APS2::write_configuration_SDRAM(uint32_t addr, const vector<uint32_t> & data) {
-	FILE_LOG(logDEBUG1) << "APS2::write_configuration_SDRAM";
+	FILE_LOG(logDEBUG2) << "APS2::write_configuration_SDRAM";
 	//Write data to configuratoin SDRAM
 
 	//SDRAM writes must be 8 byte aligned
@@ -577,7 +577,7 @@ void APS2::write_configuration_SDRAM(uint32_t addr, const vector<uint32_t> & dat
 }
 
 vector<uint32_t> APS2::read_configuration_SDRAM(uint32_t addr, uint32_t num_words) {
-	FILE_LOG(logDEBUG1) << "APS2::read_configuration_SDRAM";
+	FILE_LOG(logDEBUG2) << "APS2::read_configuration_SDRAM";
 	//Send the read request
 	APS2Command cmd;
 	cmd.r_w = 1;
@@ -595,7 +595,7 @@ vector<uint32_t> APS2::read_configuration_SDRAM(uint32_t addr, uint32_t num_word
 
 //SPI read/write
 void APS2::write_SPI(vector<uint32_t> & msg) {
-	FILE_LOG(logDEBUG1) << "APS2::write_SPI";
+	FILE_LOG(logDEBUG2) << "APS2::write_SPI";
 
 	// push on "end of message"
 	APSChipConfigCommand_t cmd;
@@ -613,7 +613,7 @@ void APS2::write_SPI(vector<uint32_t> & msg) {
 
 uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & addr) {
 	// reads a single byte from the target SPI device
-	FILE_LOG(logDEBUG1) << "APS2::read_SPI";
+	FILE_LOG(logDEBUG2) << "APS2::read_SPI";
 
 	// build message
 	APSChipConfigCommand_t cmd;

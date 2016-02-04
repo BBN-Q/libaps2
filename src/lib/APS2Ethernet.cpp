@@ -343,7 +343,7 @@ void APS2Ethernet::disconnect(string serial) {
 }
 
 void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
-  FILE_LOG(logDEBUG1) << "APS2Ethernet::send";
+  FILE_LOG(logDEBUG2) << "APS2Ethernet::send";
   if (devInfo_[ipAddr].supports_tcp) {
     FILE_LOG(logDEBUG2) << "Sending " << datagrams.size() << " datagram" << (datagrams.size() > 1 ? "s" : "") << " over TCP";
     // If we have TCP just send it out
@@ -400,7 +400,7 @@ int APS2Ethernet::send(string serial, APS2EthernetPacket msg, bool checkResponse
 }
 
 int APS2Ethernet::send(string serial, vector<APS2EthernetPacket> msg, unsigned ackEvery /* see header for default */) {
-    FILE_LOG(logDEBUG1) << "APS2Ethernet::send";
+    FILE_LOG(logDEBUG2) << "APS2Ethernet::send";
     FILE_LOG(logDEBUG3) << "Sending " << msg.size() << " packets to " << serial;
     auto iter = msg.begin();
     bool noACK = false;
@@ -447,7 +447,7 @@ int APS2Ethernet::send(string serial, vector<APS2EthernetPacket> msg, unsigned a
 }
 
 void APS2Ethernet::send_chunk(string serial, vector<APS2EthernetPacket> chunk, bool noACK) {
-    FILE_LOG(logDEBUG1) << "APS2Ethernet::send_chunk";
+    FILE_LOG(logDEBUG2) << "APS2Ethernet::send_chunk";
 
     unsigned seqNum{0};
 
@@ -472,7 +472,7 @@ void APS2Ethernet::send_chunk(string serial, vector<APS2EthernetPacket> chunk, b
 }
 
 APS2Datagram APS2Ethernet::read(string ipAddr, std::chrono::milliseconds timeout) {
-
+  FILE_LOG(logDEBUG2) << "APS2Ethernet::read";
   if ( devInfo_[ipAddr].supports_tcp) {
     //Read datagram from socket
     vector<uint32_t> buf;
@@ -527,6 +527,7 @@ APS2Datagram APS2Ethernet::read(string ipAddr, std::chrono::milliseconds timeout
 vector<APS2EthernetPacket> APS2Ethernet::receive(string serial, size_t numPackets, size_t timeoutMS) {
     //Read the packets coming back in up to the timeout
     //Defaults: receive(string serial, size_t numPackets = 1, size_t timeoutMS = 1000);
+    FILE_LOG(logDEBUG2) << "APS2Ethernet::receive";
     std::chrono::time_point<std::chrono::steady_clock> start, end;
 
     start = std::chrono::steady_clock::now();
