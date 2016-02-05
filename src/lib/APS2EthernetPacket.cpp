@@ -1,11 +1,11 @@
 #include "APS2EthernetPacket.h"
 
-APS2EthernetPacket::APS2EthernetPacket() : header{{}, {}, APS_PROTO, 0, {0}, 0}, payload(0){};
+APS2EthernetPacket::APS2EthernetPacket() : header{{}, {}, APS_PROTO, 0, APS2Command(), 0}, payload(0){};
 
-APS2EthernetPacket::APS2EthernetPacket(const APSCommand_t & command, const uint32_t & addr /*see header for default addr=0 */) :
+APS2EthernetPacket::APS2EthernetPacket(APS2Command command, const uint32_t & addr /*see header for default addr=0 */) :
 		header{{}, {}, APS_PROTO, 0, command, addr}, payload(0){};
 
-APS2EthernetPacket::APS2EthernetPacket(const MACAddr & destMAC, const MACAddr & srcMAC, APSCommand_t command, const uint32_t & addr) :
+APS2EthernetPacket::APS2EthernetPacket(const MACAddr & destMAC, const MACAddr & srcMAC, APS2Command command, const uint32_t & addr) :
 		header{destMAC, srcMAC, APS_PROTO, 0, command, addr}, payload(0){};
 
 APS2EthernetPacket::APS2EthernetPacket(const vector<uint8_t> & packetData){
@@ -111,7 +111,7 @@ APS2EthernetPacket APS2EthernetPacket::create_broadcast_packet(){
 }
 
 
-vector<APS2EthernetPacket> APS2EthernetPacket::pack_data(uint32_t addr, const vector<uint32_t> & data, const APS_COMMANDS & cmdtype /* see header for default */) {
+vector<APS2EthernetPacket> APS2EthernetPacket::chunk(uint32_t addr, const vector<uint32_t> & data, APS2Command cmd) {
 	//Break the data up into ethernet frame sized chunks with APS2EthernetPacket headers
 	// ethernet frame payload = 1500bytes - 20bytes IPV4 and 8 bytes UDP and 24 bytes APS header (with address field) = 1448bytes = 362 words
 	// for unknown reasons, we see occasional failures when using packets that large. 256 seems to be more stable.
@@ -120,7 +120,10 @@ vector<APS2EthernetPacket> APS2EthernetPacket::pack_data(uint32_t addr, const ve
 	vector<APS2EthernetPacket> packets;
 
 	APS2EthernetPacket newPacket;
-	newPacket.header.command.cmd =  static_cast<uint32_t>(cmdtype);
+	//Clear the ack and sel bits for the ApsMsgProc
+	cmd.ack = 0;
+	cmd.sel = 0;
+	newPacket.header.command =  cmd;
 
 	auto idx = data.begin();
 	uint16_t seqNum = 0;
@@ -145,20 +148,4 @@ vector<APS2EthernetPacket> APS2EthernetPacket::pack_data(uint32_t addr, const ve
 	} while (idx != data.end());
 
 	return packets;
-}
-
-
-
-string print_APSCommand(const APSCommand_t & cmd) {
-    std::ostringstream ret;
-
-    ret << std::hex << cmd.packed << " =";
-    ret << " ACK: " << cmd.ack;
-    ret << " SEQ: " << cmd.seq;
-    ret << " SEL: " << cmd.sel;
-    ret << " R/W: " << cmd.r_w;
-    ret << " CMD: " << cmd.cmd;
-    ret << " MODE/STAT: " << cmd.mode_stat;
-    ret << std::dec << " cnt: " << cmd.cnt;
-    return ret.str();
 }

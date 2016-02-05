@@ -1,6 +1,6 @@
 // Datagrams that are sent/received from the APS2
 // Consists of a vector of 32 bit words
-// 1. command word - see APSCommand_t
+// 1. command word - see APS2Command
 // 2. address
 // 3. payload
 //
@@ -13,7 +13,8 @@
 #include <vector>
 using std::vector;
 #include <cstdint>
-
+#include <string>
+using std::string;
 
 //APS Command Protocol
 // ACK SEQ SEL R/W CMD<3:0> MODE/STAT<7:0> CNT<15:0>
@@ -50,6 +51,7 @@ union APS2Command {
 	uint32_t packed;
 	//TODO: sort out the default initialization and whether this is necessary
 	APS2Command() {this->packed = 0;};
+	string to_string();
 };
 
 class APS2Datagram {
@@ -66,6 +68,5 @@ public:
 	void check_ack(const APS2Datagram &, bool legacy_firmware) const;
 
 };
-
 
 #endif //APS2DATAGRAM_H_

@@ -379,7 +379,7 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
     FILE_LOG(logDEBUG2) << "Sending " << datagrams.size() << " datagram" << (datagrams.size() > 1 ? "s" : "") << " over UDP";
     //Without TCP convert to APS2EthernetPacket packets and send
     for (auto dg : datagrams) {
-      auto packets = APS2EthernetPacket::pack_data(dg.addr, dg.payload, APS_COMMANDS(dg.cmd.cmd));
+      auto packets = APS2EthernetPacket::chunk(dg.addr, dg.payload, dg.cmd);
       //Set the ack every to a maximum of 20
       size_t ack_every;
       //For read commands don't let the ack check eat the response packet and copy in count
@@ -459,7 +459,7 @@ void APS2Ethernet::send_chunk(string serial, vector<APS2EthernetPacket> chunk, b
     for (auto packet : chunk) {
         packet.header.seqNum = seqNum;
         seqNum++;
-        FILE_LOG(logDEBUG4) << "Packet command: " << print_APSCommand(packet.header.command);
+        FILE_LOG(logDEBUG4) << "Packet command: " << packet.header.command.to_string();
         udp_socket_old_.send_to(asio::buffer(packet.serialize()), devInfo_[serial].endpoint);
         // sleep to make the driver compatible with newer versions of Windows
         // std::this_thread::sleep_for(std::chrono::microseconds(100));
@@ -545,7 +545,7 @@ vector<APS2EthernetPacket> APS2Ethernet::receive(string serial, size_t numPacket
             outVec.push_back(msgQueues_[serial].front());
             msgQueues_[serial].pop();
             msgQueue_lock_.unlock();
-            FILE_LOG(logDEBUG4) << "Received packet command: " << print_APSCommand(outVec.back().header.command);
+            FILE_LOG(logDEBUG4) << "Received packet command: " << outVec.back().header.command.to_string();
             if (outVec.size() == numPackets) {
                 FILE_LOG(logDEBUG3) << "Received " << numPackets << " packets from " << serial;
                 return outVec;

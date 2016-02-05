@@ -1,6 +1,6 @@
 // Datagrams that are sent/received from the APS2
 // Consists of a vector of 32 bit words
-// 1. command word - see APSCommand_t
+// 1. command word - see APS2Command
 // 2. address
 // 3. payload
 //
@@ -9,9 +9,25 @@
 
 #include "APS2Datagram.h"
 
+#include <iostream>
+
 #include "constants.h"
 #include "APS2_errno.h"
 #include "helpers.h"
+
+string APS2Command::to_string() {
+    std::ostringstream ret;
+
+    ret << std::hex << packed << " =";
+    ret << " ACK: " << ack;
+    ret << " SEQ: " << seq;
+    ret << " SEL: " << sel;
+    ret << " R/W: " << r_w;
+    ret << " CMD: " << cmd;
+    ret << " MODE/STAT: " << mode_stat;
+    ret << std::dec << " cnt: " << cnt;
+    return ret.str();
+}
 
 vector<APS2Datagram> APS2Datagram::chunk(APS2Command cmd, uint32_t addr, const vector<uint32_t>& data, uint16_t chunk_size) {
 	//Create multiple datagrams of a maximum payload size
@@ -93,7 +109,5 @@ void APS2Datagram::check_ack(const APS2Datagram & ack, bool legacy_firmware) con
 			throw APS2_COMMS_ERROR;
 		}
 	}
-
-
 
 }
