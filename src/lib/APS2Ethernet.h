@@ -66,6 +66,13 @@ private:
 	udp::socket udp_socket_;
 	unordered_map<string, std::unique_ptr<tcp::socket>> tcp_sockets_;
 
+	// storage for received UDP packets and remote endpoints
+ 	uint8_t received_udp_data_old_[2048];
+	uint8_t received_udp_data_[2048];
+	udp::endpoint remote_udp_endpoint_old_;
+	udp::endpoint remote_udp_endpoint_;
+
+
 	void setup_udp_receive();
 	void setup_udp_receive_old();
 
@@ -73,9 +80,6 @@ private:
 
 	void send_chunk(string, vector<APS2EthernetPacket>, bool);
 
-	// storage for received packets
- 	uint8_t receivedData_[2048];
-	udp::endpoint senderEndpoint_;
 
 	std::thread receiveThread_;
 	std::mutex msgQueue_lock_;

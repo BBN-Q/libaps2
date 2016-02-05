@@ -53,15 +53,15 @@ APS2Ethernet::~APS2Ethernet() {
 void APS2Ethernet::setup_udp_receive_old() {
     //Receive UDP packets on the old UDP sockets
     udp_socket_old_.async_receive_from(
-        asio::buffer(receivedData_, 2048), senderEndpoint_,
+        asio::buffer(received_udp_data_old_, 2048), remote_udp_endpoint_old_,
         [this](std::error_code ec, std::size_t bytesReceived)
         {
             //If there is anything to look at hand it off to the sorter
             if (!ec && bytesReceived > 0)
             {
-                vector<uint8_t> packetData(receivedData_, receivedData_ + bytesReceived);
+                vector<uint8_t> packetData(received_udp_data_old_, received_udp_data_old_ + bytesReceived);
                 sorter_lock_.lock();
-                sort_packet(packetData, senderEndpoint_);
+                sort_packet(packetData, remote_udp_endpoint_old_);
                 sorter_lock_.unlock();
             }
 
@@ -73,15 +73,15 @@ void APS2Ethernet::setup_udp_receive_old() {
 void APS2Ethernet::setup_udp_receive() {
     //Receive UDP packets on the UDP socket
     udp_socket_.async_receive_from(
-        asio::buffer(receivedData_, 2048), senderEndpoint_,
+        asio::buffer(received_udp_data_, 2048), remote_udp_endpoint_,
         [this](std::error_code ec, std::size_t bytesReceived)
         {
             //If there is anything to look at hand it off to the sorter
             if (!ec && bytesReceived > 0)
             {
-                vector<uint8_t> packetData(receivedData_, receivedData_ + bytesReceived);
+                vector<uint8_t> packetData(received_udp_data_, received_udp_data_ + bytesReceived);
                 sorter_lock_.lock();
-                sort_packet(packetData, senderEndpoint_);
+                sort_packet(packetData, remote_udp_endpoint_);
                 sorter_lock_.unlock();
             }
 
