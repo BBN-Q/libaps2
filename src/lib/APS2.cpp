@@ -725,7 +725,30 @@ void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
 	uint32_t end_addr{start_addr+num_bytes};
 	do {
 		FILE_LOG(logDEBUG2) << "Erasing 64kB page at EPROM addr " << hexn<8> << addr;
-		ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
+		//Have noticed we don't always get a response so try a few times to make sure
+		unsigned tryct = 0;
+		while (tryct < 5) {
+			try {
+				ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
+			} catch (APS2_STATUS status) {
+				if (status == APS2_RECEIVE_TIMEOUT) {
+					FILE_LOG(logERROR) << "Flash erase timed out. Retrying...";
+					tryct++;
+				}
+				else {
+					throw status;
+				}
+			}
+			catch (...) {
+				throw APS2_UNKNOWN_ERROR;
+			}
+			break;
+		}
+		if (tryct == 5) {
+			FILE_LOG(logERROR) << "Flash erase failed with timeout.";
+			throw APS2_RECEIVE_TIMEOUT;
+		}
+
 		addr += (1<<16);
 		flash_erase_done = static_cast<double>(addr - start_addr) / num_bytes;
 	} while(addr < end_addr);
