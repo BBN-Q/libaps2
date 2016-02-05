@@ -60,7 +60,9 @@ void APS2Ethernet::setup_udp_receive_old() {
             if (!ec && bytesReceived > 0)
             {
                 vector<uint8_t> packetData(receivedData_, receivedData_ + bytesReceived);
+                sorter_lock_.lock();
                 sort_packet(packetData, senderEndpoint_);
+                sorter_lock_.unlock();
             }
 
             //Start the receiver again
@@ -78,7 +80,9 @@ void APS2Ethernet::setup_udp_receive() {
             if (!ec && bytesReceived > 0)
             {
                 vector<uint8_t> packetData(receivedData_, receivedData_ + bytesReceived);
+                sorter_lock_.lock();
                 sort_packet(packetData, senderEndpoint_);
+                sorter_lock_.unlock();
             }
 
             //Start the receiver again
@@ -121,9 +125,9 @@ void APS2Ethernet::sort_packet(const vector<uint8_t> & packetData, const udp::en
         FILE_LOG(logDEBUG4) << "Recevied UDP packet to be sorted from IP " << senderIP;
         APS2EthernetPacket packet = APS2EthernetPacket(packetData);
         //Grab a lock and push the packet into the message queue
-        mLock_.lock();
+        msgQueue_lock_.lock();
         msgQueues_[senderIP].emplace(packet);
-        mLock_.unlock();
+        msgQueue_lock_.unlock();
     }
 }
 
@@ -322,9 +326,9 @@ void APS2Ethernet::connect(string serial) {
 
     tcp_sockets_.insert(std::make_pair(serial, std::move(sock)));
   } else {
-    mLock_.lock();
+    msgQueue_lock_.lock();
     msgQueues_[serial] = queue<APS2EthernetPacket>();
-    mLock_.unlock();
+    msgQueue_lock_.unlock();
   }
 }
 
@@ -336,9 +340,9 @@ void APS2Ethernet::disconnect(string serial) {
         tcp_sockets_.erase(serial);
     }
   } else {
-    mLock_.lock();
+    msgQueue_lock_.lock();
     msgQueues_.erase(serial);
-    mLock_.unlock();
+    msgQueue_lock_.unlock();
   }
 }
 
@@ -537,10 +541,10 @@ vector<APS2EthernetPacket> APS2Ethernet::receive(string serial, size_t numPacket
 
     while (elapsedTime < timeoutMS) {
         if (!msgQueues_[serial].empty()) {
-            mLock_.lock();
+            msgQueue_lock_.lock();
             outVec.push_back(msgQueues_[serial].front());
             msgQueues_[serial].pop();
-            mLock_.unlock();
+            msgQueue_lock_.unlock();
             FILE_LOG(logDEBUG4) << "Received packet command: " << print_APSCommand(outVec.back().header.command);
             if (outVec.size() == numPackets) {
                 FILE_LOG(logDEBUG3) << "Received " << numPackets << " packets from " << serial;

@@ -78,7 +78,8 @@ private:
 	udp::endpoint senderEndpoint_;
 
 	std::thread receiveThread_;
-	std::mutex mLock_;
+	std::mutex msgQueue_lock_;
+	std::mutex sorter_lock_;
 };
 
 #endif
