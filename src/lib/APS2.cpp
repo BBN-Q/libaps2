@@ -1117,7 +1117,7 @@ int APS2::get_PLL_freq() {
 	FILE_LOG(logDEBUG3) << "pll_bypass_val = " << hexn<2> << pll_bypass_val;
 
 	// select frequency based on pll cycles setting
-	// the values here should match the reverse lookup in FGPA::set_PLL_freq
+	// the values here should match the reverse lookup in APS2::set_PLL_freq
 
 	if ((pll_bypass_val & 0x80) == 0x80 && pll_cycles_val == 0x00)
 		freq =	1200;
@@ -1130,7 +1130,7 @@ int APS2::get_PLL_freq() {
 			case 0x11: freq = 300; break;
 			case 0x00: freq = 600; break;
 			default:
-				return -1;
+				throw APS2_BAD_PLL_VALUE;
 		}
 	}
 

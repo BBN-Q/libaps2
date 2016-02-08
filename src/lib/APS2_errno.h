@@ -25,6 +25,7 @@ enum APS2_STATUS {
 	APS2_UNALIGNED_MEMORY_ACCESS = -20,
 	APS2_ERPOM_ERASE_FAILURE = -21,
 	APS2_BITFILE_VALIDATION_FAILURE = -22,
+	APS2_BAD_PLL_VALUE = -23
 };
 
 
@@ -53,7 +54,8 @@ static std::map<APS2_STATUS, std::string> messages = {
 	{APS2_COMMS_ERROR, "Ethernet communications failed."},
 	{APS2_UNALIGNED_MEMORY_ACCESS, "SDRAM memory must be accessed at 8 (configuration) or 16 (sequence/waveform) byte boundaries."},
 	{APS2_ERPOM_ERASE_FAILURE, "ERPOM erase command failed"},
-	{APS2_BITFILE_VALIDATION_FAILURE, "bitfile validation failed"}
+	{APS2_BITFILE_VALIDATION_FAILURE, "bitfile validation failed"},
+	{APS2_BAD_PLL_VALUE, "Unexpected PLL chip value"}
 };
 
 
