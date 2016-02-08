@@ -265,7 +265,7 @@ void APS2::write_bitfile(const string & bitFile, uint32_t start_addr, APS2_BITFI
 	flash_task_progress = 0;
 	if (media == BITFILE_MEDIA_EPROM) {
 		uint32_t end_addr = start_addr + 4*bitfile_words.size();
-		uint32_t addr{start_addr};
+		uint32_t addr = start_addr;
 		do {
 			uint16_t read_length;
 			//Read up to 1kB at a time
@@ -1752,9 +1752,9 @@ string APS2::printAPSChipCommand(APSChipConfigCommand_t & cmd) {
 string APS2::print_firmware_version(uint32_t version_reg) {
 	std::ostringstream ret;
 
-	uint32_t minor{version_reg & 0xff};
-	uint32_t major{(version_reg >> 8) & 0xf};
-	uint32_t note_nibble{(version_reg >> 12) & 0xf};
+	uint32_t minor = version_reg & 0xff;
+	uint32_t major = (version_reg >> 8) & 0xf;
+	uint32_t note_nibble = (version_reg >> 12) & 0xf;
 	string note;
 	switch (note_nibble) {
 		case 0xa:

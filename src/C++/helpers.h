@@ -55,7 +55,6 @@ string get_device_id() {
 
 }
 
-
 void print_title(const string & title){
 	concol::concolinit();
 	cout << endl;
@@ -67,9 +66,9 @@ void print_title(const string & title){
 string print_firmware_version(uint32_t version_reg) {
 	std::ostringstream ret;
 
-	uint32_t minor{version_reg & 0xff};
-	uint32_t major{(version_reg >> 8) & 0xf};
-	uint32_t note_nibble{(version_reg >> 12) & 0xf};
+	uint32_t minor = version_reg & 0xff;
+	uint32_t major = (version_reg >> 8) & 0xf;
+	uint32_t note_nibble = (version_reg >> 12) & 0xf;
 	string note;
 	switch (note_nibble) {
 		case 0xa:
