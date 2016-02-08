@@ -56,14 +56,14 @@ union APS2Command {
 
 class APS2Datagram {
 private:
-  /* data */
+	/* data */
 public:
-  APS2Command cmd;
-  uint32_t addr;
+	APS2Command cmd;
+	uint32_t addr;
 	vector<uint32_t> payload;
 	vector<uint32_t> data() const;
 
-  static vector<APS2Datagram> chunk(APS2Command, uint32_t, const vector<uint32_t>&, uint16_t);
+	static vector<APS2Datagram> chunk(APS2Command, uint32_t, const vector<uint32_t>&, uint16_t);
 
 	void check_ack(const APS2Datagram &, bool legacy_firmware) const;
 

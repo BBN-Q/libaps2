@@ -1,8 +1,8 @@
 /*
  * constants.h
  *
- *  Created on: Jul 3, 2012
- *      Author: cryan
+ *	Created on: Jul 3, 2012
+ *	Author: cryan
  */
 
 #include <vector>
@@ -15,9 +15,9 @@ using std::vector;
 #define CONSTANTS_H_
 
 //Some maximum sizes of things we can fit
-static const int  MAX_APS_CHANNELS = 2;
+static const int MAX_APS_CHANNELS = 2;
 
-static const int  APS_WAVEFORM_UNIT_LENGTH = 4;
+static const int APS_WAVEFORM_UNIT_LENGTH = 4;
 
 static const int MAX_WF_LENGTH = 131072;
 static const int MAX_WF_AMP = 8191;
@@ -55,7 +55,7 @@ union APSChipConfigCommand_t {
 union PLLCommand_t {
 	struct {
 	uint16_t addr : 13;
-	uint16_t W  :  2;
+	uint16_t W : 2;
 	uint16_t r_w : 1;
 	};
 	uint16_t packed;
@@ -70,7 +70,7 @@ union PLLCommand_t {
 union DACCommand_t {
 	struct {
 	uint8_t addr : 5;
-	uint8_t N  :  2;
+	uint8_t N	:	2;
 	uint8_t r_w : 1;
 	};
 	uint8_t packed;
@@ -151,15 +151,15 @@ enum CHIPCONFIG_IO_TARGET {
 };
 
 enum CHIPCONFIG_IO_TARGET_CMD {
-	CHIPCONFIG_IO_TARGET_PAUSE        = 0,
-	CHIPCONFIG_IO_TARGET_DAC_0        = 0xC0, // multiple byte length in SPI cnt
-	CHIPCONFIG_IO_TARGET_DAC_1        = 0xC1, // multiple byte length in SPI cnt
-	CHIPCONFIG_IO_TARGET_PLL          = 0xD0, // multiple byte length in SPI cnt
+	CHIPCONFIG_IO_TARGET_PAUSE   = 0,
+	CHIPCONFIG_IO_TARGET_DAC_0   = 0xC0, // multiple byte length in SPI cnt
+	CHIPCONFIG_IO_TARGET_DAC_1   = 0xC1, // multiple byte length in SPI cnt
+	CHIPCONFIG_IO_TARGET_PLL     = 0xD0, // multiple byte length in SPI cnt
 	CHIPCONFIG_IO_TARGET_DAC_0_SINGLE = 0xC8, // single byte payload
 	CHIPCONFIG_IO_TARGET_DAC_1_SINGLE = 0xC9, // single byte payload
 	CHIPCONFIG_IO_TARGET_PLL_SINGLE   = 0xD8, // single byte payload
-	CHIPCONFIG_IO_TARGET_VCXO         = 0xE0,
-	CHIPCONFIG_IO_TARGET_EOL          = 0xFF, // end of list
+	CHIPCONFIG_IO_TARGET_VCXO = 0xE0,
+	CHIPCONFIG_IO_TARGET_EOL  = 0xFF, // end of list
 };
 
 enum RUNCHIPCONFIG_MODE_STAT {
@@ -194,7 +194,7 @@ enum class STATUS_REGISTERS {
 };
 
 typedef union {
-	struct  {
+	struct	{
 		uint32_t hostFirmwareVersion;
 		uint32_t userFirmwareVersion;
 		uint32_t configurationSource;
@@ -221,35 +221,35 @@ enum CONFIGURATION_SOURCE {
 };
 
 // APS2 registers
-static const uint32_t CSR_AXI_OFFSET      = 0x44A00000u;
-static const uint32_t PLL_STATUS_ADDR    = CSR_AXI_OFFSET + 0*4;
-static const uint32_t PHASE_COUNT_A_ADDR = CSR_AXI_OFFSET + 1*4;
-static const uint32_t PHASE_COUNT_B_ADDR = CSR_AXI_OFFSET + 2*4;
-static const uint32_t CACHE_STATUS_ADDR  = CSR_AXI_OFFSET + 3*4;
-static const uint32_t CACHE_CONTROL_ADDR = CSR_AXI_OFFSET + 4*4;
-static const uint32_t WFA_OFFSET_ADDR    = CSR_AXI_OFFSET + 5*4;
-static const uint32_t WFB_OFFSET_ADDR    = CSR_AXI_OFFSET + 6*4;
-static const uint32_t SEQ_OFFSET_ADDR    = CSR_AXI_OFFSET + 7*4;
-static const uint32_t RESETS_ADDR        = CSR_AXI_OFFSET + 8*4;
-static const uint32_t SEQ_CONTROL_ADDR   = CSR_AXI_OFFSET + 9*4;
-static const uint32_t ZERO_OUT_ADDR      = CSR_AXI_OFFSET + 10*4;
-static const uint32_t TRIGGER_WORD_ADDR  = CSR_AXI_OFFSET + 11*4;
-static const uint32_t TRIGGER_INTERVAL_ADDR = CSR_AXI_OFFSET + 12*4;
-static const uint32_t DAC_BIST_CHA_PH1_ADDR = CSR_AXI_OFFSET + 13*4;
-static const uint32_t DAC_BIST_CHA_PH2_ADDR = CSR_AXI_OFFSET + 14*4;
-static const uint32_t DAC_BIST_CHB_PH1_ADDR = CSR_AXI_OFFSET + 15*4;
-static const uint32_t DAC_BIST_CHB_PH2_ADDR = CSR_AXI_OFFSET + 16*4;
-static const uint32_t DMA_STATUS_ADDR    = CSR_AXI_OFFSET + 17*4;
-static const uint32_t SATA_STATUS_ADDR   = CSR_AXI_OFFSET + 18*4;
-static const uint32_t INIT_STATUS_ADDR   = CSR_AXI_OFFSET + 19*4;
-static const uint32_t UPTIME_SECONDS_ADDR = CSR_AXI_OFFSET + 20*4;
+static const uint32_t CSR_AXI_OFFSET          = 0x44A00000u;
+static const uint32_t PLL_STATUS_ADDR         = CSR_AXI_OFFSET + 0*4;
+static const uint32_t PHASE_COUNT_A_ADDR      = CSR_AXI_OFFSET + 1*4;
+static const uint32_t PHASE_COUNT_B_ADDR      = CSR_AXI_OFFSET + 2*4;
+static const uint32_t CACHE_STATUS_ADDR       = CSR_AXI_OFFSET + 3*4;
+static const uint32_t CACHE_CONTROL_ADDR      = CSR_AXI_OFFSET + 4*4;
+static const uint32_t WFA_OFFSET_ADDR         = CSR_AXI_OFFSET + 5*4;
+static const uint32_t WFB_OFFSET_ADDR         = CSR_AXI_OFFSET + 6*4;
+static const uint32_t SEQ_OFFSET_ADDR         = CSR_AXI_OFFSET + 7*4;
+static const uint32_t RESETS_ADDR             = CSR_AXI_OFFSET + 8*4;
+static const uint32_t SEQ_CONTROL_ADDR        = CSR_AXI_OFFSET + 9*4;
+static const uint32_t ZERO_OUT_ADDR           = CSR_AXI_OFFSET + 10*4;
+static const uint32_t TRIGGER_WORD_ADDR       = CSR_AXI_OFFSET + 11*4;
+static const uint32_t TRIGGER_INTERVAL_ADDR   = CSR_AXI_OFFSET + 12*4;
+static const uint32_t DAC_BIST_CHA_PH1_ADDR   = CSR_AXI_OFFSET + 13*4;
+static const uint32_t DAC_BIST_CHA_PH2_ADDR   = CSR_AXI_OFFSET + 14*4;
+static const uint32_t DAC_BIST_CHB_PH1_ADDR   = CSR_AXI_OFFSET + 15*4;
+static const uint32_t DAC_BIST_CHB_PH2_ADDR   = CSR_AXI_OFFSET + 16*4;
+static const uint32_t DMA_STATUS_ADDR         = CSR_AXI_OFFSET + 17*4;
+static const uint32_t SATA_STATUS_ADDR        = CSR_AXI_OFFSET + 18*4;
+static const uint32_t INIT_STATUS_ADDR        = CSR_AXI_OFFSET + 19*4;
+static const uint32_t UPTIME_SECONDS_ADDR     = CSR_AXI_OFFSET + 20*4;
 static const uint32_t UPTIME_NANOSECONDS_ADDR = CSR_AXI_OFFSET + 21*4;
-static const uint32_t FIRMWARE_VERSION_ADDR = CSR_AXI_OFFSET + 22*4;
-static const uint32_t TEMPERATURE_ADDR = CSR_AXI_OFFSET + 23*4;
+static const uint32_t FIRMWARE_VERSION_ADDR   = CSR_AXI_OFFSET + 22*4;
+static const uint32_t TEMPERATURE_ADDR        = CSR_AXI_OFFSET + 23*4;
 
 // TDM registers
-static const uint32_t TDM_RESETS_ADDR           = CSR_AXI_OFFSET + 0*4;
-static const uint32_t TDM_TRIGGER_WORD          = CSR_AXI_OFFSET + 1*4;
+static const uint32_t TDM_RESETS_ADDR  = CSR_AXI_OFFSET + 0*4;
+static const uint32_t TDM_TRIGGER_WORD = CSR_AXI_OFFSET + 1*4;
 static const uint32_t TDM_TRIGGER_INTERVAL_ADDR = CSR_AXI_OFFSET + 2*4;
 static const uint32_t TDM_TRIGGER_CONTROL_ADDR  = CSR_AXI_OFFSET + 3*4;
 
@@ -319,42 +319,42 @@ typedef std::pair<uint16_t, uint8_t> SPI_AddrData_t;
 
 // PLL setup sequence (modified for 300 MHz FPGA sys_clk and 1.2 GHz DACs)
 static const vector<SPI_AddrData_t> PLL_INIT = {
-	{0x0,  0x99},  // Use SDO, Long instruction mode
-	{0x10, 0x7C},  // Enable PLL, set charge pump to 4.8ma
-	{0x11, 0x5},   // Set reference divider R to 5 to divide 125 MHz reference to 25 MHz
-	{0x14, 0x6},   // Set B counter to 6
-	{0x16, 0x5},   // Set P prescaler to 16 and enable B counter (N = P*B = 96 to divide 2400 MHz to 25 MHz)
-	{0x17, 0xAD},  // Status of VCO frequency; active high on STATUS bit in Status/Control register; antibacklash pulse to 1.3ns
-	{0x18, 0x74},  // Calibrate VCO with 8 divider, set lock detect count to 255, set low range
-	{0x1A, 0x2D},  // Selects readback of PLL Lock status on LOCK bit in Status/Control register
-	{0x1B, 0xA5},  // Enable VCO & REF1 monitors; REFMON pin control set to "Status of selected reference (status of differential reference); active high"
-	{0x1C, 0x7},   // Enable differential reference, enable REF1/REF2 power, disable reference switching
-	{0xF0, 0x00},  // Enable un-inverted 400mV clock on OUT0 (goes to DACA)
-	{0xF1, 0x00},  // Enable un-inverted 400mV clock on OUT1 (goes to DACB)
-	{0xF2, 0x02},  // Disable OUT2
-	{0xF3, 0x00},  // Enable un-inverted 400mV clock on OUT3 (goes to FPGA sys_clk)
-	{0xF4, 0x02},  // Disable OUT4
-	{0xF5, 0x00},  // Enable un-inverted 400mV clock on OUT5 (goes to FPGA mem_clk)
+	{0x0,	0x99},	// Use SDO, Long instruction mode
+	{0x10, 0x7C},	// Enable PLL, set charge pump to 4.8ma
+	{0x11, 0x5},	 // Set reference divider R to 5 to divide 125 MHz reference to 25 MHz
+	{0x14, 0x6},	 // Set B counter to 6
+	{0x16, 0x5},	 // Set P prescaler to 16 and enable B counter (N = P*B = 96 to divide 2400 MHz to 25 MHz)
+	{0x17, 0xAD},	// Status of VCO frequency; active high on STATUS bit in Status/Control register; antibacklash pulse to 1.3ns
+	{0x18, 0x74},	// Calibrate VCO with 8 divider, set lock detect count to 255, set low range
+	{0x1A, 0x2D},	// Selects readback of PLL Lock status on LOCK bit in Status/Control register
+	{0x1B, 0xA5},	// Enable VCO & REF1 monitors; REFMON pin control set to "Status of selected reference (status of differential reference); active high"
+	{0x1C, 0x7},	 // Enable differential reference, enable REF1/REF2 power, disable reference switching
+	{0xF0, 0x00},	// Enable un-inverted 400mV clock on OUT0 (goes to DACA)
+	{0xF1, 0x00},	// Enable un-inverted 400mV clock on OUT1 (goes to DACB)
+	{0xF2, 0x02},	// Disable OUT2
+	{0xF3, 0x00},	// Enable un-inverted 400mV clock on OUT3 (goes to FPGA sys_clk)
+	{0xF4, 0x02},	// Disable OUT4
+	{0xF5, 0x00},	// Enable un-inverted 400mV clock on OUT5 (goes to FPGA mem_clk)
 	{0x190, 0x00}, // channel 0: no division
 	{0x191, 0x80}, // Bypass 0 divider
 	// {0x193, 0x11}, // channel 1: (2 high, 2 low = 1.2 GHz / 4 = 300 MHz sys_clk)
 	{0x193, 0x00}, // channel 1: (1 high, 1 low = 1.2 GHz / 2 = 600 MHz sys_clk)
 	{0x196, 0x10}, // channel 2: (2 high, 1 low = 1.2 GHz / 3 = 400 MHz mem_clk)
-	{0x1E0, 0x0},  // Set VCO post divide to 2
-	{0x1E1, 0x2},  // Select VCO as clock source for VCO divider
-	{0x232, 0x1},  // Set bit 0 to simultaneously update all registers with pending writes.
-	{0x18, 0x75},  // Initiate Calibration.  Must be followed by Update Registers Command
-	{0x232, 0x1}   // Update registers with pending writes.
+	{0x1E0, 0x0},	// Set VCO post divide to 2
+	{0x1E1, 0x2},	// Select VCO as clock source for VCO divider
+	{0x232, 0x1},	// Set bit 0 to simultaneously update all registers with pending writes.
+	{0x18, 0x75},	// Initiate Calibration.	Must be followed by Update Registers Command
+	{0x232, 0x1}	 // Update registers with pending writes.
 };
 
 static const vector<SPI_AddrData_t> PLL_SET_CAL_FLAG = {
-	{0x18, 0x75},  // Initiate Calibration.  Must be followed by Update Registers Command
-	{0x232, 0x1}  // Set bit 0 to 1 to simultaneously update all registers with pending writes.
+	{0x18, 0x75},	// Initiate Calibration.	Must be followed by Update Registers Command
+	{0x232, 0x1}	// Set bit 0 to 1 to simultaneously update all registers with pending writes.
 };
 
 static const vector<SPI_AddrData_t> PLL_CLEAR_CAL_FLAG = {
-	{0x18, 0x74},  // Initiate Calibration.  Must be followed by Update Registers Command
-	{0x232, 0x1}  // Set bit 0 to 1 to simultaneously update all registers with pending writes.
+	{0x18, 0x74},	// Initiate Calibration.	Must be followed by Update Registers Command
+	{0x232, 0x1}	// Set bit 0 to 1 to simultaneously update all registers with pending writes.
 };
 
 // VCXO setup sequence
@@ -364,7 +364,7 @@ static const vector<uint8_t> VCXO_INIT = {0x8, 0x60, 0x0, 0x4, 0x64, 0x91, 0x0, 
 static const vector<uint64_t> WF_SEQ = {
 	0x2100400000000000L, // WAIT for trig
 	0x0100000000000000L, // WFM
-	0x6000000000000000L  // GOTO 0
+	0x6000000000000000L	// GOTO 0
 };
 
 #endif /* CONSTANTS_H_ */

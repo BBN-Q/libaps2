@@ -123,7 +123,7 @@ vector<APS2EthernetPacket> APS2EthernetPacket::chunk(uint32_t addr, const vector
 	//Clear the ack and sel bits for the ApsMsgProc
 	cmd.ack = 0;
 	cmd.sel = 0;
-	newPacket.header.command =  cmd;
+	newPacket.header.command =	cmd;
 
 	auto idx = data.begin();
 	uint16_t seqNum = 0;

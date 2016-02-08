@@ -16,17 +16,17 @@
 #include "helpers.h"
 
 string APS2Command::to_string() {
-    std::ostringstream ret;
+	std::ostringstream ret;
 
-    ret << std::hex << packed << " =";
-    ret << " ACK: " << ack;
-    ret << " SEQ: " << seq;
-    ret << " SEL: " << sel;
-    ret << " R/W: " << r_w;
-    ret << " CMD: " << cmd;
-    ret << " MODE/STAT: " << mode_stat;
-    ret << std::dec << " cnt: " << cnt;
-    return ret.str();
+	ret << std::hex << packed << " =";
+	ret << " ACK: " << ack;
+	ret << " SEQ: " << seq;
+	ret << " SEL: " << sel;
+	ret << " R/W: " << r_w;
+	ret << " CMD: " << cmd;
+	ret << " MODE/STAT: " << mode_stat;
+	ret << std::dec << " cnt: " << cnt;
+	return ret.str();
 }
 
 vector<APS2Datagram> APS2Datagram::chunk(APS2Command cmd, uint32_t addr, const vector<uint32_t>& data, uint16_t chunk_size) {
@@ -75,7 +75,7 @@ void APS2Datagram::check_ack(const APS2Datagram & ack, bool legacy_firmware) con
 		}
 	}
 
-	//configuration SDRAM  writes
+	//configuration SDRAM	writes
 	if ( (cmd.r_w == 0) && (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::FPGACONFIG_ACK) ) {
 		if ( ack.cmd.mode_stat != 0x00 ) {
 			FILE_LOG(logERROR) << "APS2 CPLD reported error mode/stat " << hexn<2> << ack.cmd.mode_stat;
@@ -97,7 +97,7 @@ void APS2Datagram::check_ack(const APS2Datagram & ack, bool legacy_firmware) con
 	//chip config SPI writes
 	if ( (cmd.r_w == 0) && (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::CHIPCONFIGIO) ) {
 		if ( ack.cmd.mode_stat != CHIPCONFIG_SUCCESS ) {
-			FILE_LOG(logERROR) << "APS2 CPLD reported error in CHIPCONFIGIO.  mode/stat = " << hexn<2> << ack.cmd.mode_stat;
+			FILE_LOG(logERROR) << "APS2 CPLD reported error in CHIPCONFIGIO.	mode/stat = " << hexn<2> << ack.cmd.mode_stat;
 			throw APS2_COMMS_ERROR;
 		}
 	}
@@ -105,7 +105,7 @@ void APS2Datagram::check_ack(const APS2Datagram & ack, bool legacy_firmware) con
 	//chip config run
 	if ( (cmd.r_w == 0) && (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::RUNCHIPCONFIG) ) {
 		if ( ack.cmd.mode_stat != RUNCHIPCONFIG_SUCCESS ) {
-			FILE_LOG(logERROR) << "APS2 CPLD reported error in RUNCHIPCONFIG.  mode/stat =  " << hexn<2> << ack.cmd.mode_stat;
+			FILE_LOG(logERROR) << "APS2 CPLD reported error in RUNCHIPCONFIG.	mode/stat =	" << hexn<2> << ack.cmd.mode_stat;
 			throw APS2_COMMS_ERROR;
 		}
 	}

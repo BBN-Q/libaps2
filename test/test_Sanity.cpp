@@ -2,5 +2,5 @@
 
 TEST_CASE("Sanity check")
 {
-    REQUIRE(true);
+	REQUIRE(true);
 }

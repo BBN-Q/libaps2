@@ -1,9 +1,9 @@
 #include "APS2.h"
 #include "APS2Datagram.h"
 
-APS2::APS2() :  isOpen{false}, legacy_firmware{false}, channels_(2), samplingRate_{0} {};
+APS2::APS2() :	isOpen{false}, legacy_firmware{false}, channels_(2), samplingRate_{0} {};
 
-APS2::APS2(string deviceSerial) :  isOpen{false}, legacy_firmware{false}, deviceSerial_{deviceSerial}, samplingRate_{0} {
+APS2::APS2(string deviceSerial) :	isOpen{false}, legacy_firmware{false}, deviceSerial_{deviceSerial}, samplingRate_{0} {
 	channels_.reserve(2);
 	for(size_t ct=0; ct<2; ct++) channels_.push_back(Channel(ct));
 };
@@ -228,22 +228,22 @@ void APS2::write_bitfile(const string & bitFile, uint32_t start_addr, APS2_BITFI
 
 	//Get the file size in bytes
 	std::ifstream FID (bitFile, std::ios::in|std::ios::binary);
-  if (!FID.is_open()){
+	if (!FID.is_open()){
 		FILE_LOG(logERROR) << "Unable to open bitfile: " << bitFile;
-    throw APS2_NO_SUCH_BITFILE;
-  }
+		throw APS2_NO_SUCH_BITFILE;
+	}
 
-  FID.seekg(0, std::ios::end);
-  size_t file_size = FID.tellg();
+	FID.seekg(0, std::ios::end);
+	size_t file_size = FID.tellg();
 	FILE_LOG(logDEBUG) << "Opened bitfile: " << bitFile << " with " << file_size << " bytes";
-  FID.seekg(0, std::ios::beg);
+	FID.seekg(0, std::ios::beg);
 
 	//Figure out padding size for alignment
 	size_t padding_bytes = (alignment - (file_size % alignment)) % alignment;
 	FILE_LOG(logDEBUG1) << "Padding bitfile byte vector with " << padding_bytes << " bytes.";
-  //Copy the file data to a 32bit word vector
-  vector<uint32_t> bitfile_words((file_size+padding_bytes)/4, 0xffffffff);
-  FID.read(reinterpret_cast<char *>(bitfile_words.data()), file_size);
+	//Copy the file data to a 32bit word vector
+	vector<uint32_t> bitfile_words((file_size+padding_bytes)/4, 0xffffffff);
+	FID.read(reinterpret_cast<char *>(bitfile_words.data()), file_size);
 
 	//Swap bytes because we want to preserve bytes order in file it will be byte-swapped again when the packet is serialized
 	for (auto & val : bitfile_words) {
@@ -567,7 +567,7 @@ void APS2::write_configuration_SDRAM(uint32_t addr, const vector<uint32_t> & dat
 		throw APS2_UNALIGNED_MEMORY_ACCESS;
 	}
 
-	//Convert to datagrams.  For the now the ApsMsgProc needs maximum of 1kB chunks
+	//Convert to datagrams.	For the now the ApsMsgProc needs maximum of 1kB chunks
 	APS2Command cmd;
 	cmd.ack = 1;
 	cmd.sel = 1; //necessary for newer firmware to demux to ApsMsgProc
@@ -773,15 +773,15 @@ vector<uint32_t> APS2::read_flash(uint32_t addr, uint32_t num_words) {
 }
 
 void APS2::write_macip_flash(const uint64_t & mac,
-	                  const uint32_t & ip_addr,
-	                  const bool & dhcp_enable) {
+										const uint32_t & ip_addr,
+										const bool & dhcp_enable) {
 	uint32_t dhcp_int;
 
 	dhcp_int = (dhcp_enable) ? 1 : 0;
 	vector<uint32_t> data = {static_cast<uint32_t>(mac >> 16),
-		                     static_cast<uint32_t>((mac & 0xffff) << 16),
-		                     ip_addr,
-		                     dhcp_int};
+												 static_cast<uint32_t>((mac & 0xffff) << 16),
+												 ip_addr,
+												 dhcp_int};
 	write_flash(EPROM_MACIP_ADDR, data);
 	// verify
 	if (get_mac_addr() != mac) {
@@ -960,7 +960,7 @@ int APS2::set_PLL_freq(const int & freq) {
 	}
 
 	// bypass divider if freq == 1200
-	pllBypassVal = (freq==1200) ?  0x80 : 0x00;
+	pllBypassVal = (freq==1200) ?	0x80 : 0x00;
 	FILE_LOG(logDEBUG2) << "Setting PLL cycles addr: " << myhex << pllCyclesAddr << " val: " << int(pllCyclesVal);
 	FILE_LOG(logDEBUG2) << "Setting PLL bypass addr: " << myhex << pllBypassAddr << " val: " << int(pllBypassVal);
 
@@ -1118,11 +1118,11 @@ int APS2::get_PLL_freq() {
 	// the values here should match the reverse lookup in FGPA::set_PLL_freq
 
 	if ((pll_bypass_val & 0x80) == 0x80 && pll_cycles_val == 0x00)
-		freq =  1200;
+		freq =	1200;
 	else {
 		switch(pll_cycles_val) {
-			case 0xEE: freq = 40;  break;
-			case 0xBB: freq = 50;  break;
+			case 0xEE: freq = 40;	break;
+			case 0xBB: freq = 50;	break;
 			case 0x55: freq = 100; break;
 			case 0x22: freq = 200; break;
 			case 0x11: freq = 300; break;
@@ -1208,36 +1208,36 @@ void APS2::setup_DAC(const int & dac)
 
 	// TODO: remove int(... & 0x1F)
 	data = read_SPI(targets[dac], DAC_INTERRUPT_ADDR);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_INTERRUPT_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) <<	"Reg: " << myhex << int(DAC_INTERRUPT_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 	data = read_SPI(targets[dac], DAC_MSDMHD_ADDR);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) <<	"Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 	data = read_SPI(targets[dac], DAC_SD_ADDR);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) <<	"Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 
 	// Ensure that surveilance and auto modes are off
 	data = read_SPI(targets[dac], DAC_CONTROLLER_ADDR);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_CONTROLLER_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) <<	"Reg: " << myhex << int(DAC_CONTROLLER_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 	data = 0;
 	msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLER_ADDR, data}});
 	write_SPI(msg);
 
 	// Slide the data valid window left (with MSD) and check for the interrupt
-	SD = 0;  //(sample delay nibble, stored in Reg. 5, bits 7:4)
+	SD = 0;	//(sample delay nibble, stored in Reg. 5, bits 7:4)
 	MSD = 0; //(setup delay nibble, stored in Reg. 4, bits 7:4)
-	MHD = 0; //(hold delay nibble,  stored in Reg. 4, bits 3:0)
+	MHD = 0; //(hold delay nibble,	stored in Reg. 4, bits 3:0)
 
 	set_DAC_SD(dac, SD);
 
 	for (MSD = 0; MSD < 16; MSD++) {
-		FILE_LOG(logDEBUG2) <<  "Setting MSD: " << int(MSD);
+		FILE_LOG(logDEBUG2) <<	"Setting MSD: " << int(MSD);
 
 		data = (MSD << 4) | MHD;
 		msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
 		write_SPI(msg);
-		FILE_LOG(logDEBUG2) <<  "Write Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+		FILE_LOG(logDEBUG2) <<	"Write Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 
 		data = read_SPI(targets[dac], DAC_SD_ADDR);
-		FILE_LOG(logDEBUG2) <<  "Read Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+		FILE_LOG(logDEBUG2) <<	"Read Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 
 		bool check = data & 1;
 		FILE_LOG(logDEBUG2) << "Check: " << check;
@@ -1250,7 +1250,7 @@ void APS2::setup_DAC(const int & dac)
 	// Clear the MSD, then slide right (with MHD)
 	MSD = 0;
 	for (MHD = 0; MHD < 16; MHD++) {
-		FILE_LOG(logDEBUG2) <<  "Setting MHD: " << int(MHD);
+		FILE_LOG(logDEBUG2) <<	"Setting MHD: " << int(MHD);
 
 		data = (MSD << 4) | MHD;
 		msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
@@ -1440,18 +1440,18 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	// The two different phases take the even/odd samples
 	vector<int16_t> evenSamples, oddSamples;
 	bool toggle = false;
-    std::partition_copy(testVec.begin(),
-                        testVec.end(),
-                        std::back_inserter(oddSamples),
-                        std::back_inserter(evenSamples),
-                        [&toggle](int) { return toggle = !toggle; });
+		std::partition_copy(testVec.begin(),
+												testVec.end(),
+												std::back_inserter(oddSamples),
+												std::back_inserter(evenSamples),
+												[&toggle](int) { return toggle = !toggle; });
 
-    //
-    uint32_t phase1BIST = calc_bist(oddSamples);
-    uint32_t phase2BIST = calc_bist(evenSamples);
+		//
+		uint32_t phase1BIST = calc_bist(oddSamples);
+		uint32_t phase2BIST = calc_bist(evenSamples);
 
-    FILE_LOG(logDEBUG) << "Expected phase 1 BIST register " << hexn<8> << phase1BIST;
-    FILE_LOG(logDEBUG) << "Expected phase 2 BIST register " << hexn<8> << phase2BIST;
+		FILE_LOG(logDEBUG) << "Expected phase 1 BIST register " << hexn<8> << phase1BIST;
+		FILE_LOG(logDEBUG) << "Expected phase 2 BIST register " << hexn<8> << phase2BIST;
 
 	//Load the test vector and setup software triggered waveform mode
 	//Clear the channel data on both channels so we get the right waveform length
@@ -1558,7 +1558,7 @@ int APS2::set_offset_register(const int & dac, const float & offset) {
 	 * offset - offset in normalized full range (-1, 1)
 	 */
 	int16_t scaledOffset = offset * MAX_WF_AMP;
-	FILE_LOG(logINFO) << "Setting DAC " << dac << "  zero register to " << scaledOffset;
+	FILE_LOG(logINFO) << "Setting DAC " << dac << "	zero register to " << scaledOffset;
 
 	//Read current value
 	uint32_t val = read_memory(ZERO_OUT_ADDR, 1)[0];
@@ -1719,32 +1719,32 @@ string APS2::print_status_bank(const APSStatusBank_t & status) {
 	ret << endl << endl;
 	ret << "Host Firmware Version = " << hexn<8> << status.hostFirmwareVersion << endl;
 	ret << "User Firmware Version = " << hexn<8> << status.userFirmwareVersion << endl;
-	ret << "Configuration Source  = " << hexn<8> << status.configurationSource << endl;
-	ret << "User Status           = " << hexn<8> << status.userStatus << endl;
-	ret << "DAC 0 Status          = " << hexn<8> << status.dac0Status << endl;
-	ret << "DAC 1 Status          = " << hexn<8> << status.dac1Status << endl;
-	ret << "PLL Status            = " << hexn<8> << status.pllStatus << endl;
-	ret << "VCXO Status           = " << hexn<8> << status.vcxoStatus << endl;
+	ret << "Configuration Source	= " << hexn<8> << status.configurationSource << endl;
+	ret << "User Status					 = " << hexn<8> << status.userStatus << endl;
+	ret << "DAC 0 Status					= " << hexn<8> << status.dac0Status << endl;
+	ret << "DAC 1 Status					= " << hexn<8> << status.dac1Status << endl;
+	ret << "PLL Status						= " << hexn<8> << status.pllStatus << endl;
+	ret << "VCXO Status					 = " << hexn<8> << status.vcxoStatus << endl;
 	ret << std::dec;
-	ret << "Send Packet Count     = " << status.sendPacketCount << endl;
-	ret << "Recv Packet Count     = " << status.receivePacketCount << endl;
-	ret << "Seq Skip Count        = " << status.sequenceSkipCount << endl;
-	ret << "Seq Dup.  Count       = " << status.sequenceDupCount << endl;
-	ret << "FCS Overrun Count     = " << status.fcsOverrunCount << endl;
-	ret << "Packet Overrun Count  = " << status.packetOverrunCount << endl;
-	ret << "Uptime (s)            = " << status.uptimeSeconds << endl;
-	ret << "Uptime (ns)           = " << status.uptimeNanoSeconds << endl;
+	ret << "Send Packet Count		 = " << status.sendPacketCount << endl;
+	ret << "Recv Packet Count		 = " << status.receivePacketCount << endl;
+	ret << "Seq Skip Count				= " << status.sequenceSkipCount << endl;
+	ret << "Seq Dup.	Count			 = " << status.sequenceDupCount << endl;
+	ret << "FCS Overrun Count		 = " << status.fcsOverrunCount << endl;
+	ret << "Packet Overrun Count	= " << status.packetOverrunCount << endl;
+	ret << "Uptime (s)						= " << status.uptimeSeconds << endl;
+	ret << "Uptime (ns)					 = " << status.uptimeNanoSeconds << endl;
 	return ret.str();
 }
 
 string APS2::printAPSChipCommand(APSChipConfigCommand_t & cmd) {
-    std::ostringstream ret;
+		std::ostringstream ret;
 
-    ret << std::hex << cmd.packed << " =";
-    ret << " Target: " << cmd.target;
-    ret << " SPICNT_DATA: " << cmd.spicnt_data;
-    ret << " INSTR: " << cmd.instr;
-    return ret.str();
+		ret << std::hex << cmd.packed << " =";
+		ret << " Target: " << cmd.target;
+		ret << " SPICNT_DATA: " << cmd.spicnt_data;
+		ret << " INSTR: " << cmd.instr;
+		return ret.str();
 }
 
 string APS2::print_firmware_version(uint32_t version_reg) {

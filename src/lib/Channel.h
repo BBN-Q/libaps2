@@ -1,8 +1,8 @@
 /*
  * Channel.h
  *
- *  Created on: Jun 13, 2012
- *      Author: cryan
+ *	Created on: Jun 13, 2012
+ *	Author: cryan
  */
 
 

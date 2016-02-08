@@ -1,8 +1,8 @@
 /*
  * Channel.cpp
  *
- *  Created on: Jun 13, 2012
- *      Author: cryan
+ *	Created on: Jun 13, 2012
+ *			Author: cryan
  */
 
 #include "headings.h"
@@ -126,15 +126,15 @@ int Channel::write_state_to_hdf5(H5::H5File & H5StateFile, const string & rootSt
 
 	// write waveform data
 	FILE_LOG(logDEBUG) << "Writing Waveform: " << rootStr + "/waveformLib";
-	vector2h5array<float>(waveform_,  &H5StateFile, rootStr + "/waveformLib", rootStr + "/waveformLib",   H5::PredType::NATIVE_FLOAT);
+	vector2h5array<float>(waveform_,	&H5StateFile, rootStr + "/waveformLib", rootStr + "/waveformLib",	 H5::PredType::NATIVE_FLOAT);
 
 
 	// add channel state information to root group
 	H5::Group tmpGroup = H5StateFile.openGroup(rootStr);
 
-	element2h5attribute<float>("offset",  offset_,    &tmpGroup, H5::PredType::NATIVE_FLOAT);
-	element2h5attribute<float>("scale",   scale_,     &tmpGroup, H5::PredType::NATIVE_FLOAT);
-	element2h5attribute<bool>("enabled",  enabled_,   &tmpGroup, H5::PredType::NATIVE_UINT);
+	element2h5attribute<float>("offset",	offset_,		&tmpGroup, H5::PredType::NATIVE_FLOAT);
+	element2h5attribute<float>("scale",	 scale_,		 &tmpGroup, H5::PredType::NATIVE_FLOAT);
+	element2h5attribute<bool>("enabled",	enabled_,	 &tmpGroup, H5::PredType::NATIVE_UINT);
 	element2h5attribute<int>("trigDelay", trigDelay_, &tmpGroup, H5::PredType::NATIVE_INT);
 
 	tmpGroup.close();
@@ -148,7 +148,7 @@ int Channel::write_state_to_hdf5(H5::H5File & H5StateFile, const string & rootSt
 //	// set attribute
 //	FILE_LOG(logDEBUG) << "Creating Group: " << rootStr + "/linkListData";
 //	tmpGroup = H5StateFile.createGroup(rootStr + "/linkListData");
-//	element2h5attribute<USHORT>("numBanks",  numBanks, &tmpGroup,H5::PredType::NATIVE_UINT16);
+//	element2h5attribute<USHORT>("numBanks",	numBanks, &tmpGroup,H5::PredType::NATIVE_UINT16);
 //	tmpGroup.close();
 //
 //	std::ostringstream tmpStream;
@@ -165,13 +165,13 @@ int Channel::write_state_to_hdf5(H5::H5File & H5StateFile, const string & rootSt
 int Channel::read_state_from_hdf5(H5::H5File & H5StateFile, const string & rootStr){
 	clear_data();
 	// read waveform data
-	waveform_ = h5array2vector<float>(&H5StateFile, rootStr + "/waveformLib",   H5::PredType::NATIVE_INT16);
+	waveform_ = h5array2vector<float>(&H5StateFile, rootStr + "/waveformLib",	 H5::PredType::NATIVE_INT16);
 
 	// load state information
 	H5::Group tmpGroup = H5StateFile.openGroup(rootStr);
-	offset_    = h5element2element<float>("offset",&tmpGroup, H5::PredType::NATIVE_FLOAT);
-	scale_     = h5element2element<float>("scale",&tmpGroup, H5::PredType::NATIVE_FLOAT);
-	enabled_   = h5element2element<bool>("enabled",&tmpGroup, H5::PredType::NATIVE_UINT);
+	offset_		= h5element2element<float>("offset",&tmpGroup, H5::PredType::NATIVE_FLOAT);
+	scale_		 = h5element2element<float>("scale",&tmpGroup, H5::PredType::NATIVE_FLOAT);
+	enabled_	 = h5element2element<bool>("enabled",&tmpGroup, H5::PredType::NATIVE_UINT);
 	trigDelay_ = h5element2element<int>("trigDelay",&tmpGroup, H5::PredType::NATIVE_INT);
 
 	//Load the linklist data

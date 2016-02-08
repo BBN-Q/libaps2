@@ -1,8 +1,8 @@
 /*
  * libaps2.h
  *
- *  Created on: Jun 25, 2012
- *      Author: qlab
+ *	Created on: Jun 25, 2012
+ *	Author: qlab
  */
 
 #ifndef LIBAPS_H_

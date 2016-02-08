@@ -7,8 +7,8 @@
 #include "APS2Datagram.h"
 
 struct APS2EthernetHeader {
-	MACAddr  dest;
-	MACAddr  src;
+	MACAddr	dest;
+	MACAddr	src;
 	uint16_t frameType;
 	uint16_t seqNum;
 	APS2Command command;

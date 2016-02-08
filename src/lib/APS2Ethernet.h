@@ -31,7 +31,7 @@ struct EthernetDevInfo {
 class APS2Ethernet {
 public:
 
-	APS2Ethernet& operator=(APS2Ethernet &rhs)  { return rhs; };
+	APS2Ethernet& operator=(APS2Ethernet &rhs)	{ return rhs; };
 
 	APS2Ethernet();
 	~APS2Ethernet();

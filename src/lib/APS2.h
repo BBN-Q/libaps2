@@ -177,7 +177,7 @@ private:
 
 	int save_state_file(string &);
 	int read_state_file(string &);
-	int write_state_to_hdf5(  H5::H5File & , const string & );
+	int write_state_to_hdf5(	H5::H5File & , const string & );
 	int read_state_from_hdf5( H5::H5File & , const string & );
 
 	//Non-exported functions
