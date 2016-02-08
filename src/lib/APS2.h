@@ -106,10 +106,8 @@ public:
 	//Flash read/write
 	void write_flash(uint32_t, vector<uint32_t> &);
 	vector<uint32_t> read_flash(uint32_t, uint32_t);
-
-	double flash_erase_done;
-	double flash_write_done;
-	double flash_validate_done;
+	std::atomic<APS2_FLASH_TASK> flash_task;
+	std::atomic<double> flash_task_progress;
 
 	//MAC and IP addresses
 	uint64_t get_mac_addr();

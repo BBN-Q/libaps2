@@ -394,18 +394,18 @@ APS2_STATUS read_flash(const char* deviceSerial, uint32_t addr, uint32_t numWord
 	return APS2_OK;
 }
 
-double get_flash_erase_done(const char* deviceSerial){
-	return APSs[string(deviceSerial)]->flash_erase_done;
+APS2_FLASH_TASK get_flash_task(const char* deviceSerial){
+	return APSs[string(deviceSerial)]->flash_task;
 }
 
-double get_flash_write_done(const char* deviceSerial){
-	return APSs[string(deviceSerial)]->flash_write_done;
+void clear_flash_progress(const char* deviceSerial){
+	APSs[string(deviceSerial)]->flash_task = STARTING;
+	APSs[string(deviceSerial)]->flash_task_progress = 0;
 }
 
-double get_flash_validate_done(const char* deviceSerial){
-	return APSs[string(deviceSerial)]->flash_validate_done;
+double get_flash_progress(const char* deviceSerial){
+	return APSs[string(deviceSerial)]->flash_task_progress;
 }
-
 
 uint64_t get_mac_addr(const char* deviceSerial) {
 	return APSs[string(deviceSerial)]->get_mac_addr();

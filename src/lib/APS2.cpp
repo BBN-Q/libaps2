@@ -261,7 +261,8 @@ void APS2::write_bitfile(const string & bitFile, uint32_t start_addr, APS2_BITFI
 
 	//Now validate bitfile data (EPROM only for now)
 	//TODO: DRAM as well?
-	flash_validate_done = 0;
+	flash_task = VALIDATING;
+	flash_task_progress = 0;
 	if (media == BITFILE_MEDIA_EPROM) {
 		uint32_t end_addr = start_addr + 4*bitfile_words.size();
 		uint32_t addr{start_addr};
@@ -280,7 +281,7 @@ void APS2::write_bitfile(const string & bitFile, uint32_t start_addr, APS2_BITFI
 				}
 				addr += 4;
 			}
-			flash_validate_done = static_cast<double>(addr - start_addr) / (end_addr-start_addr);
+			flash_task_progress = static_cast<double>(addr - start_addr) / (end_addr-start_addr);
 		} while(addr < end_addr);
 	}
 }
@@ -679,7 +680,6 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & ad
 //Flash read/write
 void APS2::write_flash(uint32_t addr, vector<uint32_t> & data) {
 	FILE_LOG(logDEBUG1) << "APS2::write_flash";
-	flash_write_done = 0;
 
 	// erase before write
 	erase_flash(addr, sizeof(uint32_t) * data.size());
@@ -696,16 +696,19 @@ void APS2::write_flash(uint32_t addr, vector<uint32_t> & data) {
 	cmd.mode_stat = EPROM_RW;
 	auto dgs = APS2Datagram::chunk(cmd, addr, data, 0x0100); //max chunk_size is limited wrapping in Ethernet frames
 	FILE_LOG(logDEBUG1) << "Flash write chunked into " << dgs.size() << " datagrams.";
+	flash_task = WRITING;
+	flash_task_progress = 0;
 	//Write 1 at a time so we can update progress
 	for (size_t ct = 0; ct < dgs.size(); ct++) {
 		ethernetRM_->send(deviceSerial_, {dgs[ct]});
-		flash_write_done = static_cast<double>(ct+1)/static_cast<double>(dgs.size());
+		flash_task_progress = static_cast<double>(ct+1)/static_cast<double>(dgs.size());
 	}
 }
 
 void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
 	FILE_LOG(logDEBUG1) << "APS2::erase_flash";
-	flash_erase_done = 0;
+	flash_task = ERASING;
+	flash_task_progress = 0;
 
 	// each erase command erases 64 KB of data starting at addr
 	if ((start_addr % (1 << 16)) != 0){
@@ -750,7 +753,7 @@ void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
 		}
 
 		addr += (1<<16);
-		flash_erase_done = static_cast<double>(addr - start_addr) / num_bytes;
+		flash_task_progress = static_cast<double>(addr - start_addr) / num_bytes;
 	} while(addr < end_addr);
 }
 

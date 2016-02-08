@@ -165,34 +165,15 @@ int main (int argc, char* argv[])
 		case TARGET_EPROM:
 		case TARGET_EPROM_BACKUP:
 		{
+			clear_flash_progress(deviceSerial.c_str());
+			//Launch the write on another thread so we can poll for progress
 			auto thread_future = std::async(std::launch::async, [deviceSerial, bitfile, target_addr]() {
 				return write_bitfile(deviceSerial.c_str(), bitfile.c_str(), target_addr, BITFILE_MEDIA_EPROM);
 			});
 
-			//First report erase percentage
-			double percentage;
-			do {
-				std::this_thread::sleep_for(std::chrono::milliseconds(50));
-				//Make sure we haven't return prematurely
-				auto thread_status = thread_future.wait_for(std::chrono::milliseconds(0));
-				if ( thread_status == std::future_status::ready ) {
-					auto status = thread_future.get();
-					if ( status == APS2_OK ) {
-						break;
-					} else {
-						std::cerr << "Writing bit file failed with error message: " << get_error_msg(status) << endl;
-						disconnect_APS(deviceSerial.c_str());
-						return -1;
-					}
-				}
-				percentage = get_flash_erase_done(deviceSerial.c_str());
-				progress_bar("Erasing: ", percentage);
-			} while(percentage < (1-1e-6));
-			cout << endl;
+			auto prev_flash_task = get_flash_task(deviceSerial.c_str());
 
-			//Now write percentage
-			do {
-				std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			while (get_flash_task(deviceSerial.c_str()) != DONE) {
 				//Make sure we haven't return prematurely
 				auto thread_status = thread_future.wait_for(std::chrono::milliseconds(0));
 				if ( thread_status == std::future_status::ready ) {
@@ -205,29 +186,22 @@ int main (int argc, char* argv[])
 						return -1;
 					}
 				}
-				percentage = get_flash_write_done(deviceSerial.c_str());
-				progress_bar("Writing: ", percentage);
-			} while(percentage < (1-1e-6));
-			cout << endl;
 
-			//Now validation percentage
-			do {
-				std::this_thread::sleep_for(std::chrono::milliseconds(50));
-				//Make sure we haven't return prematurely
-				auto thread_status = thread_future.wait_for(std::chrono::milliseconds(0));
-				if ( thread_status == std::future_status::ready ) {
-					auto status = thread_future.get();
-					if ( status == APS2_OK ) {
-						break;
-					} else {
-						std::cerr << "Writing bit file failed with error message: " << get_error_msg(status) << endl;
-						disconnect_APS(deviceSerial.c_str());
-						return -1;
-					}
+				//Otherwise update progress bars
+				//First check for change in task to move onto next progress bar
+				auto cur_flash_task = get_flash_task(deviceSerial.c_str());
+				if (cur_flash_task != prev_flash_task) {
+					prev_flash_task = cur_flash_task;
+					cout << endl;
 				}
-				percentage = get_flash_validate_done(deviceSerial.c_str());
-				progress_bar("Validating: ", percentage);
-			} while(percentage < (1-1e-6));
+
+				//Update the progress bar
+				std::map<APS2_FLASH_TASK, string> task_string_map { {ERASING, "Erasing: "}, {WRITING, "Writing: "}, {VALIDATING, "Validating: "}};
+				if ( (cur_flash_task == ERASING) || (cur_flash_task == WRITING) || (cur_flash_task == VALIDATING) ) {
+					progress_bar(task_string_map[cur_flash_task], get_flash_progress(deviceSerial.c_str()));
+				}
+				std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			}
 			cout << endl;
 			break;
 		}
@@ -259,6 +233,5 @@ int main (int argc, char* argv[])
 
 	disconnect_APS(deviceSerial.c_str());
 	cout << concol::RED << "Finished!" << concol::RESET << endl;
-
 	return 0;
 }
