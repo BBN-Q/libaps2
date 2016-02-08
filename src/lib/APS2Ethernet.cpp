@@ -39,8 +39,8 @@ APS2Ethernet::APS2Ethernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
 	udp_socket_old_.set_option(asio::socket_base::broadcast(true));
 	udp_socket_.set_option(asio::socket_base::broadcast(true));
 
-	setup_udp_receive_old();
-	setup_udp_receive();
+	setup_udp_receive(udp_socket_old_, received_udp_data_old_, remote_udp_endpoint_old_);
+	setup_udp_receive(udp_socket_, received_udp_data_, remote_udp_endpoint_);
 
 };
 
@@ -50,46 +50,25 @@ APS2Ethernet::~APS2Ethernet() {
 	receiveThread_.join();
 }
 
-void APS2Ethernet::setup_udp_receive_old() {
-	//Receive UDP packets on the old UDP sockets
-	udp_socket_old_.async_receive_from(
-		asio::buffer(received_udp_data_old_, 2048), remote_udp_endpoint_old_,
-		[this](std::error_code ec, std::size_t bytesReceived)
+void APS2Ethernet::setup_udp_receive(udp::socket & sock, uint8_t* buf, udp::endpoint & remote_endpoint) {
+	//Receive UDP packets and pass off to sorter
+	sock.async_receive_from(
+		asio::buffer(buf, 2048), remote_endpoint,
+		[this, &sock, buf, &remote_endpoint](std::error_code ec, std::size_t bytesReceived)
 		{
 			//If there is anything to look at hand it off to the sorter
 			if (!ec && bytesReceived > 0)
 			{
-				vector<uint8_t> packetData(received_udp_data_old_, received_udp_data_old_ + bytesReceived);
+				vector<uint8_t> packetData(buf, buf + bytesReceived);
 				sorter_lock_.lock();
-				sort_packet(packetData, remote_udp_endpoint_old_);
+				sort_packet(packetData, remote_endpoint);
 				sorter_lock_.unlock();
 			}
 
 			//Start the receiver again
-			setup_udp_receive_old();
+			setup_udp_receive(sock, buf, remote_endpoint);
 	});
 }
-
-void APS2Ethernet::setup_udp_receive() {
-	//Receive UDP packets on the UDP socket
-	udp_socket_.async_receive_from(
-		asio::buffer(received_udp_data_, 2048), remote_udp_endpoint_,
-		[this](std::error_code ec, std::size_t bytesReceived)
-		{
-			//If there is anything to look at hand it off to the sorter
-			if (!ec && bytesReceived > 0)
-			{
-				vector<uint8_t> packetData(received_udp_data_, received_udp_data_ + bytesReceived);
-				sorter_lock_.lock();
-				sort_packet(packetData, remote_udp_endpoint_);
-				sorter_lock_.unlock();
-			}
-
-			//Start the receiver again
-			setup_udp_receive();
-	});
-}
-
 
 void APS2Ethernet::sort_packet(const vector<uint8_t> & packetData, const udp::endpoint & sender) {
 	//If we have the endpoint address then add it to the queue otherwise check to see if it is an enumerate response

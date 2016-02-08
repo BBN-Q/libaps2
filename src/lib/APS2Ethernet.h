@@ -72,9 +72,7 @@ private:
 	udp::endpoint remote_udp_endpoint_old_;
 	udp::endpoint remote_udp_endpoint_;
 
-
-	void setup_udp_receive();
-	void setup_udp_receive_old();
+	void setup_udp_receive(udp::socket &, uint8_t*, udp::endpoint &);
 
 	void sort_packet(const vector<uint8_t> &, const udp::endpoint &);
 
