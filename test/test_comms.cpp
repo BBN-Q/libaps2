@@ -148,13 +148,16 @@ TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 		size_t idx=0;
 		std::default_random_engine generator;
 		std::uniform_int_distribution<uint32_t> wordDistribution;
-		for (unsigned writeSize=4; writeSize<=256; writeSize+=4){
+		for (unsigned writeSize=0; writeSize<=256; writeSize+=4){
 			for (unsigned ct=0; ct<writeSize; ct++){
 				outData.push_back(wordDistribution(generator));
 			}
-			write_memory(ip_addr.c_str(), idx*4, outData.data()+idx, writeSize);
+			APS2_STATUS status;
+			status = write_memory(ip_addr.c_str(), idx*4, outData.data()+idx, writeSize);
+			REQUIRE( status == APS2_OK );
 			idx += writeSize;
 		}
+
 		//Read data back in 128 words at a time to support legacy firmware
 		inData.resize(idx);
 		idx = 0;
@@ -162,12 +165,7 @@ TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 			read_memory(ip_addr.c_str(),	idx*4, inData.data()+idx, 128);
 			idx += 128;
 		}
-
-		bool passed = true;
-		for (size_t ct=0; ct<inData.size(); ct++){
-			passed &= (inData[ct] == outData[ct]);
-		}
-		REQUIRE(passed);
+		REQUIRE( outData == inData );
 	}
 
 	SECTION("CACHE BRAMs write/read") {

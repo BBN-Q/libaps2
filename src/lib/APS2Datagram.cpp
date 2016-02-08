@@ -5,7 +5,7 @@
 // 3. payload
 //
 // Original author: Colm Ryan
-// Copyright 2016 Raytheon BBN Technologi
+// Copyright 2016 Raytheon BBN Technologies
 
 #include "APS2Datagram.h"
 
@@ -39,7 +39,7 @@ vector<APS2Datagram> APS2Datagram::chunk(APS2Command cmd, uint32_t addr, const v
 		cmd.cnt = cur_chunk_size;
 		chunks.push_back(APS2Datagram{cmd, addr, vector<uint32_t>(start_it, end_it)});
 		std::advance(start_it, cur_chunk_size);
-		addr += 4*cur_chunk_size;
+		addr += 4*cur_chunk_size; //increment AXI byte address
 	}
 	return chunks;
 }

@@ -27,6 +27,10 @@ TEST_CASE("APS2Datagram chunking", "[datagram]") {
 		REQUIRE( chunks[0].payload == vector<uint32_t>({1,2,3}));
 	}
 
+	SECTION("no data gives no chunks"){
+		vector<APS2Datagram> chunks = APS2Datagram::chunk(cmd, 0xdeadbeef, {}, 1);
+		REQUIRE( chunks.empty() );
+	}
 
 }
 TEST_CASE("APS2Datagram data", "[datagram]") {
