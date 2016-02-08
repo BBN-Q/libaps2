@@ -8,6 +8,8 @@ using std::endl;
 #include "catch.hpp"
 #include "asio.hpp"
 
+#include <random>
+
 #include "libaps2.h"
 #include "constants.h"
 #include "concol.h"
