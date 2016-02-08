@@ -1089,7 +1089,6 @@ void APS2::check_clocks_status() {
 	//On board MMCM PLL's are reported either through user status or the PLL_STATUS_ADDR CSR register
 	uint32_t pll_status;
 	if (legacy_firmware) {
-		if (statusRegs.userFirmwareVersion < 0x212) return; //nothing to read
 		pll_status = statusRegs.userStatus;
 	 } else {
 		 pll_status = read_memory(PLL_STATUS_ADDR, 1).front();
