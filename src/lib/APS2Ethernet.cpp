@@ -22,7 +22,7 @@ APS2Ethernet::APS2Ethernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
 	//Bind the old UDP socket at local port bb4e
 	try {
 		udp_socket_old_.open(udp::v4());
-		udp_socket_old_.bind(udp::endpoint(udp::v4(), APS_PROTO));
+		udp_socket_old_.bind(udp::endpoint(udp::v4(), UDP_PORT_OLD));
 	} catch (...) {
 		throw APS2_SOCKET_FAILURE;
 	}
@@ -30,7 +30,7 @@ APS2Ethernet::APS2Ethernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
 	//Bind UDP socket at local port bb4f
 	try {
 		udp_socket_.open(udp::v4());
-		udp_socket_.bind(udp::endpoint(udp::v4(), APS_PROTO+1));
+		udp_socket_.bind(udp::endpoint(udp::v4(), UDP_PORT));
 	} catch (...) {
 		throw APS2_SOCKET_FAILURE;
 	}
