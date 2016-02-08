@@ -72,23 +72,22 @@ set(APS2_VERSION_MAJOR 0)
 set(APS2_VERSION_MINOR 6)
 set(APS2_VERSION_PATCH 0)
 set(APS2_VERSION_STRING ${APS2_VERSION_MAJOR}.${APS2_VERSION_MINOR}.${APS2_VERSION_PATCH})
-set_target_properties(aps2 PROPERTIES VERSION ${APS2_VERSION_STRING} SOVERSION ${APS2_VERSION_MAJOR})
+set_target_properties(aps2 PROPERTIES
+	VERSION ${APS2_VERSION_STRING}
+	SOVERSION ${APS2_VERSION_MAJOR}
+	MACOSX_RPATH 1)
 
 ADD_EXECUTABLE(enumerate
 	./C++/enumerate.cpp
 )
-TARGET_LINK_LIBRARIES(enumerate aps2)
-
 
 ADD_EXECUTABLE(play_waveform
 	./C++/play_waveform.cpp
 )
-TARGET_LINK_LIBRARIES(play_waveform aps2)
 
 ADD_EXECUTABLE(play_sequence
 	./C++/play_sequence.cpp
 )
-TARGET_LINK_LIBRARIES(play_sequence aps2)
 
 ADD_EXECUTABLE(run_tests
 	../test/run_tests.cpp
@@ -111,7 +110,7 @@ ADD_EXECUTABLE(program
 	./util/program.cpp
 )
 
-ADD_EXECUTABLE(DAC_BIST
+ADD_EXECUTABLE(dac_bist
 	./util/DAC_BIST.cpp
 )
 
@@ -119,14 +118,37 @@ ADD_EXECUTABLE(waveforms
 	./C++/waveforms.cpp
 )
 
+TARGET_LINK_LIBRARIES(enumerate aps2)
+TARGET_LINK_LIBRARIES(play_waveform aps2)
+TARGET_LINK_LIBRARIES(play_sequence aps2)
 TARGET_LINK_LIBRARIES(flash aps2)
 TARGET_LINK_LIBRARIES(reset aps2)
 TARGET_LINK_LIBRARIES(program aps2)
-TARGET_LINK_LIBRARIES(DAC_BIST aps2)
+TARGET_LINK_LIBRARIES(dac_bist aps2)
 TARGET_LINK_LIBRARIES(waveforms aps2)
 
+SET(bin_targets enumerate play_waveform play_sequence flash reset program dac_bist waveforms run_tests)
+
 if(WIN32)
-TARGET_LINK_LIBRARIES(aps2 hdf5	hdf5_cpp ws2_32 iphlpapi)
+TARGET_LINK_LIBRARIES(aps2 hdf5	hdf5_cpp ws2_32 iphlpapi pthread)
 else(WIN32)
-TARGET_LINK_LIBRARIES(aps2 hdf5	hdf5_cpp)
+TARGET_LINK_LIBRARIES(aps2 hdf5	hdf5_cpp pthread)
 endif(WIN32)
+
+# installation section
+IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+	SET(CMAKE_INSTALL_PREFIX "${PROJECT_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
+ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+
+INSTALL(TARGETS ${bin_targets} aps2
+	    LIBRARY DESTINATION lib
+	    RUNTIME DESTINATION bin)
+
+INSTALL(FILES "${PROJECT_SOURCE_DIR}/lib/libaps2.h"
+	    DESTINATION include)
+
+if(APPLE)
+	set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH “@loader_path/../lib”)
+elseif(UNIX)
+	set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH “\$ORIGIN/../lib”)
+endif()
