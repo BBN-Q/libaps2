@@ -148,7 +148,9 @@ INSTALL(FILES "${PROJECT_SOURCE_DIR}/lib/libaps2.h"
 	    DESTINATION include)
 
 if(APPLE)
-	set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH “@loader_path/../lib”)
+	set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH "@loader_path/../lib")
+	set_target_properties(aps2 PROPERTIES INSTALL_RPATH "@loader_path")
 elseif(UNIX)
-	set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH “\$ORIGIN/../lib”)
+	set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
+	set_target_properties(aps2 PROPERTIES INSTALL_RPATH "\$ORIGIN")
 endif()
