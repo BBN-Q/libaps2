@@ -147,6 +147,21 @@ INSTALL(TARGETS ${bin_targets} aps2
 INSTALL(FILES "${PROJECT_SOURCE_DIR}/lib/libaps2.h"
 	    DESTINATION include)
 
+# On linux we need to ship the system libraries
+# TODO: do something similar for windows
+IF(UNIX AND NOT APPLE)
+GET_FILENAME_COMPONENT(GCC_PATH ${CMAKE_CXX_COMPILER} PATH)
+SET(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS
+	${GCC_PATH}/../lib64/libgcc_s.so.1
+	${GCC_PATH}/../lib64/libstdc++.so.6
+	${GCC_PATH}/../lib64/libstdc++.so.6.0.21
+	${HDF5_INCLUDE_DIR}/../lib/libhdf5.so.10
+	${HDF5_INCLUDE_DIR}/../lib/libhdf5.so.10.1.0
+	${HDF5_INCLUDE_DIR}/../lib/libhdf5_cpp.so.11
+	${HDF5_INCLUDE_DIR}/../lib/libhdf5_cpp.so.11.0.0)
+ENDIF()
+INCLUDE( InstallRequiredSystemLibraries )
+
 if(APPLE)
 	set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH "@loader_path/../lib")
 	set_target_properties(aps2 PROPERTIES INSTALL_RPATH "@loader_path")
