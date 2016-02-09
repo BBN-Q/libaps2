@@ -19,7 +19,13 @@ enum APS2_STATUS {
 	APS2_IP_ADDR_VALIDATION_FAILURE = -14,
 	APS2_DHCP_VALIDATION_FAILURE = -15,
 	APS2_RECEIVE_TIMEOUT = -16,
-	APS2_SOCKET_FAILURE = -17
+	APS2_SOCKET_FAILURE = -17,
+	APS2_INVALID_IP_ADDR = -18,
+	APS2_COMMS_ERROR = -19,
+	APS2_UNALIGNED_MEMORY_ACCESS = -20,
+	APS2_ERPOM_ERASE_FAILURE = -21,
+	APS2_BITFILE_VALIDATION_FAILURE = -22,
+	APS2_BAD_PLL_VALUE = -23
 };
 
 
@@ -29,6 +35,7 @@ enum APS2_STATUS {
 #include <string>
 
 static std::map<APS2_STATUS, std::string> messages = {
+	{APS2_NO_DEVICE_FOUND, "Device failed to respond at requested IP address"},
 	{APS2_UNCONNECTED, "Attempt to run library function on unconnected APS2"},
 	{APS2_SEQFILE_FAIL, "Failed to load HDF5 sequence file. Check it is present and correctly formatted."},
 	{APS2_FILELOG_ERROR, "Unable to open log file."},
@@ -42,7 +49,13 @@ static std::map<APS2_STATUS, std::string> messages = {
 	{APS2_IP_ADDR_VALIDATION_FAILURE, "Failed to validate the update to the IP address in flash memory."},
 	{APS2_DHCP_VALIDATION_FAILURE, "Failed to validate the update to the DHCP enable bit in flash memory."},
 	{APS2_RECEIVE_TIMEOUT, "Timed out while waiting to receive data."},
-	{APS2_SOCKET_FAILURE, "Failed to open ethernet socket. Verify that no dangling libaps2 processes are running."}
+	{APS2_SOCKET_FAILURE, "Failed to open ethernet socket. Verify that no dangling libaps2 processes are running."},
+	{APS2_INVALID_IP_ADDR, "Requested conneciton to invalid IPv4 address."},
+	{APS2_COMMS_ERROR, "Ethernet communications failed."},
+	{APS2_UNALIGNED_MEMORY_ACCESS, "SDRAM memory must be accessed at 8 (configuration) or 16 (sequence/waveform) byte boundaries."},
+	{APS2_ERPOM_ERASE_FAILURE, "ERPOM erase command failed"},
+	{APS2_BITFILE_VALIDATION_FAILURE, "bitfile validation failed"},
+	{APS2_BAD_PLL_VALUE, "Unexpected PLL chip value"}
 };
 
 

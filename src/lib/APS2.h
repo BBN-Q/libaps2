@@ -8,7 +8,7 @@
 #define APS2_H
 
 #include "headings.h"
-#include "APSEthernet.h"
+#include "APS2Ethernet.h"
 #include "Channel.h"
 #include "APS2_errno.h"
 #include "APS2_enums.h"
@@ -24,20 +24,16 @@ public:
 	APS2(string);
 	~APS2();
 
-	void connect(shared_ptr<APSEthernet> &&);
+	void connect(shared_ptr<APS2Ethernet> &&);
 	void disconnect();
 
 	APS2_STATUS init(const bool & = false, const int & bitFileNum = 0);
-	void reset(const APS_RESET_MODE_STAT & resetMode = APS_RESET_MODE_STAT::SOFT_RESET);
-
-	void store_image(const string & bitFile, const int & position = 0);
-	int select_image(const int &);
-	int program_FPGA(const string &);
+	void reset(APS_RESET_MODE_STAT mode = APS_RESET_MODE_STAT::SOFT_RESET);
 
 	int setup_VCXO() const;
 	int setup_PLL() const;
 	int setup_DACs();
-	int run_chip_config(const uint32_t & addr = 0x0);
+	void run_chip_config(uint32_t addr = 0x0);
 
 	APSStatusBank_t read_status_registers();
 	uint32_t read_status_register(const STATUS_REGISTERS &);
@@ -87,23 +83,31 @@ public:
 
 	APS2_RUN_STATE runState;
 	APS2_HOST_TYPE host_type;
+	bool legacy_firmware;
 
 	//Pretty printers
 	static string print_status_bank(const APSStatusBank_t & status);
 	static string printAPSChipCommand(APSChipConfigCommand_t & command);
+	static string print_firmware_version(uint32_t);
 
 	//Memory read/write
 	void write_memory(const uint32_t & addr, const vector<uint32_t> & data);
 	void write_memory(const uint32_t & addr, const uint32_t & data);
-	vector<uint32_t> read_memory(const uint32_t &, const uint32_t &);
+	vector<uint32_t> read_memory(uint32_t, uint32_t);
 
 	//SPI read/write
 	void write_SPI(vector<uint32_t> &);
 	uint32_t read_SPI(const CHIPCONFIG_IO_TARGET &, const uint16_t &);
 
+	//Configuration SDRAM read/write
+	void write_configuration_SDRAM(uint32_t addr, const vector<uint32_t> & data);
+	vector<uint32_t> read_configuration_SDRAM(uint32_t, uint32_t);
+
 	//Flash read/write
-	int write_flash(const uint32_t &, vector<uint32_t> &);
-	vector<uint32_t> read_flash(const uint32_t &, const uint32_t &);
+	void write_flash(uint32_t, vector<uint32_t> &);
+	vector<uint32_t> read_flash(uint32_t, uint32_t);
+	std::atomic<APS2_FLASH_TASK> flash_task;
+	std::atomic<double> flash_task_progress;
 
 	//MAC and IP addresses
 	uint64_t get_mac_addr();
@@ -115,35 +119,28 @@ public:
 	bool get_dhcp_enable();
 	void set_dhcp_enable(const bool &);
 
-	//CLPD DRAM
-	int write_bitfile(const uint32_t &, const string &);
-	int load_bitfile(const uint32_t &);
-
 	//Create/restore setup SPI sequence
-	int write_SPI_setup();
+	void write_SPI_setup();
+
+	//bitfile loading
+	void write_bitfile(const string &, uint32_t, APS2_BITFILE_STORAGE_MEDIA);
+	void program_bitfile(uint32_t);
 
 	// DAC BIST test
 	int run_DAC_BIST(const int &, const vector<int16_t> &, vector<uint32_t> &);
 	void set_DAC_SD(const int &, const uint8_t &);
 
+
+
 private:
 
 	string deviceSerial_;
 	vector<Channel> channels_;
-	shared_ptr<APSEthernet> ethernetRM_;
+	shared_ptr<APS2Ethernet> ethernetRM_;
 	unsigned samplingRate_;
 	MACAddr macAddr_;
 
-	//Read/Write commands
-	int write_command(const APSCommand_t &, const uint32_t & addr = 0, const bool & checkResponse = true);
-	vector<APSEthernetPacket> pack_data(const uint32_t &, const vector<uint32_t> &, const APS_COMMANDS & cmdtype = APS_COMMANDS::USERIO_ACK);
-	vector<APSEthernetPacket> read_packets(const size_t &);
-
-	int erase_flash(uint32_t, uint32_t);
-
-	//Single packet query
-	vector<APSEthernetPacket> query(const APSCommand_t &, const uint32_t & addr = 0);
-	vector<APSEthernetPacket> query(const APSEthernetPacket &);
+	void erase_flash(uint32_t, uint32_t);
 
 	vector<uint32_t> build_DAC_SPI_msg(const CHIPCONFIG_IO_TARGET &, const vector<SPI_AddrData_t> &);
 	vector<uint32_t> build_PLL_SPI_msg(const vector<SPI_AddrData_t> &);
@@ -178,16 +175,15 @@ private:
 
 	int save_state_file(string &);
 	int read_state_file(string &);
-	int write_state_to_hdf5(  H5::H5File & , const string & );
+	int write_state_to_hdf5(	H5::H5File & , const string & );
 	int read_state_from_hdf5( H5::H5File & , const string & );
 
 	//Non-exported functions
-	shared_ptr<APSEthernet> get_interface();
+	shared_ptr<APS2Ethernet> get_interface();
 
 	void write_macip_flash(const uint64_t &, const uint32_t &, const bool &);
 
 }; //end class APS2
-
 
 
 

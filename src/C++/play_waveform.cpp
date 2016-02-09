@@ -14,20 +14,20 @@ using std::vector;
 using std::cout;
 using std::endl;
 
-enum  optionIndex { UNKNOWN, HELP, WFA_FILE, WFB_FILE, TRIG_MODE, TRIG_INTERVAL, LOG_LEVEL};
+enum	optionIndex { UNKNOWN, HELP, WFA_FILE, WFB_FILE, TRIG_MODE, TRIG_INTERVAL, LOG_LEVEL};
 const option::Descriptor usage[] =
 {
-	{UNKNOWN, 0,"" , ""    , option::Arg::None, "USAGE: play_waveform [options]\n\n"
-	                                         "Options:" },
-	{HELP,    0,"" , "help", option::Arg::None, "  --help  \tPrint usage and exit." },
-	{WFA_FILE, 0,"", "wfA", option::Arg::Required, "  --wfA  \tChannel A waveform file (ASCII one signed 16 bit integer per line).  Only wfA or wfB required." },
-	{WFB_FILE, 0,"", "wfB", option::Arg::Required, "  --wfB  \tChannel B waveform file (ASCII one signed 16 bit integer per line). Only wfA or wfB required." },
-	{TRIG_MODE, 0,"", "trigMode", option::Arg::Required, "  --trigMode  \tTrigger mode (0: external; 1: internal; 2: software - optional; default=1)." },
-	{TRIG_INTERVAL,  0,"", "trigInterval", option::Arg::Numeric, "  --trigRep  \tInternal trigger interval (optional; default=10ms)." },
-	{LOG_LEVEL,  0,"", "logLevel", option::Arg::Numeric, "  --logLevel  \tLogging level level to print (optional; default=2/INFO)." },
-	{UNKNOWN, 0,"" ,  ""   , option::Arg::None, "\nExamples:\n"
-	                                         "  play_waveform --wfA=../examples/wfA.dat --wfB=../examples/wfB.dat\n"
-	                                         "  play_waveform --wfA=../examples/wfB.dat --trigMode=2\n" },
+	{UNKNOWN, 0,"" , ""		, option::Arg::None, "USAGE: play_waveform [options]\n\n"
+																					 "Options:" },
+	{HELP,		0,"" , "help", option::Arg::None, "	--help	\tPrint usage and exit." },
+	{WFA_FILE, 0,"", "wfA", option::Arg::Required, "	--wfA	\tChannel A waveform file (ASCII one signed 16 bit integer per line).	Only wfA or wfB required." },
+	{WFB_FILE, 0,"", "wfB", option::Arg::Required, "	--wfB	\tChannel B waveform file (ASCII one signed 16 bit integer per line). Only wfA or wfB required." },
+	{TRIG_MODE, 0,"", "trigMode", option::Arg::Required, "	--trigMode	\tTrigger mode (0: external; 1: internal; 2: software - optional; default=1)." },
+	{TRIG_INTERVAL,	0,"", "trigInterval", option::Arg::Numeric, "	--trigRep	\tInternal trigger interval (optional; default=10ms)." },
+	{LOG_LEVEL,	0,"", "logLevel", option::Arg::Numeric, "	--logLevel	\tLogging level level to print (optional; default=2/INFO)." },
+	{UNKNOWN, 0,"" ,	""	 , option::Arg::None, "\nExamples:\n"
+																					 "	play_waveform --wfA=../examples/wfA.dat --wfB=../examples/wfB.dat\n"
+																					 "	play_waveform --wfA=../examples/wfB.dat --trigMode=2\n" },
 	{0,0,0,0,0,0}
 };
 
@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
 	print_title("BBN APS2 Waveform Player");
 
 	argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
-	option::Stats  stats(usage, argc, argv);
+	option::Stats	stats(usage, argc, argv);
 	option::Option *options = new option::Option[stats.options_max];
 	option::Option *buffer = new option::Option[stats.buffer_max];
 	option::Parser parse(usage, argc, argv, options, buffer);
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 	set_logging_level(logLevel);
 	set_log("stdout");
 
-	//Load the waveform files 
+	//Load the waveform files
 	vector<int16_t> wfA, wfB;
 	std::ifstream ifs;
 	if (options[WFA_FILE]) {

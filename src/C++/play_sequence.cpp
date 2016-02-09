@@ -9,19 +9,19 @@
 
 #include "optionparser.h"
 
-enum  optionIndex { UNKNOWN, HELP, SEQ_FILE, TRIG_MODE, TRIG_INTERVAL, LOG_LEVEL};
+enum	optionIndex { UNKNOWN, HELP, SEQ_FILE, TRIG_MODE, TRIG_INTERVAL, LOG_LEVEL};
 const option::Descriptor usage[] =
 {
-	{UNKNOWN, 0,"" , ""    , option::Arg::None, "USAGE: play_sequence [options]\n\n"
-	                                         "Options:" },
-	{HELP,    0,"" , "help", option::Arg::None, "  --help  \tPrint usage and exit." },
-	{SEQ_FILE, 0,"", "seqFile", option::Arg::Required, "  --seqFile  \tHDF5 sequence file to play." },
-	{TRIG_MODE, 0,"", "trigMode", option::Arg::Required, "  --trigMode  \tTrigger mode (0: external; 1: internal; 2: software - optional; default=1)." },
-	{TRIG_INTERVAL,  0,"", "trigInterval", option::Arg::Numeric, "  --trigRep  \t(optional) Internal trigger interval (optional; default=10ms)." },
-	{LOG_LEVEL,  0,"", "logLevel", option::Arg::Numeric, "  --logLevel  \t(optional) Logging level level to print to console (optional; default=2/INFO)." },
-	{UNKNOWN, 0,"" ,  ""   , option::Arg::None, "\nExamples:\n"
-	                                         "  play_sequence --seqFile=../examples/ramsey_tppi.h5\n"
-	                                         "  play_sequence --seqFile=../examples/rampey_slipped.h5 --trigMode=2\n" },
+	{UNKNOWN, 0,"" , ""		, option::Arg::None, "USAGE: play_sequence [options]\n\n"
+																					 "Options:" },
+	{HELP,		0,"" , "help", option::Arg::None, "	--help	\tPrint usage and exit." },
+	{SEQ_FILE, 0,"", "seqFile", option::Arg::Required, "	--seqFile	\tHDF5 sequence file to play." },
+	{TRIG_MODE, 0,"", "trigMode", option::Arg::Required, "	--trigMode	\tTrigger mode (0: external; 1: internal; 2: software - optional; default=1)." },
+	{TRIG_INTERVAL,	0,"", "trigInterval", option::Arg::Numeric, "	--trigRep	\t(optional) Internal trigger interval (optional; default=10ms)." },
+	{LOG_LEVEL,	0,"", "logLevel", option::Arg::Numeric, "	--logLevel	\t(optional) Logging level level to print to console (optional; default=2/INFO)." },
+	{UNKNOWN, 0,"" ,	""	 , option::Arg::None, "\nExamples:\n"
+																					 "	play_sequence --seqFile=../examples/ramsey_tppi.h5\n"
+																					 "	play_sequence --seqFile=../examples/rampey_slipped.h5 --trigMode=2\n" },
 	{0,0,0,0,0,0}
 };
 
@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
 	print_title("BBN APS2 Sequence Player");
 
 	argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
-	option::Stats  stats(usage, argc, argv);
+	option::Stats	stats(usage, argc, argv);
 	option::Option *options = new option::Option[stats.options_max];
 	option::Option *buffer = new option::Option[stats.buffer_max];
 	option::Parser parse(usage, argc, argv, options, buffer);

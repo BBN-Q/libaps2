@@ -1,20 +1,27 @@
 #include "APS2.h"
+#include "APS2Datagram.h"
 
-APS2::APS2() :  isOpen{false}, channels_(2), samplingRate_{0} {};
+APS2::APS2() :	isOpen{false}, legacy_firmware{false}, channels_(2), samplingRate_{0} {};
 
-APS2::APS2(string deviceSerial) :  isOpen{false}, deviceSerial_{deviceSerial}, samplingRate_{0} {
+APS2::APS2(string deviceSerial) :	isOpen{false}, legacy_firmware{false}, deviceSerial_{deviceSerial}, samplingRate_{0} {
 	channels_.reserve(2);
 	for(size_t ct=0; ct<2; ct++) channels_.push_back(Channel(ct));
 };
 
 APS2::~APS2() = default;
 
-void APS2::connect(shared_ptr<APSEthernet> && ethernetRM) {
+void APS2::connect(shared_ptr<APS2Ethernet> && ethernetRM) {
+	FILE_LOG(logDEBUG) << "APS2::connect";
+	//Hold on to APS2Ethernet class to keep socket alive
 	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
 		ethernetRM_->connect(deviceSerial_);
+		//Figure out whether this is an APS2 or TDM and what register map to use
 		try {
 			APSStatusBank_t statusRegs = read_status_registers();
+			if ( statusRegs.userFirmwareVersion != 0xbadda555 ) {
+				legacy_firmware = true;
+			}
 			if ((statusRegs.hostFirmwareVersion & (1 << APS2_HOST_TYPE_BIT)) == (1 << APS2_HOST_TYPE_BIT)) {
 				host_type = TDM;
 			} else {
@@ -44,41 +51,31 @@ void APS2::disconnect() {
 	}
 }
 
-void APS2::reset(const APS_RESET_MODE_STAT & resetMode /* default SOFT_RESET */) {
+void APS2::reset(APS_RESET_MODE_STAT mode /* default SOFT_RESET */) {
+	FILE_LOG(logDEBUG1) << "APS2::reset";
 
-	APSCommand_t command = { .packed=0 };
+	APS2Command cmd;
+	cmd.sel = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::RESET);
+	cmd.mode_stat = static_cast<uint32_t>(mode);
 
-	command.cmd = static_cast<uint32_t>(APS_COMMANDS::RESET);
-	command.mode_stat = static_cast<uint32_t>(resetMode);
-
-	uint32_t addr = 0;
-	if (resetMode == APS_RESET_MODE_STAT::RECONFIG_EPROM) {
+	//For EPROM reset we can specify the image to load
+	//Use user image for now
+	uint32_t addr{0};
+	if (mode == APS_RESET_MODE_STAT::RECONFIG_EPROM) {
 		addr = EPROM_USER_IMAGE_ADDR;
 	}
 
-	write_command(command, addr, false);
-	// After being reset the board should send an acknowledge packet with status bytes
-	std::this_thread::sleep_for(std::chrono::seconds(4));
-	int retrycnt = 0;
-	while (retrycnt < 3) {
-		try {
-			// poll status to see device reset
-			read_status_registers();
-			return;
-		} catch (std::exception &e) {
-			FILE_LOG(logDEBUG) << "Status timeout; retrying...";
-		}
-		retrycnt++;
-	}
+	//Send the command
+	ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
 
-	throw APS2_RESET_TIMEOUT;
+	//we expect to loose the connection at this point...
 }
 
 APS2_STATUS APS2::init(const bool & forceReload, const int & bitFileNum) {
 	if (host_type == TDM) {
 		return APS2_OK;
 	}
-	 //TODO: bitfiles will be stored in flash so all we need to do here is the DACs
 
 	get_sampleRate(); // to update state variable
 
@@ -127,25 +124,42 @@ int APS2::setup_DACs() {
 }
 
 APSStatusBank_t APS2::read_status_registers() {
+	FILE_LOG(logDEBUG1) << "APS2::read_status_registers";
 	//Query with the status request command
-	APSCommand_t command = { .packed=0 };
-	command.cmd = static_cast<uint32_t>(APS_COMMANDS::STATUS);
-	command.r_w = 1;
-	command.mode_stat = APS_STATUS_HOST;
-	APSEthernetPacket statusPacket = query(command)[0];
+	APS2Command cmd;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::STATUS);
+	cmd.r_w = 1;
+	cmd.sel = 1; //necessary for newer firmware to demux to ApsMsgProc
+	cmd.mode_stat = APS_STATUS_HOST;
+
+	//Send the request
+	ethernetRM_->send(deviceSerial_, {{cmd, 0, {}}});
+
+	//Read the response
+	auto resp_dg = ethernetRM_->read(deviceSerial_, std::chrono::milliseconds(100));
+
 	//Copy the data back into the status type
 	APSStatusBank_t statusRegs;
-	std::copy(statusPacket.payload.begin(), statusPacket.payload.end(), statusRegs.array);
-	FILE_LOG(logDEBUG) << print_status_bank(statusRegs);
+	std::copy(resp_dg.payload.begin(), resp_dg.payload.end(), statusRegs.array);
+	FILE_LOG(logDEBUG1) << print_status_bank(statusRegs);
 	return statusRegs;
 }
 
 uint32_t APS2::get_firmware_version() {
-	// Reads version information from status registers
-	APSStatusBank_t statusRegs = read_status_registers();
-	uint32_t version = statusRegs.userFirmwareVersion;
+	/*
+	* Return the board firmware encoded bottom 16 bits of the firmware register
+	*/
+	uint32_t version;
+	if (legacy_firmware) {
+		// Reads version information from status registers
+		APSStatusBank_t statusRegs = read_status_registers();
+		version = statusRegs.userFirmwareVersion;
+	} else {
+		// Reads version information from CSR register
+		version = read_memory(FIRMWARE_VERSION_ADDR, 1)[0];
+	}
 
-	FILE_LOG(logDEBUG) << "Firmware version on FPGA is " << myhex << version;
+	FILE_LOG(logDEBUG) << "Firmware version on FPGA is " << print_firmware_version(version);
 
 	return version;
 }
@@ -154,22 +168,41 @@ double APS2::get_uptime(){
 	/*
 	* Return the board uptime in seconds.
 	*/
-	//Read the status registers
-	APSStatusBank_t statusRegs = read_status_registers();
-	//Put together the seconds and nanoseconds parts
-	double intPart; //dummy integer part
-	return static_cast<double>(statusRegs.uptimeSeconds) + modf(static_cast<double>(statusRegs.uptimeNanoSeconds)/1e9, &intPart);
+	FILE_LOG(logDEBUG1) << "APS2::get_uptime";
+	uint32_t uptime_seconds, uptime_nanoseconds;
+	if ( legacy_firmware ) {
+		//Read the status registers
+		APSStatusBank_t statusRegs = read_status_registers();
+		//Put together the seconds and nanoseconds parts
+		//In the APS2MsgProc the nanoseconds doesn't reset at 1s so take fractional part
+		uptime_seconds = statusRegs.uptimeSeconds;
+		uptime_nanoseconds = statusRegs.uptimeNanoSeconds;
+	} else {
+		// Reads uptime from adjacent CSR registers
+		auto uptime_vec = read_memory(UPTIME_SECONDS_ADDR, 2);
+		uptime_seconds = uptime_vec[0];
+		uptime_nanoseconds = uptime_vec[1];
+	}
+	auto uptime = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::seconds(uptime_seconds) + std::chrono::nanoseconds(uptime_nanoseconds));
+	return uptime.count();
 }
 
 double APS2::get_fpga_temperature(){
 	/*
 	* Return the FGPA die temperature in C.
 	*/
-	//Read the status registers
-	APSStatusBank_t statusRegs = read_status_registers();
+	uint32_t temperature_reg;
+	if ( legacy_firmware ) {
+		//Read the status registers
+		APSStatusBank_t statusRegs = read_status_registers();
+		temperature_reg = statusRegs.userStatus;
+	} else {
+		//Read CSR register
+		temperature_reg = read_memory(TEMPERATURE_ADDR, 1).front();
+	}
 
 	//Temperature is return in bottom 12bits of user status and needs to be converted from the 12bit ADC value
-	double temp = static_cast<double>((statusRegs.userStatus & 0xfff))*503.975/4096 - 273.15;
+	double temp = static_cast<double>((temperature_reg & 0xfff))*503.975/4096 - 273.15;
 
 	//Don't return a stupid number of digits
 	//It seems the scale goes from 0-504K with 12bits = 0.12 degrees precision at best
@@ -178,82 +211,91 @@ double APS2::get_fpga_temperature(){
 	return temp;
 }
 
-void APS2::store_image(const string & bitFile, const int & position) { /* see header for position default = 0 */
-	FILE_LOG(logDEBUG) << "Opening bitfile: " << bitFile;
+void APS2::write_bitfile(const string & bitFile, uint32_t start_addr, APS2_BITFILE_STORAGE_MEDIA media) {
+	//Write a bitfile to either configuration DRAM or ERPOM starting at specified address
+	FILE_LOG(logDEBUG1) << "APS2::write_bitfile";
 
-	std::ifstream FID(bitFile, std::ios::in | std::ios::binary);
+	//byte alignment of storage media
+	uint32_t alignment;
+	switch (media) {
+		case BITFILE_MEDIA_DRAM:
+			alignment = 8;
+			break;
+		case BITFILE_MEDIA_EPROM:
+			alignment = 256;
+			break;
+	}
+
+	//Get the file size in bytes
+	std::ifstream FID (bitFile, std::ios::in|std::ios::binary);
 	if (!FID.is_open()){
 		FILE_LOG(logERROR) << "Unable to open bitfile: " << bitFile;
 		throw APS2_NO_SUCH_BITFILE;
 	}
 
-	//Read the file into a byte array
-	vector<uint8_t> fileData((std::istreambuf_iterator<char>(FID)), std::istreambuf_iterator<char>());
-	FILE_LOG(logDEBUG1) << "Read " << fileData.size() << " bytes in bitfile.";
+	FID.seekg(0, std::ios::end);
+	size_t file_size = FID.tellg();
+	FILE_LOG(logDEBUG) << "Opened bitfile: " << bitFile << " with " << file_size << " bytes";
+	FID.seekg(0, std::ios::beg);
 
-	//Pad out to align with a multiple of 8 bytes
-	//This is because DRAM writes must be mulitples of 8 bytes and 8 bytes aligned
-	int padBytes = (8 - (fileData.size() % 8)) % 8;
-	FILE_LOG(logDEBUG1) << "Padding bitfile byte vector with " << padBytes << " bytes.";
-	fileData.resize(fileData.size() + padBytes, 0xff);
+	//Figure out padding size for alignment
+	size_t padding_bytes = (alignment - (file_size % alignment)) % alignment;
+	FILE_LOG(logDEBUG1) << "Padding bitfile byte vector with " << padding_bytes << " bytes.";
+	//Copy the file data to a 32bit word vector
+	vector<uint32_t> bitfile_words((file_size+padding_bytes)/4, 0xffffffff);
+	FID.read(reinterpret_cast<char *>(bitfile_words.data()), file_size);
 
-	//Copy over the file data to a 32 bit data vector
-	vector<uint32_t> packedData;
-	packedData.resize(fileData.size()/4);
-	memcpy(packedData.data(), fileData.data(), fileData.size());
-
-	//Convert to big endian byte order - basically because it will be byte-swapped again when the packet is serialized
-	for (auto & packet : packedData) {
-		packet = htonl(packet);
+	//Swap bytes because we want to preserve bytes order in file it will be byte-swapped again when the packet is serialized
+	for (auto & val : bitfile_words) {
+		val = htonl(val);
 	}
 
-	FILE_LOG(logDEBUG1) << "Bit file is " << packedData.size() << " 32-bit words long";
-
-	uint32_t addr = 0; // TODO: make start address depend on position
-	auto packets = pack_data(addr, packedData, APS_COMMANDS::FPGACONFIG_ACK);
-
-	// send in groups of 20
-	ethernetRM_->send(deviceSerial_, packets, 20);
-}
-
-int APS2::select_image(const int & bitFileNum) {
-	FILE_LOG(logINFO) << "Selecting bitfile number " << bitFileNum;
-
-	uint32_t addr = 0; // todo: make start address depend on bitFileNum
-
-	APSEthernetPacket packet;
-	packet.header.command.r_w = 0;
-	packet.header.command.cmd =  static_cast<uint32_t>(APS_COMMANDS::FPGACONFIG_CTRL);
-	packet.header.command.cnt = 0;
-	packet.header.addr = addr;
-
-	return ethernetRM_->send(deviceSerial_, packet, false);
-}
-
-int APS2::program_FPGA(const string & bitFile) {
-	/**
-	 * @param bitFile path to a Xilinx bit file
-	 * @param expectedVersion - checks whether version register matches this value after programming. -1 = skip the check
-	 */
-	store_image(bitFile);
-	int success = select_image(0);
-	if (success != 0)
-		return success;
-
-	std::this_thread::sleep_for(std::chrono::seconds(4));
-
-	int retrycnt = 0;
-	while (retrycnt < 3) {
-		try {
-			// poll status to see device reset
-			read_status_registers();
-			return APS2_OK;
-		} catch (std::exception &e) {
-			FILE_LOG(logDEBUG) << "Status timeout; retrying...";
-		}
-		retrycnt++;
+	switch (media) {
+		case BITFILE_MEDIA_DRAM:
+			write_configuration_SDRAM(start_addr, bitfile_words);
+			break;
+		case BITFILE_MEDIA_EPROM:
+			write_flash(start_addr, bitfile_words);
+			break;
 	}
-	return APS2_RESET_TIMEOUT;
+
+	//Now validate bitfile data (EPROM only for now)
+	//TODO: DRAM as well?
+	flash_task = VALIDATING;
+	flash_task_progress = 0;
+	if (media == BITFILE_MEDIA_EPROM) {
+		uint32_t end_addr = start_addr + 4*bitfile_words.size();
+		uint32_t addr = start_addr;
+		do {
+			uint16_t read_length;
+			//Read up to 1kB at a time
+			if ((end_addr - addr) >= (1 << 10)) {
+				read_length = 256;
+			} else {
+				read_length = (end_addr - addr)/4;
+			}
+			auto check_vec = read_flash(addr, read_length);
+			for (size_t ct = 0; ct < read_length; ct++) {
+				if (check_vec[ct] != bitfile_words[(addr-start_addr)/4]) {
+					throw APS2_BITFILE_VALIDATION_FAILURE;
+				}
+				addr += 4;
+			}
+			flash_task_progress = static_cast<double>(addr - start_addr) / (end_addr-start_addr);
+		} while(addr < end_addr);
+	}
+}
+
+void APS2::program_bitfile(uint32_t addr) {
+	//Program the bitfile from configuration SDRAM at the specified address
+	//FPGA will reset so connection will be dropped
+	FILE_LOG(logDEBUG1) << "APS2::program_bitfile";
+	FILE_LOG(logINFO) << "Programming bitfile starting at address " << hexn<8> << addr;
+
+	APS2Command cmd;
+	cmd.sel = 1; //necessary for newer firmware to demux to ApsMsgProc
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::FPGACONFIG_CTRL);
+	ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
 }
 
 void APS2::set_sampleRate(const unsigned int & freq){
@@ -269,7 +311,7 @@ void APS2::set_sampleRate(const unsigned int & freq){
 }
 
 unsigned int APS2::get_sampleRate() {
-	FILE_LOG(logDEBUG2) << "get_sampleRate";
+	FILE_LOG(logDEBUG1) << "APS2::get_sampleRate";
 	samplingRate_ = get_PLL_freq();
 	return samplingRate_;
 }
@@ -487,58 +529,98 @@ void APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
 	 * data = vector<uint32_t> data
 	 */
 
-	if (data.size() == 0) {
-		return;
-	}
-	//Pack the data into APSEthernetFrames
-	vector<APSEthernetPacket> dataPackets = pack_data(addr, data);
-
-	//Send the packets out
-	ethernetRM_->send(deviceSerial_, dataPackets, 20);
+	//Convert to datagrams and send
+	APS2Command cmd;
+	cmd.ack = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::USERIO_ACK); //TODO: take out when all TCP comms
+	auto dgs = APS2Datagram::chunk(cmd, addr, data, 0xfffc); //max chunk_size is limited by 128bit data alignment in SDRAM
+	ethernetRM_->send(deviceSerial_, dgs);
 }
 
-vector<uint32_t> APS2::read_memory(const uint32_t & addr, const uint32_t & numWords){
-	//TODO: handle numWords that require mulitple packets
+vector<uint32_t> APS2::read_memory(uint32_t addr, uint32_t numWords){
+	//TODO: handle numWords that require mulitple requests
 
 	//Send the read request
-	APSEthernetPacket readReq;
-	readReq.header.command.r_w = 1;
-	readReq.header.command.cmd =  static_cast<uint32_t>(APS_COMMANDS::USERIO_ACK);
-	readReq.header.command.cnt = numWords;
-	readReq.header.addr = addr;
-	ethernetRM_->send(deviceSerial_, readReq, false);
+	APS2Command cmd;
+	cmd.r_w = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::USERIO_ACK); //TODO: take out when all TCP comms
+	cmd.cnt = numWords;
+	ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
 
-	//Retrieve the data packet(s)
-	auto readData = read_packets(1);
+	//Read the response
+	//We expect a single datagram back
+	auto result = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
+	//TODO: error checking
+	return result.payload;
+}
 
-	return readData[0].payload;
+void APS2::write_configuration_SDRAM(uint32_t addr, const vector<uint32_t> & data) {
+	FILE_LOG(logDEBUG2) << "APS2::write_configuration_SDRAM";
+	//Write data to configuratoin SDRAM
+
+	//SDRAM writes must be 8 byte aligned
+	if ( (addr & 0x7) != 0) {
+		FILE_LOG(logERROR) << "Attempted to write configuration SDRAM at an address not aligned to 8 bytes";
+		throw APS2_UNALIGNED_MEMORY_ACCESS;
+	}
+	if ( (data.size() % 2) != 0) {
+		FILE_LOG(logERROR) << "Attempted to write configuration SDRAM with data not a multiple of 8 bytes";
+		throw APS2_UNALIGNED_MEMORY_ACCESS;
+	}
+
+	//Convert to datagrams.	For the now the ApsMsgProc needs maximum of 1kB chunks
+	APS2Command cmd;
+	cmd.ack = 1;
+	cmd.sel = 1; //necessary for newer firmware to demux to ApsMsgProc
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::FPGACONFIG_ACK);
+	auto dgs = APS2Datagram::chunk(cmd, addr, data, 0x100); //1kB chunks to fit in fake ethernet packet to ApsMsgProc
+	ethernetRM_->send(deviceSerial_, dgs);
+}
+
+vector<uint32_t> APS2::read_configuration_SDRAM(uint32_t addr, uint32_t num_words) {
+	FILE_LOG(logDEBUG2) << "APS2::read_configuration_SDRAM";
+	//Send the read request
+	APS2Command cmd;
+	cmd.r_w = 1;
+	cmd.sel = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::FPGACONFIG_ACK);
+	cmd.cnt = num_words;
+	ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
+
+	//Read the response
+	//We expect a single datagram back
+	auto result = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
+	//TODO: error checking
+	return result.payload;
 }
 
 //SPI read/write
 void APS2::write_SPI(vector<uint32_t> & msg) {
+	FILE_LOG(logDEBUG2) << "APS2::write_SPI";
+
 	// push on "end of message"
-	APSChipConfigCommand_t cmd = {.packed=0};
+	APSChipConfigCommand_t cmd;
 	cmd.target = CHIPCONFIG_IO_TARGET_EOL;
 	msg.push_back(cmd.packed);
 
-	// build packet
-	APSEthernetPacket packet;
-	packet.header.command.r_w = 0;
-	packet.header.command.cmd =  static_cast<uint32_t>(APS_COMMANDS::CHIPCONFIGIO);
-	packet.header.command.cnt = msg.size();
-	packet.payload = msg;
-
-	APSEthernetPacket p = query(packet)[0];
-	// TODO: check ACK packet status
+	// build datagram
+	APS2Command cmd_bis;
+	cmd_bis.ack = 1;
+	cmd_bis.sel = 1; //necessary for newer firmware to demux to ApsMsgProc
+	cmd_bis.cmd = static_cast<uint32_t>(APS_COMMANDS::CHIPCONFIGIO);
+	auto dgs = APS2Datagram::chunk(cmd_bis, 0, msg, 0x100); //1kB chunks to fit in fake ethernet packet to ApsMsgProc
+	ethernetRM_->send(deviceSerial_, dgs);
 }
 
 uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & addr) {
-	// reads a single 32-bit word from the target SPI device
+	// reads a single byte from the target SPI device
+	FILE_LOG(logDEBUG2) << "APS2::read_SPI";
 
 	// build message
 	APSChipConfigCommand_t cmd;
-	DACCommand_t dacinstr = {.packed = 0};
-	PLLCommand_t pllinstr = {.packed = 0};
+	DACCommand_t dacinstr;
+	PLLCommand_t pllinstr;
+
 	// config target and instruction
 	switch (target) {
 		case CHIPCONFIG_TARGET_DAC_0:
@@ -567,117 +649,142 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & ad
 			return 0;
 	}
 	cmd.spicnt_data = 1; // request 1 byte
-	vector<uint32_t> msg = {cmd.packed};
-	// interface logic requires at least 3 bytes of data to return anything, so push on the same instruction twice more
-	msg.push_back(cmd.packed);
-	msg.push_back(cmd.packed);
-	msg.push_back(cmd.packed);
+
+	// interface logic requires at least 3 bytes of data to return anything, so push on the same instruction three more times more
+	vector<uint32_t> msg = {cmd.packed, cmd.packed, cmd.packed, cmd.packed};
 
 	// write the SPI read instruction
 	write_SPI(msg);
 
-	// build read packet
-	APSEthernetPacket packet;
-	packet.header.command.r_w = 1;
-	packet.header.command.cmd = static_cast<uint32_t>(APS_COMMANDS::CHIPCONFIGIO);
-	packet.header.command.cnt = 1; // single word read
+	// build read datagram
+	APS2Command cmd_bis;
+	cmd_bis.r_w = 1;
+	cmd_bis.sel = 1; //necessary for newer firmware to demux to ApsMsgProc
+	cmd_bis.cmd = static_cast<uint32_t>(APS_COMMANDS::CHIPCONFIGIO);
+	cmd_bis.cnt = 1;
+	ethernetRM_->send(deviceSerial_, {{cmd_bis, 0, {}}});
 
-	APSEthernetPacket response = query(packet)[0];
-	// TODO: Check status bits
-	if (response.payload.size() == 0) {
-		return 0;
-	} else {
-		FILE_LOG(logDEBUG4) << "read_SPI response payload = " << hexn<8> << response.payload[0] << endl;
-		return response.payload[0] >> 24; // first response is in MSB of 32-bit word
+	//Read the response
+	//We expect a single datagram back with a single word
+	auto result = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
+	if ( result.cmd.mode_stat != 0x00 ) {
+		FILE_LOG(logERROR) << "read_SPI response datagram reported error: " << result.cmd.mode_stat;
+		throw APS2_COMMS_ERROR;
 	}
+	if ( result.payload.size() != 1 ) {
+		FILE_LOG(logERROR) << "read_SPI response datagram unexpected size: expected 1, got " << result.payload.size();
+	}
+	return result.payload[0] >> 24; // first response is in MSB of 32-bit word
 }
 
 //Flash read/write
-int APS2::write_flash(const uint32_t & addr, vector<uint32_t> & data) {
+void APS2::write_flash(uint32_t addr, vector<uint32_t> & data) {
+	FILE_LOG(logDEBUG1) << "APS2::write_flash";
+
 	// erase before write
 	erase_flash(addr, sizeof(uint32_t) * data.size());
 
 	// resize data to a multiple of 64 words (256 bytes)
-	int padwords = (64 - (data.size() % 64)) % 64;
-	FILE_LOG(logDEBUG3) << "Flash write: padding payload with " << padwords << " words";
-	data.resize(data.size() + padwords);
+	int pad_words = (64 - (data.size() % 64)) % 64;
+	FILE_LOG(logDEBUG1) << "Flash write: padding payload with " << pad_words << " words";
+	data.resize(data.size() + pad_words, 0xffffffff);
 
-	vector<APSEthernetPacket> packets = pack_data(addr, data, APS_COMMANDS::EPROMIO);
-
-	FILE_LOG(logDEBUG) << "Writing " << packets.size() << " packets of data to flash address " << myhex << addr;
-	try {
-		ethernetRM_->send(deviceSerial_, packets);
-		// APSEthernetPacket p = read_packets(packets.size())[0];
-		// return p.header.command.mode_stat;
-		return 0;
-	} catch (std::exception &e) {
-		FILE_LOG(logERROR) << "Flash write failed!";
-		return -1;
+	APS2Command cmd;
+	cmd.ack = 1;
+	cmd.sel = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::EPROMIO);
+	cmd.mode_stat = EPROM_RW;
+	auto dgs = APS2Datagram::chunk(cmd, addr, data, 0x0100); //max chunk_size is limited wrapping in Ethernet frames
+	FILE_LOG(logDEBUG1) << "Flash write chunked into " << dgs.size() << " datagrams.";
+	flash_task = WRITING;
+	flash_task_progress = 0;
+	//Write 1 at a time so we can update progress
+	for (size_t ct = 0; ct < dgs.size(); ct++) {
+		ethernetRM_->send(deviceSerial_, {dgs[ct]});
+		flash_task_progress = static_cast<double>(ct+1)/static_cast<double>(dgs.size());
 	}
 }
 
-int APS2::erase_flash(uint32_t addr, uint32_t numBytes) {
+void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
+	FILE_LOG(logDEBUG1) << "APS2::erase_flash";
+	flash_task = ERASING;
+	flash_task_progress = 0;
+
 	// each erase command erases 64 KB of data starting at addr
-	FILE_LOG(logINFO) << "Erasing " << numBytes << " bytes starting at " << myhex << addr;
-	//TODO: check 64KB alignment
-	if ((addr % 65536) != 0){
-		FILE_LOG(logERROR) << "Flash memory erase command was not 64KB aligned!";
-		return -1;
+	if ((start_addr % (1 << 16)) != 0){
+		FILE_LOG(logERROR) << "EPROM memory erase command addr was not 64KB aligned!";
+		throw APS2_UNALIGNED_MEMORY_ACCESS;
 	}
 
-	APSCommand_t command = { .packed=0 };
-	command.r_w = 0;
-	command.cmd = static_cast<uint32_t>(APS_COMMANDS::EPROMIO);
-	command.mode_stat = EPROM_ERASE;
+	FILE_LOG(logDEBUG) << "Erasing " << num_bytes / (1<10) << " kbytes starting at EPROM address " << hexn<8> << start_addr;
 
-	uint32_t erasedBytes = 0;
+	APS2Command cmd;
+	cmd.ack = 1;
+	cmd.sel = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::EPROMIO);
+	cmd.mode_stat = EPROM_ERASE;
 
-	//Since erasing can take a while throw up some info if we have are erasing more than 1MB
-	bool verbose = numBytes > 1048576 ? true : false;
-
-	while(erasedBytes < numBytes) {
-		if (verbose && !mymod(erasedBytes, 1048576)){
-			FILE_LOG(logDEBUG) << "Flash erase " << 100*erasedBytes / numBytes << "% complete";
+	uint32_t addr{start_addr};
+	uint32_t end_addr{start_addr+num_bytes};
+	do {
+		FILE_LOG(logDEBUG2) << "Erasing 64kB page at EPROM addr " << hexn<8> << addr;
+		//Have noticed we don't always get a response so try a few times to make sure
+		unsigned tryct = 0;
+		while (tryct < 5) {
+			try {
+				ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
+			} catch (APS2_STATUS status) {
+				if (status == APS2_RECEIVE_TIMEOUT) {
+					FILE_LOG(logERROR) << "Flash erase timed out. Retrying...";
+					tryct++;
+				}
+				else {
+					throw status;
+				}
+			}
+			catch (...) {
+				throw APS2_UNKNOWN_ERROR;
+			}
+			break;
 		}
-		FILE_LOG(logDEBUG2) << "Erasing a 64 KB page at addr: " << myhex << addr;
-		write_command(command, addr, false);
-		APSEthernetPacket p = read_packets(1)[0];
-		if (p.header.command.mode_stat == EPROM_OPERATION_FAILED){
-			FILE_LOG(logERROR) << "Flash memory erase command failed!";
+		if (tryct == 5) {
+			FILE_LOG(logERROR) << "Flash erase failed with timeout.";
+			throw APS2_RECEIVE_TIMEOUT;
 		}
-		erasedBytes += 65536;
-		addr += 65536;
-	}
-	return 0;
+
+		addr += (1<<16);
+		flash_task_progress = static_cast<double>(addr - start_addr) / num_bytes;
+	} while(addr < end_addr);
 }
 
-vector<uint32_t> APS2::read_flash(const uint32_t & addr, const uint32_t & numWords) {
+vector<uint32_t> APS2::read_flash(uint32_t addr, uint32_t num_words) {
 	//TODO: handle reads that require multiple packets
-	APSCommand_t command = { .packed=0 };
-	command.r_w = 1;
-	command.cmd = static_cast<uint32_t>(APS_COMMANDS::EPROMIO);
-	command.mode_stat = EPROM_RW;
-	command.cnt = std::min(numWords, static_cast<const uint32_t>(365));
 
-	vector<uint32_t> data;
-	// TODO: loop sending write and read commands, until received at least numWords
-	APSEthernetPacket p = query(command, addr)[0];
-	// TODO: Check status bits
-	data.insert(data.end(), p.payload.begin(), p.payload.end());
+	//Send the read request
+	APS2Command cmd;
+	cmd.r_w = 1;
+	cmd.sel = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::EPROMIO);
+	cmd.cnt = num_words;
+	ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
 
-	return data;
+	//Read the response
+	//We expect a single datagram back
+	auto result = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
+	//TODO: error checking
+	return result.payload;
 }
 
 void APS2::write_macip_flash(const uint64_t & mac,
-	                  const uint32_t & ip_addr,
-	                  const bool & dhcp_enable) {
+										const uint32_t & ip_addr,
+										const bool & dhcp_enable) {
 	uint32_t dhcp_int;
 
 	dhcp_int = (dhcp_enable) ? 1 : 0;
 	vector<uint32_t> data = {static_cast<uint32_t>(mac >> 16),
-		                     static_cast<uint32_t>((mac & 0xffff) << 16),
-		                     ip_addr,
-		                     dhcp_int};
+												 static_cast<uint32_t>((mac & 0xffff) << 16),
+												 ip_addr,
+												 dhcp_int};
 	write_flash(EPROM_MACIP_ADDR, data);
 	// verify
 	if (get_mac_addr() != mac) {
@@ -725,7 +832,7 @@ void APS2::set_dhcp_enable(const bool & dhcp_enable) {
 }
 
 //Create/restore setup SPI sequence
-int APS2::write_SPI_setup() {
+void APS2::write_SPI_setup() {
 	FILE_LOG(logINFO) << "Writing SPI startup sequence";
 	vector<uint32_t> msg = build_VCXO_SPI_msg(VCXO_INIT);
 	vector<uint32_t> pll_msg = build_PLL_SPI_msg(PLL_INIT);
@@ -733,10 +840,10 @@ int APS2::write_SPI_setup() {
 	// push on "sleep" for 8*256*100ns = 0.205ms
 	msg.push_back(0x00000800);
 	// push on "end of message"
-	APSChipConfigCommand_t cmd = {.packed=0};
+	APSChipConfigCommand_t cmd;
 	cmd.target = CHIPCONFIG_IO_TARGET_EOL;
 	msg.push_back(cmd.packed);
-	return write_flash(0x0, msg);
+	write_flash(0x0, msg);
 }
 
 
@@ -744,69 +851,6 @@ int APS2::write_SPI_setup() {
  *
  * Private Functions
  */
-
-int APS2::write_command(const APSCommand_t & command, const uint32_t & addr, const bool & checkResponse /* see header for default values*/){
-	/*
-	* Write a single command
-	*/
-	//TODO: figure out move constructor
-	APSEthernetPacket packet(command, addr);
-	ethernetRM_->send(deviceSerial_, packet, checkResponse);
-	return 0;
-}
-
-vector<APSEthernetPacket> APS2::pack_data(const uint32_t & addr, const vector<uint32_t> & data, const APS_COMMANDS & cmdtype /* see header for default */) {
-	//Break the data up into ethernet frame sized chunks.
-	// ethernet frame payload = 1500bytes - 20bytes IPV4 and 8 bytes UDP and 24 bytes APS header (with address field) = 1448bytes = 362 words
-	// for unknown reasons, we see occasional failures when using packets that large. 256 seems to be more stable.
-	static const int maxPayload = 256;
-
-	vector<APSEthernetPacket> packets;
-
-	APSEthernetPacket newPacket;
-	newPacket.header.command.cmd =  static_cast<uint32_t>(cmdtype);
-
-	auto idx = data.begin();
-	uint16_t seqNum = 0;
-	uint32_t curAddr = addr;
-	while (idx != data.end()){
-		if (std::distance(idx, data.end()) > maxPayload){
-			newPacket.header.command.cnt = maxPayload;
-		}
-		else{
-			newPacket.header.command.cnt = std::distance(idx, data.end());
-		}
-
-		newPacket.header.seqNum = seqNum++;
-		newPacket.header.addr = curAddr;
-		curAddr += 4*newPacket.header.command.cnt;
-
-		newPacket.payload.clear();
-		std::copy(idx, idx+newPacket.header.command.cnt, std::back_inserter(newPacket.payload));
-
-		packets.push_back(newPacket);
-		idx += newPacket.header.command.cnt;
-	}
-
-	return packets;
-}
-
-
-vector<APSEthernetPacket> APS2::read_packets(const size_t & numPackets) {
-	return ethernetRM_->receive(deviceSerial_, numPackets);
-}
-
-vector<APSEthernetPacket> APS2::query(const APSCommand_t & command, const uint32_t & addr /* see header for default value = 0 */) {
-	//write-read ping-pong
-	write_command(command, addr, false);
-	return read_packets(1);
-}
-
-vector<APSEthernetPacket> APS2::query(const APSEthernetPacket & pkt) {
-	//write-read ping-pong
-	ethernetRM_->send(deviceSerial_, pkt, false);
-	return read_packets(1);
-}
 
 vector<uint32_t> APS2::build_DAC_SPI_msg(const CHIPCONFIG_IO_TARGET & target, const vector<SPI_AddrData_t> & addrData) {
 	vector<uint32_t> msg;
@@ -919,7 +963,7 @@ int APS2::set_PLL_freq(const int & freq) {
 	}
 
 	// bypass divider if freq == 1200
-	pllBypassVal = (freq==1200) ?  0x80 : 0x00;
+	pllBypassVal = (freq==1200) ?	0x80 : 0x00;
 	FILE_LOG(logDEBUG2) << "Setting PLL cycles addr: " << myhex << pllCyclesAddr << " val: " << int(pllCyclesVal);
 	FILE_LOG(logDEBUG2) << "Setting PLL bypass addr: " << myhex << pllBypassAddr << " val: " << int(pllBypassVal);
 
@@ -1031,8 +1075,9 @@ void APS2::check_clocks_status() {
 	/*
 	 * Reads the locked status of the clock distribution PLL and the FPGA MMCM's (SYS_CLK, CFG_CLK and MEM_CLK)
 	 */
-	FILE_LOG(logDEBUG1) << "Entering APS2::check_clocks_status";
+	FILE_LOG(logDEBUG1) << "APS2::check_clocks_status";
 
+	//PLL chips are reported through status registers
 	APSStatusBank_t statusRegs = read_status_registers();
 
 	//First check the clock distribution PLL (the bottom three bits should be high)
@@ -1041,27 +1086,29 @@ void APS2::check_clocks_status() {
  		throw APS2_PLL_LOST_LOCK;
  	}
 
- 	//Now check the FPGA clocks
- 	if (statusRegs.userFirmwareVersion >= 0x212) {
-		FILE_LOG(logDEBUG1) << "User status: " << hexn<8> << statusRegs.userStatus;
-	 	bool clocksGood = true;
-	 	for (auto bit : {MMCM_SYS_LOCK_BIT, MMCM_CFG_LOCK_BIT, MIG_C0_LOCK_BIT, MIG_C0_CAL_BIT, MIG_C1_LOCK_BIT, MIG_C1_CAL_BIT}) {
-	 		clocksGood &= (statusRegs.userStatus >> bit) & 0x1;
-	 	}
-	 	if (!clocksGood) {
-	 		throw APS2_MMCM_LOST_LOCK;
-	 	}
+	//On board MMCM PLL's are reported either through user status or the PLL_STATUS_ADDR CSR register
+	uint32_t pll_status;
+	if (legacy_firmware) {
+		pll_status = statusRegs.userStatus;
+	 } else {
+		 pll_status = read_memory(PLL_STATUS_ADDR, 1).front();
+	 }
+	 bool clocksGood = true;
+	 for (auto bit : {MMCM_SYS_LOCK_BIT, MMCM_CFG_LOCK_BIT, MIG_C0_LOCK_BIT, MIG_C0_CAL_BIT, MIG_C1_LOCK_BIT, MIG_C1_CAL_BIT}) {
+		 clocksGood &= (pll_status >> bit) & 0x1;
+	 }
+	 if (!clocksGood) {
+		 throw APS2_MMCM_LOST_LOCK;
 	 }
 }
 
 int APS2::get_PLL_freq() {
-	// Poll APS2 PLL chip to determine current frequency
+	// Poll APS2 PLL chip to determine current frequency in MHz
+	FILE_LOG(logDEBUG1) << "APS2::get_PLL_freq";
 
 	int freq = 0;
 	uint16_t pll_cycles_addr = 0x190;
 	uint16_t pll_bypass_addr = 0x191;
-
-	FILE_LOG(logDEBUG3) << "get_PLL_freq";
 
 	uint32_t pll_cycles_val = read_SPI(CHIPCONFIG_TARGET_PLL, pll_cycles_addr);
 	uint32_t pll_bypass_val = read_SPI(CHIPCONFIG_TARGET_PLL, pll_bypass_addr);
@@ -1070,24 +1117,24 @@ int APS2::get_PLL_freq() {
 	FILE_LOG(logDEBUG3) << "pll_bypass_val = " << hexn<2> << pll_bypass_val;
 
 	// select frequency based on pll cycles setting
-	// the values here should match the reverse lookup in FGPA::set_PLL_freq
+	// the values here should match the reverse lookup in APS2::set_PLL_freq
 
 	if ((pll_bypass_val & 0x80) == 0x80 && pll_cycles_val == 0x00)
-		freq =  1200;
+		freq =	1200;
 	else {
 		switch(pll_cycles_val) {
-			case 0xEE: freq = 40;  break;
-			case 0xBB: freq = 50;  break;
+			case 0xEE: freq = 40;	break;
+			case 0xBB: freq = 50;	break;
 			case 0x55: freq = 100; break;
 			case 0x22: freq = 200; break;
 			case 0x11: freq = 300; break;
 			case 0x00: freq = 600; break;
 			default:
-				return -2;
+				throw APS2_BAD_PLL_VALUE;
 		}
 	}
 
-	FILE_LOG(logDEBUG) << "PLL frequency for FPGA:  Freq: " << freq;
+	FILE_LOG(logDEBUG1) << "PLL frequency " << freq;
 
 	return freq;
 }
@@ -1163,36 +1210,36 @@ void APS2::setup_DAC(const int & dac)
 
 	// TODO: remove int(... & 0x1F)
 	data = read_SPI(targets[dac], DAC_INTERRUPT_ADDR);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_INTERRUPT_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) <<	"Reg: " << myhex << int(DAC_INTERRUPT_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 	data = read_SPI(targets[dac], DAC_MSDMHD_ADDR);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) <<	"Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 	data = read_SPI(targets[dac], DAC_SD_ADDR);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) <<	"Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 
 	// Ensure that surveilance and auto modes are off
 	data = read_SPI(targets[dac], DAC_CONTROLLER_ADDR);
-	FILE_LOG(logDEBUG2) <<  "Reg: " << myhex << int(DAC_CONTROLLER_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) <<	"Reg: " << myhex << int(DAC_CONTROLLER_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 	data = 0;
 	msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLER_ADDR, data}});
 	write_SPI(msg);
 
 	// Slide the data valid window left (with MSD) and check for the interrupt
-	SD = 0;  //(sample delay nibble, stored in Reg. 5, bits 7:4)
+	SD = 0;	//(sample delay nibble, stored in Reg. 5, bits 7:4)
 	MSD = 0; //(setup delay nibble, stored in Reg. 4, bits 7:4)
-	MHD = 0; //(hold delay nibble,  stored in Reg. 4, bits 3:0)
+	MHD = 0; //(hold delay nibble,	stored in Reg. 4, bits 3:0)
 
 	set_DAC_SD(dac, SD);
 
 	for (MSD = 0; MSD < 16; MSD++) {
-		FILE_LOG(logDEBUG2) <<  "Setting MSD: " << int(MSD);
+		FILE_LOG(logDEBUG2) <<	"Setting MSD: " << int(MSD);
 
 		data = (MSD << 4) | MHD;
 		msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
 		write_SPI(msg);
-		FILE_LOG(logDEBUG2) <<  "Write Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+		FILE_LOG(logDEBUG2) <<	"Write Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 
 		data = read_SPI(targets[dac], DAC_SD_ADDR);
-		FILE_LOG(logDEBUG2) <<  "Read Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+		FILE_LOG(logDEBUG2) <<	"Read Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 
 		bool check = data & 1;
 		FILE_LOG(logDEBUG2) << "Check: " << check;
@@ -1205,7 +1252,7 @@ void APS2::setup_DAC(const int & dac)
 	// Clear the MSD, then slide right (with MHD)
 	MSD = 0;
 	for (MHD = 0; MHD < 16; MHD++) {
-		FILE_LOG(logDEBUG2) <<  "Setting MHD: " << int(MHD);
+		FILE_LOG(logDEBUG2) <<	"Setting MHD: " << int(MHD);
 
 		data = (MSD << 4) | MHD;
 		msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
@@ -1252,22 +1299,13 @@ void APS2::set_DAC_SD(const int & dac, const uint8_t & sd) {
 	write_SPI(msg);
 }
 
-int APS2::run_chip_config(const uint32_t & addr /* default = 0 */) {
+void APS2::run_chip_config(uint32_t addr /* default = 0 */) {
 	FILE_LOG(logINFO) << "Running chip config from address " << hexn<8> << addr;
 	// construct the chip config command
-	APSEthernetPacket packet;
-	packet.header.command.r_w = 0;
-	packet.header.command.cmd =  static_cast<uint32_t>(APS_COMMANDS::RUNCHIPCONFIG);
-	packet.header.command.cnt = 0;
-	packet.header.addr = addr;
-	ethernetRM_->send(deviceSerial_, packet, false);
-
-	//Retrieve the data packet(s)
-	auto response = read_packets(1)[0];
-	if (response.header.command.mode_stat == RUNCHIPCONFIG_SUCCESS) {
-		FILE_LOG(logDEBUG1) << "Chip config successful";
-	}
-	return response.header.command.mode_stat;
+	APS2Command cmd;
+	cmd.ack = 1;
+	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::RUNCHIPCONFIG);
+	ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
 }
 
 void APS2::enable_DAC_FIFO(const int & dac) {
@@ -1404,18 +1442,18 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	// The two different phases take the even/odd samples
 	vector<int16_t> evenSamples, oddSamples;
 	bool toggle = false;
-    std::partition_copy(testVec.begin(),
-                        testVec.end(),
-                        std::back_inserter(oddSamples),
-                        std::back_inserter(evenSamples),
-                        [&toggle](int) { return toggle = !toggle; });
+		std::partition_copy(testVec.begin(),
+												testVec.end(),
+												std::back_inserter(oddSamples),
+												std::back_inserter(evenSamples),
+												[&toggle](int) { return toggle = !toggle; });
 
-    //
-    uint32_t phase1BIST = calc_bist(oddSamples);
-    uint32_t phase2BIST = calc_bist(evenSamples);
+		//
+		uint32_t phase1BIST = calc_bist(oddSamples);
+		uint32_t phase2BIST = calc_bist(evenSamples);
 
-    FILE_LOG(logDEBUG) << "Expected phase 1 BIST register " << hexn<8> << phase1BIST;
-    FILE_LOG(logDEBUG) << "Expected phase 2 BIST register " << hexn<8> << phase2BIST;
+		FILE_LOG(logDEBUG) << "Expected phase 1 BIST register " << hexn<8> << phase1BIST;
+		FILE_LOG(logDEBUG) << "Expected phase 2 BIST register " << hexn<8> << phase2BIST;
 
 	//Load the test vector and setup software triggered waveform mode
 	//Clear the channel data on both channels so we get the right waveform length
@@ -1522,7 +1560,7 @@ int APS2::set_offset_register(const int & dac, const float & offset) {
 	 * offset - offset in normalized full range (-1, 1)
 	 */
 	int16_t scaledOffset = offset * MAX_WF_AMP;
-	FILE_LOG(logINFO) << "Setting DAC " << dac << "  zero register to " << scaledOffset;
+	FILE_LOG(logINFO) << "Setting DAC " << dac << "	zero register to " << scaledOffset;
 
 	//Read current value
 	uint32_t val = read_memory(ZERO_OUT_ADDR, 1)[0];
@@ -1541,7 +1579,7 @@ int APS2::set_offset_register(const int & dac, const float & offset) {
 }
 
 void APS2::set_bit(const uint32_t & addr, std::initializer_list<int> bits) {
-	uint32_t curReg = read_memory(addr, 1)[0];
+	uint32_t curReg = read_memory(addr, 1).front();
 	for (int bit : bits) {
 		curReg |= (1 << bit);
 	}
@@ -1549,7 +1587,7 @@ void APS2::set_bit(const uint32_t & addr, std::initializer_list<int> bits) {
 }
 
 void APS2::clear_bit(const uint32_t & addr, std::initializer_list<int> bits) {
-	uint32_t curReg = read_memory(addr, 1)[0];
+	uint32_t curReg = read_memory(addr, 1).front();
 	for (int bit : bits) {
 		curReg &= ~(1 << bit);
 	}
@@ -1680,33 +1718,52 @@ int APS2::read_state_from_hdf5(H5::H5File & H5StateFile, const string & rootStr)
 string APS2::print_status_bank(const APSStatusBank_t & status) {
 	std::ostringstream ret;
 
-	ret << "Host Firmware Version = " << std::hex << status.hostFirmwareVersion << endl;
-	ret << "User Firmware Version = " << status.userFirmwareVersion << endl;
-	ret << "Configuration Source  = " << status.configurationSource << endl;
-	ret << "User Status           = " << status.userStatus << endl;
-	ret << "DAC 0 Status          = " << status.dac0Status << endl;
-	ret << "DAC 1 Status          = " << status.dac1Status << endl;
-	ret << "PLL Status            = " << status.pllStatus << endl;
-	ret << "VCXO Status           = " << status.vcxoStatus << endl;
-	ret << "Send Packet Count     = " << std::dec << status.sendPacketCount << endl;
-	ret << "Recv Packet Count     = " << status.receivePacketCount << endl;
-	ret << "Seq Skip Count        = " << status.sequenceSkipCount << endl;
-	ret << "Seq Dup.  Count       = " << status.sequenceDupCount << endl;
-	ret << "FCS Overrun Count     = " << status.fcsOverrunCount << endl;
-	ret << "Packet Overrun Count  = " << status.packetOverrunCount << endl;
-	ret << "Uptime (s)            = " << status.uptimeSeconds << endl;
-	ret << "Uptime (ns)           = " << status.uptimeNanoSeconds << endl;
+	ret << endl << endl;
+	ret << "Host Firmware Version = " << hexn<8> << status.hostFirmwareVersion << endl;
+	ret << "User Firmware Version = " << hexn<8> << status.userFirmwareVersion << endl;
+	ret << "Configuration Source	= " << hexn<8> << status.configurationSource << endl;
+	ret << "User Status					 = " << hexn<8> << status.userStatus << endl;
+	ret << "DAC 0 Status					= " << hexn<8> << status.dac0Status << endl;
+	ret << "DAC 1 Status					= " << hexn<8> << status.dac1Status << endl;
+	ret << "PLL Status						= " << hexn<8> << status.pllStatus << endl;
+	ret << "VCXO Status					 = " << hexn<8> << status.vcxoStatus << endl;
+	ret << std::dec;
+	ret << "Send Packet Count		 = " << status.sendPacketCount << endl;
+	ret << "Recv Packet Count		 = " << status.receivePacketCount << endl;
+	ret << "Seq Skip Count				= " << status.sequenceSkipCount << endl;
+	ret << "Seq Dup.	Count			 = " << status.sequenceDupCount << endl;
+	ret << "FCS Overrun Count		 = " << status.fcsOverrunCount << endl;
+	ret << "Packet Overrun Count	= " << status.packetOverrunCount << endl;
+	ret << "Uptime (s)						= " << status.uptimeSeconds << endl;
+	ret << "Uptime (ns)					 = " << status.uptimeNanoSeconds << endl;
 	return ret.str();
 }
 
-
-
 string APS2::printAPSChipCommand(APSChipConfigCommand_t & cmd) {
-    std::ostringstream ret;
+		std::ostringstream ret;
 
-    ret << std::hex << cmd.packed << " =";
-    ret << " Target: " << cmd.target;
-    ret << " SPICNT_DATA: " << cmd.spicnt_data;
-    ret << " INSTR: " << cmd.instr;
-    return ret.str();
+		ret << std::hex << cmd.packed << " =";
+		ret << " Target: " << cmd.target;
+		ret << " SPICNT_DATA: " << cmd.spicnt_data;
+		ret << " INSTR: " << cmd.instr;
+		return ret.str();
+}
+
+string APS2::print_firmware_version(uint32_t version_reg) {
+	std::ostringstream ret;
+
+	uint32_t minor = version_reg & 0xff;
+	uint32_t major = (version_reg >> 8) & 0xf;
+	uint32_t note_nibble = (version_reg >> 12) & 0xf;
+	string note;
+	switch (note_nibble) {
+		case 0xa:
+			note = "alpha";
+			break;
+		case 0xb:
+			note = "beta";
+			break;
+	}
+	ret << major << "." << minor << " " << note;
+	return ret.str();
 }

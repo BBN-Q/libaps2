@@ -1,12 +1,22 @@
+// Datagrams that are sent/received from the APS2
+// Consists of a vector of 32 bit words
+// 1. command word - see APS2Command
+// 2. address
+// 3. payload
+//
+// Original author: Colm Ryan
+// Copyright 2016 Raytheon BBN Technologies
 
-#ifndef APSETHERNETPACKET_H_
-#define APSETHERNETPACKET_H_
+#ifndef APS2DATAGRAM_H_
+#define APS2DATAGRAM_H_
 
-#include "headings.h"
-#include "MACAddr.h"
+#include <vector>
+using std::vector;
+#include <cstdint>
+#include <string>
+using std::string;
 
-//Some bitfield unions for packing/unpacking the commands words
-//APS Command Protocol 
+//APS Command Protocol
 // ACK SEQ SEL R/W CMD<3:0> MODE/STAT<7:0> CNT<15:0>
 // 31 30 29 28 27..24 23..16 15..0
 // ACK .......Acknowledge Flag. Set in the Acknowledge Packet returned in response to a
@@ -27,7 +37,8 @@
 // CNT<15:0> ...Number of 32-bit data words to transfer for a read or a write command. Note
 // that the length does NOT include the Address Word. CNT must be at least 1.
 // To meet Ethernet packet length limitations, CNT must not exceed 366.
-typedef union {
+
+union APS2Command {
 	struct {
 	uint32_t cnt : 16;
 	uint32_t mode_stat : 8;
@@ -38,37 +49,24 @@ typedef union {
 	uint32_t ack : 1;
 	};
 	uint32_t packed;
-} APSCommand_t;
-
-string print_APSCommand(const APSCommand_t & command);
-
-struct APSEthernetHeader {
-	MACAddr  dest;
-	MACAddr  src;
-	uint16_t frameType;
-	uint16_t seqNum;
-	APSCommand_t command;
-	uint32_t addr;
+	//TODO: sort out the default initialization and whether this is necessary
+	APS2Command() {this->packed = 0;};
+	string to_string();
 };
 
-class APSEthernetPacket{
+class APS2Datagram {
+private:
+	/* data */
 public:
-	APSEthernetHeader header;
+	APS2Command cmd;
+	uint32_t addr;
 	vector<uint32_t> payload;
+	vector<uint32_t> data() const;
 
-	APSEthernetPacket();
+	static vector<APS2Datagram> chunk(APS2Command, uint32_t, const vector<uint32_t>&, uint16_t);
 
-	APSEthernetPacket(const APSCommand_t &, const uint32_t & addr=0);
-	APSEthernetPacket(const MACAddr &, const MACAddr &, APSCommand_t, const uint32_t &);
+	void check_ack(const APS2Datagram &, bool legacy_firmware) const;
 
-	APSEthernetPacket(const vector<uint8_t> &);
-	
-	static const size_t NUM_HEADER_BYTES = 24;
-
-	vector<uint8_t> serialize() const ;
-	size_t numBytes() const; 
-
-	static APSEthernetPacket create_broadcast_packet();
 };
 
-#endif //APSETHERNETPACKET_H_
+#endif //APS2DATAGRAM_H_

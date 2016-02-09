@@ -1,8 +1,8 @@
 /*
  * libaps2.h
  *
- *  Created on: Jun 25, 2012
- *      Author: qlab
+ *	Created on: Jun 25, 2012
+ *	Author: qlab
  */
 
 #ifndef LIBAPS_H_
@@ -30,6 +30,7 @@ typedef enum APS2_TRIGGER_SOURCE APS2_TRIGGER_SOURCE;
 typedef enum APS2_RUN_MODE APS2_RUN_MODE;
 typedef enum APS2_RUN_STATE APS2_RUN_STATE;
 typedef enum TLogLevel TLogLevel;
+typedef enum APS2_BITFILE_STORAGE_MEDIA APS2_BITFILE_STORAGE_MEDIA;
 
 EXPORT const char* get_error_msg(APS2_STATUS);
 
@@ -93,10 +94,19 @@ EXPORT APS2_STATUS set_dhcp_enable(const char*, const int);
 EXPORT APS2_STATUS write_memory(const char*, uint32_t, uint32_t*, uint32_t);
 EXPORT APS2_STATUS read_memory(const char*, uint32_t, uint32_t*, uint32_t);
 EXPORT APS2_STATUS read_register(const char*, uint32_t, uint32_t*);
-EXPORT int program_FPGA(const char*, const char*);
 
-EXPORT int write_flash(const char*, uint32_t, uint32_t*, uint32_t);
-EXPORT int read_flash(const char*, uint32_t, uint32_t, uint32_t*);
+EXPORT APS2_STATUS write_bitfile(const char*, const char*, uint32_t, APS2_BITFILE_STORAGE_MEDIA);
+EXPORT APS2_STATUS program_bitfile(const char*, uint32_t);
+
+EXPORT APS2_STATUS write_configuration_SDRAM(const char*, uint32_t, uint32_t*, uint32_t);
+EXPORT APS2_STATUS read_configuration_SDRAM(const char*, uint32_t, uint32_t, uint32_t*);
+
+EXPORT APS2_STATUS write_flash(const char*, uint32_t, uint32_t*, uint32_t);
+EXPORT APS2_STATUS read_flash(const char*, uint32_t, uint32_t, uint32_t*);
+
+EXPORT APS2_FLASH_TASK get_flash_task(const char *);
+EXPORT void clear_flash_progress(const char *);
+EXPORT double get_flash_progress(const char *);
 
 EXPORT uint64_t get_mac_addr(const char*);
 EXPORT APS2_STATUS set_mac_addr(const char*, uint64_t);

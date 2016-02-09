@@ -1,5 +1,6 @@
 #include <iostream>
-#include <stdexcept>
+#include <thread>
+#include <future>
 
 #include "headings.h"
 #include "libaps2.h"
@@ -15,208 +16,222 @@ using std::cout;
 using std::endl;
 using std::flush;
 
-enum  optionIndex { UNKNOWN, HELP, BIT_FILE, IP_ADDR, PROG_MODE, LOG_LEVEL};
+enum	optionIndex { UNKNOWN, HELP, BIT_FILE, IP_ADDR, PROG_MODE, LOG_LEVEL};
 const option::Descriptor usage[] =
 {
-  {UNKNOWN, 0,"" , ""    , option::Arg::None, "USAGE: program [options]\n\n"
-                                           "Options:" },
-  {HELP,    0,"" , "help", option::Arg::None, "  --help  \tPrint usage and exit." },
-  {BIT_FILE, 0,"", "bitFile", option::Arg::Required, "  --bitFile  \tPath to firmware bitfile (required)." },
-  {IP_ADDR,  0,"", "ipAddr", option::Arg::NonEmpty, "  --ipAddr  \tIP address of unit to program (optional)." },
-  {PROG_MODE, 0,"", "progMode", option::Arg::NonEmpty, "  --progMode  \t(optional) Where to program firmware DRAM/EPROM/BACKUP (optional)." },
-  {LOG_LEVEL,  0,"", "logLevel", option::Arg::Numeric, "  --logLevel  \t(optional) Logging level level to print (optional; default=3/DEBUG)." },
-  {UNKNOWN, 0,"" ,  ""   , option::Arg::None, "\nExamples:\n"
-                                           "  program --bitFile=/path/to/bitfile (all other options will be prompted for)\n"
-                                           "  program --bitFile=/path/to/bitfile --ipAddr=192.168.2.2 --progMode=DRAM " },
-  {0,0,0,0,0,0}
+	{UNKNOWN, 0,"" , ""		, option::Arg::None, "USAGE: program [options]\n\n"
+																					 "Options:" },
+	{HELP,		0,"" , "help", option::Arg::None, "	--help	\tPrint usage and exit." },
+	{BIT_FILE, 0,"", "bitFile", option::Arg::Required, "	--bitFile	\tPath to firmware bitfile (required)." },
+	{IP_ADDR,	0,"", "ipAddr", option::Arg::NonEmpty, "	--ipAddr	\tIP address of unit to program (optional)." },
+	{PROG_MODE, 0,"", "progMode", option::Arg::NonEmpty, "	--progMode	\t(optional) Where to program firmware DRAM/EPROM/BACKUP (optional)." },
+	{LOG_LEVEL,	0,"", "logLevel", option::Arg::Numeric, "	--logLevel	\t(optional) Logging level level to print (optional; default=3/DEBUG)." },
+	{UNKNOWN, 0,"" ,	""	 , option::Arg::None, "\nExamples:\n"
+																					 "	program --bitFile=/path/to/bitfile (all other options will be prompted for)\n"
+																					 "	program --bitFile=/path/to/bitfile --ipAddr=192.168.2.2 --progMode=DRAM " },
+	{0,0,0,0,0,0}
 };
 
 
-enum MODE {DRAM, EPROM, EPROM_BACKUP};
+enum PROGRAM_TARGET {TARGET_DRAM, TARGET_EPROM, TARGET_EPROM_BACKUP};
 
-MODE get_mode() {
-  cout << concol::RED << "Programming options:" << concol::RESET << endl;
-  cout << "1) Upload DRAM image" << endl;
-  cout << "2) Update EPROM image" << endl;
-  cout << "3) Update backup EPROM image" << endl << endl;
-  cout << "Choose option [1]: ";
+PROGRAM_TARGET get_target() {
+	cout << concol::RED << "Programming options:" << concol::RESET << endl;
+	cout << "1) Upload DRAM image" << endl;
+	cout << "2) Update EPROM image" << endl;
+	cout << "3) Update backup EPROM image" << endl << endl;
+	cout << "Choose option [1]: ";
 
-  char input;
-  cin.get(input);
-  switch (input) {
-    case '1':
-    default:
-      return DRAM;
-      break;
-    case '2':
-      return EPROM;
-      break;
-    case '3':
-      return EPROM_BACKUP;
-      break;
-  }
+	char input;
+	cin.get(input);
+	switch (input) {
+		case '1':
+		default:
+			return TARGET_DRAM;
+			break;
+		case '2':
+			return TARGET_EPROM;
+			break;
+		case '3':
+			return TARGET_EPROM_BACKUP;
+			break;
+	}
 }
 
-vector<uint32_t> read_bit_file(string fileName) {
-  std::ifstream FID (fileName, std::ios::in|std::ios::binary);
-  if (!FID.is_open()){
-    throw std::runtime_error("Unable to open file.");
-  }
+void progress_bar(string label, double percent ){
+	std::string bar(50, ' ');
 
-  //Get the file size in bytes
-  FID.seekg(0, std::ios::end);
-  size_t fileSize = FID.tellg();
-  cout << "Bitfile is " << fileSize << " bytes" << endl;
-  FID.seekg(0, std::ios::beg);
+	size_t str_pos = static_cast<size_t>(percent*50);
+	bar.replace(0, str_pos, str_pos, '=');
+	if (str_pos < bar.size()) {
+		bar.replace(str_pos, 1, 1, '>');
+	}
 
-  //Copy over the file data to the data vector
-  vector<uint32_t> packedData;
-  packedData.resize(fileSize/4);
-  FID.read(reinterpret_cast<char *>(packedData.data()), fileSize);
-
-  //Convert to big endian byte order - basically because it will be byte-swapped again when the packet is serialized
-  for (auto & packet : packedData) {
-    packet = htonl(packet);
-  }
-
-  return packedData;
-}
-
-int write_image(string deviceSerial, string fileName, MODE mode) {
-  vector<uint32_t> data;
-  try {
-    data = read_bit_file(fileName);
-  } catch (std::exception &e) {
-    cout << concol::RED << "Unable to open file." << concol::RESET << endl;
-    return -1;
-  }
-  uint32_t addr;
-  switch (mode) {
-    case EPROM:
-      addr = EPROM_USER_IMAGE_ADDR;
-      break;
-    case EPROM_BACKUP:
-      addr = EPROM_BASE_IMAGE_ADDR;
-      break;
-    default:
-      cout << concol::RED << "Unrecognized mode: " << mode << concol::RESET << endl;
-      return -2;
-  }
-  write_flash(deviceSerial.c_str(), addr, data.data(), data.size());
-  //verify the write
-  vector<uint32_t> buffer(256);
-  uint32_t numWords = 256;
-  cout << "Verifying:" << endl;
-  for (size_t ct=0; ct < data.size(); ct+=256) {
-    if (ct % 1000 == 0) {
-      cout << "\r" << 100*ct/data.size() << "%" << flush;
-    }
-    if (std::distance(data.begin() + ct, data.end()) < 256) {
-      numWords = std::distance(data.begin() + ct, data.end());
-    }
-    read_flash(deviceSerial.c_str(), addr + 4*ct, numWords, buffer.data());
-    if (!std::equal(buffer.begin(), buffer.begin()+numWords, data.begin()+ct)) {
-      cout << endl << "Mismatched data at offset " << hexn<6> << ct << endl;
-      return -2;
-    }
-  }
-  cout << "\r100%" << endl;
-  return reset(deviceSerial.c_str(), static_cast<int>(APS_RESET_MODE_STAT::RECONFIG_EPROM));
+	cout << label;
+	cout << std::setw(3) << static_cast<int>(100*percent) << "% [" << bar << "] ";
+	cout << "\r" << std::flush;
 }
 
 int main (int argc, char* argv[])
 {
 
-  concol::concolinit();
-  cout << concol::RED << "BBN AP2 Firmware Programming Executable" << concol::RESET << endl;
+	concol::concolinit();
+	cout << concol::RED << "BBN AP2 Firmware Programming Executable" << concol::RESET << endl;
 
-  argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
-  option::Stats  stats(usage, argc, argv);
-  option::Option *options = new option::Option[stats.options_max];
-  option::Option *buffer = new option::Option[stats.buffer_max];
-  option::Parser parse(usage, argc, argv, options, buffer);
+	argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
+	option::Stats	stats(usage, argc, argv);
+	option::Option *options = new option::Option[stats.options_max];
+	option::Option *buffer = new option::Option[stats.buffer_max];
+	option::Parser parse(usage, argc, argv, options, buffer);
 
-  if (parse.error())
-   return -1;
+	if (parse.error())
+	 return -1;
 
-  if (options[HELP] || argc == 0) {
-    option::printUsage(std::cout, usage);
-    return 0;
-  }
+	if (options[HELP] || argc == 0) {
+		option::printUsage(std::cout, usage);
+		return 0;
+	}
 
-  for (option::Option* opt = options[UNKNOWN]; opt; opt = opt->next())
-   std::cout << "Unknown option: " << opt->name << "\n";
+	for (option::Option* opt = options[UNKNOWN]; opt; opt = opt->next())
+	 std::cout << "Unknown option: " << opt->name << "\n";
 
-  for (int i = 0; i < parse.nonOptionsCount(); ++i)
-   std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
+	for (int i = 0; i < parse.nonOptionsCount(); ++i)
+	 std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
-  string bitFile;
-  if (options[BIT_FILE]) {
-    bitFile = string(options[BIT_FILE].arg);
-  }
-  else {
-    std::cerr << "Bitfile option is required." << endl;
-    return -1;
-  }
+	string bitfile;
+	if (options[BIT_FILE]) {
+		bitfile = string(options[BIT_FILE].arg);
+	}
+	else {
+		std::cerr << "Bitfile option is required." << endl;
+		return -1;
+	}
 
-  //Logging level
-  TLogLevel logLevel = logDEBUG1;
-  if (options[LOG_LEVEL]) {
-    logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
-  }
-  set_log("stdout");
-  set_logging_level(logLevel);
+	//Logging level
+	TLogLevel logLevel = logDEBUG1;
+	if (options[LOG_LEVEL]) {
+		logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
+	}
+	set_logging_level(logLevel);
 
-  string deviceSerial;
-  if (options[IP_ADDR]) {
-    deviceSerial = string(options[IP_ADDR].arg);
-    cout << "Programming device " << deviceSerial << endl;
-  } else {
-    deviceSerial = get_device_id();
-  }
+	string deviceSerial;
+	if (options[IP_ADDR]) {
+		deviceSerial = string(options[IP_ADDR].arg);
+		cout << "Programming device " << deviceSerial << endl;
+	} else {
+		deviceSerial = get_device_id();
+	}
 
-  MODE mode;
-  if (options[PROG_MODE]) {
-    string modeIn(options[PROG_MODE].arg);
-    if (!modeIn.compare("DRAM")) {
-      mode = DRAM;
-    }
-    else if (!modeIn.compare("EPROM")){
-      mode = EPROM;
-    }
-    else if (!modeIn.compare("BACKUP")){
-      mode = EPROM_BACKUP;
-    }
-    else{
-      std::cerr << "Unrecognized programming mode " << modeIn;
-      return -1;
-    }
-  } else {
-    mode = get_mode();
-  }
+	PROGRAM_TARGET target;
+	if (options[PROG_MODE]) {
+		string target_in(options[PROG_MODE].arg);
+		if (!target_in.compare("DRAM")) {
+			target = TARGET_DRAM;
+		}
+		else if (!target_in.compare("EPROM")){
+			target = TARGET_EPROM;
+		}
+		else if (!target_in.compare("BACKUP")){
+			target = TARGET_EPROM_BACKUP;
+		}
+		else{
+			std::cerr << "Unrecognized programming mode " << target_in;
+			return -1;
+		}
+	} else {
+		target = get_target();
+	}
 
-  connect_APS(deviceSerial.c_str());
+	connect_APS(deviceSerial.c_str());
 
-  switch (mode) {
-    case EPROM:
-    case EPROM_BACKUP:
-      cout << concol::RED << "Reprogramming EPROM image" << concol::RESET << endl;
-      write_image(deviceSerial, bitFile, mode);
-      break;
+	uint32_t target_addr;
+	switch (target) {
+		case TARGET_EPROM:
+			cout << concol::RED << "Reprogramming user EPROM image" << concol::RESET << endl;
+			target_addr = EPROM_USER_IMAGE_ADDR;
+			break;
+		case TARGET_EPROM_BACKUP:
+			cout << concol::RED << "Reprogramming backup EPROM image" << concol::RESET << endl;
+			target_addr = EPROM_BASE_IMAGE_ADDR;
+			break;
+		case TARGET_DRAM:
+			cout << concol::RED << "Reprogramming DRAM image" << concol::RESET << endl;
+			//default to address 0 for now
+			target_addr = 0;
+			break;
+	}
 
-    case DRAM:
-      cout << concol::RED << "Reprogramming DRAM image" << concol::RESET << endl;
-      program_FPGA(deviceSerial.c_str(), bitFile.c_str());
-      break;
-  }
+	switch (target) {
+		case TARGET_EPROM:
+		case TARGET_EPROM_BACKUP:
+		{
+			clear_flash_progress(deviceSerial.c_str());
+			//Launch the write on another thread so we can poll for progress
+			auto thread_future = std::async(std::launch::async, [deviceSerial, bitfile, target_addr]() {
+				return write_bitfile(deviceSerial.c_str(), bitfile.c_str(), target_addr, BITFILE_MEDIA_EPROM);
+			});
 
-  uint32_t newVersion;
-  get_firmware_version(deviceSerial.c_str(), &newVersion);
-  cout << concol::RED << "Device came up with firmware version: " << hexn<4> << newVersion << endl;
+			auto prev_flash_task = get_flash_task(deviceSerial.c_str());
 
-  disconnect_APS(deviceSerial.c_str());
+			while (get_flash_task(deviceSerial.c_str()) != DONE) {
+				//Make sure we haven't return prematurely
+				auto thread_status = thread_future.wait_for(std::chrono::milliseconds(0));
+				if ( thread_status == std::future_status::ready ) {
+					auto status = thread_future.get();
+					if ( status == APS2_OK ) {
+						break;
+					} else {
+						std::cerr << "Writing bit file failed with error message: " << get_error_msg(status) << endl;
+						disconnect_APS(deviceSerial.c_str());
+						return -1;
+					}
+				}
 
-  cout << concol::RED << "Finished!" << concol::RESET << endl;
+				//Otherwise update progress bars
+				//First check for change in task to move onto next progress bar
+				auto cur_flash_task = get_flash_task(deviceSerial.c_str());
+				if (cur_flash_task != prev_flash_task) {
+					prev_flash_task = cur_flash_task;
+					cout << endl;
+				}
 
-  return 0;
+				//Update the progress bar
+				std::map<APS2_FLASH_TASK, string> task_string_map { {ERASING, "Erasing: "}, {WRITING, "Writing: "}, {VALIDATING, "Validating: "}};
+				if ( (cur_flash_task == ERASING) || (cur_flash_task == WRITING) || (cur_flash_task == VALIDATING) ) {
+					progress_bar(task_string_map[cur_flash_task], get_flash_progress(deviceSerial.c_str()));
+				}
+				std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			}
+			cout << endl;
+			break;
+		}
+		case TARGET_DRAM:
+			write_bitfile(deviceSerial.c_str(), bitfile.c_str(), target_addr, BITFILE_MEDIA_DRAM);
+			cout << concol::RED << "Booting from DRAM image... ";
+			program_bitfile(deviceSerial.c_str(), target_addr);
+			//APS will drop connection so disconnect wait and reconnect
+			disconnect_APS(deviceSerial.c_str());
+			for (size_t ct = 0; ct < 5; ct++) {
+				cout << 5-ct << " " << std::flush;
+				std::this_thread::sleep_for(std::chrono::seconds(1));
+			}
+			cout << endl;
+			APS2_STATUS status;
+			status = connect_APS(deviceSerial.c_str());
+
+			if ( status != APS2_OK ) {
+				std::cerr << "APS2 failed to come back up after programming!" << endl;
+				return -1;
+			}
+
+			uint32_t newVersion{0};
+			get_firmware_version(deviceSerial.c_str(), &newVersion);
+			cout << concol::RED << "Device came up with firmware version: " << print_firmware_version(newVersion) << endl;
+			break;
+		}
+
+
+	disconnect_APS(deviceSerial.c_str());
+	cout << concol::RED << "Finished!" << concol::RESET << endl;
+	return 0;
 }

@@ -8,11 +8,11 @@
 #include "headings.h"
 #include "libaps2.h"
 #include "APS2.h"
-#include "APSEthernet.h"
+#include "APS2Ethernet.h"
 #include "asio.hpp"
 
-weak_ptr<APSEthernet> ethernetRM; //resource manager for the asio ethernet interface
-map<string, APS2> APSs; //map to hold on to the APS instances
+weak_ptr<APS2Ethernet> ethernetRM; //resource manager for the asio ethernet interface
+map<string, std::unique_ptr<APS2>> APSs; //map to hold on to the APS instances
 set<string> deviceSerials; // set of APSs that responded to an enumerate broadcast
 
 // stub class to close the logger file handle when the driver goes out of scope
@@ -36,12 +36,17 @@ InitAndCleanUp::~InitAndCleanUp() {
 InitAndCleanUp initandcleanup_;
 
 //Return the shared_ptr to the Ethernet interface
-shared_ptr<APSEthernet> get_interface() {
+shared_ptr<APS2Ethernet> get_interface() {
 	//See if we have to setup our own RM
-	shared_ptr<APSEthernet> myEthernetRM = ethernetRM.lock();
+	shared_ptr<APS2Ethernet> myEthernetRM = ethernetRM.lock();
 
 	if (!myEthernetRM) {
-		myEthernetRM = std::make_shared<APSEthernet>();
+		try {
+			myEthernetRM = std::make_shared<APS2Ethernet>();
+		}
+		catch (...) {
+			FILE_LOG(logERROR) << "Failed to create ethernet interface.";
+		}
 		ethernetRM = myEthernetRM;
 	}
 
@@ -53,7 +58,8 @@ shared_ptr<APSEthernet> get_interface() {
 template<typename F, typename... Args>
 APS2_STATUS aps2_call(const char* deviceSerial, F func, Args... args){
 	try {
-		(APSs.at(deviceSerial).*func)(args...);
+		//for some reason with "(APSs.at(deviceSerial)->*func)(args...);" the compiler doesn't like "->*"
+		(*(APSs.at(deviceSerial)).*func)(args...);
 		//Nothing thrown then assume OK
 		return APS2_OK;
 	}
@@ -76,7 +82,7 @@ APS2_STATUS aps2_call(const char* deviceSerial, F func, Args... args){
 template<typename R, typename F, typename... Args>
 APS2_STATUS aps2_getter(const char* deviceSerial, F func, R* resPtr, Args... args){
 	try {
-		*resPtr = (APSs.at(deviceSerial).*func)(args...);
+		*resPtr = (*(APSs.at(deviceSerial)).*func)(args...);
 		//Nothing thrown then assume OK
 		return APS2_OK;
 	}
@@ -146,12 +152,13 @@ APS2_STATUS connect_APS(const char* deviceSerial) {
 	string serial = string(deviceSerial);
 	// create the APS2 object if it is not already in the map
 	if (APSs.find(serial) == APSs.end()) {
-		APSs[serial] = APS2(serial);
+		//C++14 use std::make_unique
+		APSs.insert(std::make_pair(serial, std::unique_ptr<APS2>(new APS2(serial)) ) );
 	}
-	//Can't seem to bind the interface lvalue to ‘std::shared_ptr<APSEthernet>&&’
+	//Can't seem to bind the interface lvalue to ‘std::shared_ptr<APS2Ethernet>&&’
 	// return aps2_call(deviceSerial, &APS2::connect, get_interface());
 	try {
-		APSs.at(deviceSerial).connect(get_interface());
+		APSs.at(deviceSerial)->connect(get_interface());
 		return APS2_OK;
 	}
 	catch (APS2_STATUS status) {
@@ -171,8 +178,8 @@ APS2_STATUS disconnect_APS(const char* deviceSerial) {
 	return status;
 }
 
-APS2_STATUS reset(const char* deviceSerial, int resetMode) {
-	return aps2_call(deviceSerial, &APS2::reset, static_cast<APS_RESET_MODE_STAT>(resetMode));
+APS2_STATUS reset(const char* deviceSerial, int mode) {
+	return aps2_call(deviceSerial, &APS2::reset, static_cast<APS_RESET_MODE_STAT>(mode));
 }
 
 //Initialize an APS unit
@@ -326,8 +333,8 @@ APS2_STATUS write_memory(const char* deviceSerial, uint32_t addr, uint32_t* data
 
 APS2_STATUS read_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
 	try {
-		auto readData = APSs[string(deviceSerial)].read_memory(addr, numWords);
-		std::copy(readData.begin(), readData.end(), data);	
+		auto readData = APSs[string(deviceSerial)]->read_memory(addr, numWords);
+		std::copy(readData.begin(), readData.end(), data);
 	}
 	catch (APS2_STATUS status) {
 		return status;
@@ -335,7 +342,7 @@ APS2_STATUS read_memory(const char* deviceSerial, uint32_t addr, uint32_t* data,
 	catch (...) {
 		return APS2_UNKNOWN_ERROR;
 	}
-	
+
 	return APS2_OK;
 }
 
@@ -343,22 +350,65 @@ APS2_STATUS read_register(const char* deviceSerial, uint32_t addr, uint32_t* res
 	return read_memory(deviceSerial, addr, result, 1);
 }
 
-int program_FPGA(const char* deviceSerial, const char* bitFile) {
-	return aps2_call(deviceSerial, &APS2::program_FPGA, string(bitFile));
+APS2_STATUS write_bitfile(const char* deviceSerial, const char* bitFile, uint32_t addr, APS2_BITFILE_STORAGE_MEDIA media) {
+	return aps2_call(deviceSerial, &APS2::write_bitfile, string(bitFile), addr, media);
 }
 
-int write_flash(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
+APS2_STATUS program_bitfile(const char* deviceSerial, uint32_t addr) {
+	return aps2_call(deviceSerial, &APS2::program_bitfile, addr);
+}
+
+APS2_STATUS write_configuration_SDRAM(const char* ip_addr, uint32_t addr, uint32_t* data, uint32_t num_words){
+	return aps2_call(ip_addr, &APS2::write_configuration_SDRAM, addr, vector<uint32_t>(data, data + num_words));
+}
+
+APS2_STATUS read_configuration_SDRAM(const char* ip_addr, uint32_t addr, uint32_t num_words, uint32_t* data){
+	try {
+		auto read_data = APSs[string(ip_addr)]->read_configuration_SDRAM(addr, num_words);
+		std::copy(read_data.begin(), read_data.end(), data);
+	}
+	catch (APS2_STATUS status) {
+		return status;
+	}
+	catch (...) {
+		return APS2_UNKNOWN_ERROR;
+	}
+	return APS2_OK;
+}
+
+APS2_STATUS write_flash(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
 	return aps2_call(deviceSerial, &APS2::write_flash, addr, vector<uint32_t>(data, data + numWords));
 }
 
-int read_flash(const char* deviceSerial, uint32_t addr, uint32_t numWords, uint32_t* data) {
-	auto readData = APSs[string(deviceSerial)].read_flash(addr, numWords);
-	std::copy(readData.begin(), readData.end(), data);
-	return 0;
+APS2_STATUS read_flash(const char* deviceSerial, uint32_t addr, uint32_t numWords, uint32_t* data) {
+	try {
+		auto readData = APSs[string(deviceSerial)]->read_flash(addr, numWords);
+		std::copy(readData.begin(), readData.end(), data);
+	}
+	catch (APS2_STATUS status) {
+		return status;
+	}
+	catch (...) {
+		return APS2_UNKNOWN_ERROR;
+	}
+	return APS2_OK;
+}
+
+APS2_FLASH_TASK get_flash_task(const char* deviceSerial){
+	return APSs[string(deviceSerial)]->flash_task;
+}
+
+void clear_flash_progress(const char* deviceSerial){
+	APSs[string(deviceSerial)]->flash_task = STARTING;
+	APSs[string(deviceSerial)]->flash_task_progress = 0;
+}
+
+double get_flash_progress(const char* deviceSerial){
+	return APSs[string(deviceSerial)]->flash_task_progress;
 }
 
 uint64_t get_mac_addr(const char* deviceSerial) {
-	return APSs[string(deviceSerial)].get_mac_addr();
+	return APSs[string(deviceSerial)]->get_mac_addr();
 }
 
 APS2_STATUS set_mac_addr(const char* deviceSerial, uint64_t mac) {
@@ -367,7 +417,7 @@ APS2_STATUS set_mac_addr(const char* deviceSerial, uint64_t mac) {
 
 APS2_STATUS get_ip_addr(const char* deviceSerial, char* ipAddrPtr) {
 	try {
-		uint32_t ipAddr = APSs[string(deviceSerial)].get_ip_addr();
+		uint32_t ipAddr = APSs[string(deviceSerial)]->get_ip_addr();
 		string ipAddrStr = asio::ip::address_v4(ipAddr).to_string();
 		ipAddrStr.copy(ipAddrPtr, ipAddrStr.size(), 0);
 		return APS2_OK;
@@ -397,7 +447,7 @@ APS2_STATUS set_dhcp_enable(const char* deviceSerial, const int enable) {
 int run_DAC_BIST(const char* deviceSerial, const int dac, int16_t* data, unsigned int length, uint32_t* results){
 	vector<int16_t> testVec(data, data+length);
 	vector<uint32_t> tmpResults;
-	int passed = APSs[string(deviceSerial)].run_DAC_BIST(dac, testVec, tmpResults);
+	int passed = APSs[string(deviceSerial)]->run_DAC_BIST(dac, testVec, tmpResults);
 	std::copy(tmpResults.begin(), tmpResults.end(), results);
 	return passed;
 }

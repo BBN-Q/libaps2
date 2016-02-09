@@ -1,14 +1,14 @@
-#include "APSEthernetPacket.h"
+#include "APS2EthernetPacket.h"
 
-APSEthernetPacket::APSEthernetPacket() : header{{}, {}, APS_PROTO, 0, {0}, 0}, payload(0){};
+APS2EthernetPacket::APS2EthernetPacket() : header{{}, {}, APS_PROTO, 0, APS2Command(), 0}, payload(0){};
 
-APSEthernetPacket::APSEthernetPacket(const APSCommand_t & command, const uint32_t & addr /*see header for default addr=0 */) :
+APS2EthernetPacket::APS2EthernetPacket(APS2Command command, const uint32_t & addr /*see header for default addr=0 */) :
 		header{{}, {}, APS_PROTO, 0, command, addr}, payload(0){};
 
-APSEthernetPacket::APSEthernetPacket(const MACAddr & destMAC, const MACAddr & srcMAC, APSCommand_t command, const uint32_t & addr) :
+APS2EthernetPacket::APS2EthernetPacket(const MACAddr & destMAC, const MACAddr & srcMAC, APS2Command command, const uint32_t & addr) :
 		header{destMAC, srcMAC, APS_PROTO, 0, command, addr}, payload(0){};
 
-APSEthernetPacket::APSEthernetPacket(const vector<uint8_t> & packetData){
+APS2EthernetPacket::APS2EthernetPacket(const vector<uint8_t> & packetData){
 	/*
 	Create a packet from a byte array returned by pcap.
 	*/
@@ -29,6 +29,7 @@ APSEthernetPacket::APSEthernetPacket(const vector<uint8_t> & packetData){
 		myOffset = 24;
 	}
 	else{
+		header.addr = 0;
 		myOffset = 20;
 	}
 	payload.clear();
@@ -39,7 +40,7 @@ APSEthernetPacket::APSEthernetPacket(const vector<uint8_t> & packetData){
 	}
 }
 
-vector<uint8_t> APSEthernetPacket::serialize() const {
+vector<uint8_t> APS2EthernetPacket::serialize() const {
 	/*
 	 * Serialize a packet to a vector of bytes for transmission.
 	 * Handle host to network byte ordering here
@@ -85,16 +86,16 @@ vector<uint8_t> APSEthernetPacket::serialize() const {
 	return outVec;
 }
 
-size_t APSEthernetPacket::numBytes() const{
+size_t APS2EthernetPacket::numBytes() const{
 	size_t trueSize = needs_address(APS_COMMANDS(header.command.cmd)) ? NUM_HEADER_BYTES + 4*payload.size() : NUM_HEADER_BYTES - 4 + 4*payload.size() ;
-	return std::max(trueSize, static_cast<size_t>(64)); 
-}	
+	return std::max(trueSize, static_cast<size_t>(64));
+}
 
-APSEthernetPacket APSEthernetPacket::create_broadcast_packet(){
+APS2EthernetPacket APS2EthernetPacket::create_broadcast_packet(){
 	/*
 	 * Helper function to put together a broadcast status packet that all APS units should respond to.
 	 */
-	APSEthernetPacket myPacket;
+	APS2EthernetPacket myPacket;
 
 	//Put the broadcast FF:FF:FF:FF:FF:FF in the MAC destination address
 	std::fill(myPacket.header.dest.addr.begin(), myPacket.header.dest.addr.end(), 0xFF);
@@ -110,17 +111,41 @@ APSEthernetPacket APSEthernetPacket::create_broadcast_packet(){
 }
 
 
+vector<APS2EthernetPacket> APS2EthernetPacket::chunk(uint32_t addr, const vector<uint32_t> & data, APS2Command cmd) {
+	//Break the data up into ethernet frame sized chunks with APS2EthernetPacket headers
+	// ethernet frame payload = 1500bytes - 20bytes IPV4 and 8 bytes UDP and 24 bytes APS header (with address field) = 1448bytes = 362 words
+	// for unknown reasons, we see occasional failures when using packets that large. 256 seems to be more stable.
+	static const int MAX_PAYLOAD = 256;
 
-string print_APSCommand(const APSCommand_t & cmd) {
-    std::ostringstream ret;
+	vector<APS2EthernetPacket> packets;
 
-    ret << std::hex << cmd.packed << " =";
-    ret << " ACK: " << cmd.ack;
-    ret << " SEQ: " << cmd.seq;
-    ret << " SEL: " << cmd.sel;
-    ret << " R/W: " << cmd.r_w;
-    ret << " CMD: " << cmd.cmd;
-    ret << " MODE/STAT: " << cmd.mode_stat;
-    ret << std::dec << " cnt: " << cmd.cnt;
-    return ret.str();
+	APS2EthernetPacket newPacket;
+	//Clear the ack and sel bits for the ApsMsgProc
+	cmd.ack = 0;
+	cmd.sel = 0;
+	newPacket.header.command =	cmd;
+
+	auto idx = data.begin();
+	uint16_t seqNum = 0;
+	uint32_t curAddr = addr;
+	do {
+		if (std::distance(idx, data.end()) > MAX_PAYLOAD){
+			newPacket.header.command.cnt = MAX_PAYLOAD;
+		}
+		else{
+			newPacket.header.command.cnt = std::distance(idx, data.end());
+		}
+
+		newPacket.header.seqNum = seqNum++;
+		newPacket.header.addr = curAddr;
+		curAddr += 4*newPacket.header.command.cnt;
+
+		newPacket.payload.clear();
+		std::copy(idx, idx+newPacket.header.command.cnt, std::back_inserter(newPacket.payload));
+
+		packets.push_back(newPacket);
+		idx += newPacket.header.command.cnt;
+	} while (idx != data.end());
+
+	return packets;
 }
