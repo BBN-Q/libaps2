@@ -150,15 +150,15 @@ INSTALL(FILES "${PROJECT_SOURCE_DIR}/lib/libaps2.h"
 # On linux we need to ship the system libraries
 # TODO: do something similar for windows
 IF(UNIX AND NOT APPLE)
-GET_FILENAME_COMPONENT(GCC_PATH ${CMAKE_CXX_COMPILER} PATH)
-SET(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS
-	${GCC_PATH}/../lib64/libgcc_s.so.1
-	${GCC_PATH}/../lib64/libstdc++.so.6
-	${GCC_PATH}/../lib64/libstdc++.so.6.0.21
-	${HDF5_INCLUDE_DIR}/../lib/libhdf5.so.10
-	${HDF5_INCLUDE_DIR}/../lib/libhdf5.so.10.1.0
-	${HDF5_INCLUDE_DIR}/../lib/libhdf5_cpp.so.11
-	${HDF5_INCLUDE_DIR}/../lib/libhdf5_cpp.so.11.0.0)
+	GET_FILENAME_COMPONENT(GCC_PATH ${CMAKE_CXX_COMPILER} PATH)
+	FILE(GLOB STDCPP ${GCC_PATH}/../lib64/libstdc++.so.*)
+	FILE(GLOB HDF5LIB ${HDF5_INCLUDE_DIR}/../lib/libhdf5.so.*)
+	FILE(GLOB HDF5CPPLIB ${HDF5_INCLUDE_DIR}/../lib/libhdf5_cpp.so.*)
+	SET(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS
+		${GCC_PATH}/../lib64/libgcc_s.so.1
+		${STDCPP}
+		${HDF5LIB}
+		${HDF5CPPLIB})
 ENDIF()
 INCLUDE( InstallRequiredSystemLibraries )
 
