@@ -13,10 +13,9 @@ using std::endl;
 #include "libaps2.h"
 #include "constants.h"
 #include "concol.h"
+#include "RandomHelpers.h"
 
 extern string ip_addr; //ip address from run_tests
-
-static std::default_random_engine generator(std::random_device{}());
 
 // N-wide hex output with 0x
 template <unsigned int N>
@@ -25,32 +24,13 @@ std::ostream& hexn(std::ostream& out)
 	return out << "0x" << std::hex << std::setw(N) << std::setfill('0');
 }
 
-vector<uint32_t> random_data(size_t length) {
-	//Create random data to write/read
-	std::uniform_int_distribution<uint32_t> word_distribution;
-	vector<uint32_t> data(length);
-	for (auto & val : data){
-		val = word_distribution(generator);
-	}
-	return data;
-}
-
-uint32_t random_address(uint32_t mem_low, uint32_t mem_high, uint32_t alignment) {
-	//Create a random starting address aligned appropriately
-	//Choose a random starting point
-	std::uniform_int_distribution<uint32_t> addr_distribution(mem_low, mem_high);
-	uint32_t start_addr = addr_distribution(generator);
-	start_addr &= ~(alignment); //align address
-	return start_addr;
-}
-
 bool test_mem_write_read(uint32_t memStartAddr, uint32_t memHighAddr, size_t testLength, uint32_t alignmentMask){
 	/*
 	Helper function to test writing and reading to a range of memory with a particular alignment.
 	*/
 
-	auto test_vec = random_data(testLength/4);
-	auto start_addr = random_address(memStartAddr, memHighAddr-testLength, alignmentMask);
+	auto test_vec = RandomHelpers::random_data(testLength/4);
+	auto start_addr = RandomHelpers::random_address(memStartAddr, memHighAddr-testLength, alignmentMask);
 
 	cout << "writing " << std::dec << testLength/(1 << 10) << " kB starting at " << hexn<8> << start_addr << "..... ";
 	cout.flush();
@@ -222,9 +202,9 @@ TEST_CASE("configuration SDRAM writing and reading", "[configuration SDRAM]") {
 	get_firmware_version(ip_addr.c_str(), &firmware_version);
 	size_t testLength = ( (firmware_version & 0x00000fff) >= 0x300) ? (1 << 22) : (1 << 18);
 	//write to configuration memory
-	auto test_vec = random_data(testLength/4);
+	auto test_vec = RandomHelpers::random_data(testLength/4);
 	uint32_t alignment = 0x7; //8byte
-	auto start_addr = random_address(0, 0x07ffffff-testLength, alignment); //128MB
+	auto start_addr = RandomHelpers::random_address(0, 0x07ffffff-testLength, alignment); //128MB
 	cout << "config. memory: writing " << std::dec << testLength/(1 << 10) << " kB starting at " << hexn<8> << start_addr << "..... ";
 	cout.flush();
 	auto start = std::chrono::steady_clock::now();
@@ -261,11 +241,11 @@ TEST_CASE("eprom read/write", "[eprom]") {
 	SECTION("basic write/read") {
 		//test writing/reading 128kB
 		size_t test_length = 128*(1<<10);
-		auto test_vec = random_data(test_length/4);
+		auto test_vec = RandomHelpers::random_data(test_length/4);
 		//backup image starts at 16MB or 0x01000000 and should be no more than 10MB
 		//so test between 28 and 32MB
 		uint32_t alignment = 0xffff; //64kB aligned for erase
-		auto start_addr = random_address(0x01c00000, 0x01ffffff-test_length, alignment);
+		auto start_addr = RandomHelpers::random_address(0x01c00000, 0x01ffffff-test_length, alignment);
 		cout << "ERPOM: writing " << std::dec << test_length/(1 << 10) << " kB starting at " << hexn<8> << start_addr << "..... ";
 		cout.flush();
 		auto start = std::chrono::steady_clock::now();
@@ -282,7 +262,6 @@ TEST_CASE("eprom read/write", "[eprom]") {
 		auto it = check_vec.begin();
 		while (check_addr < start_addr + test_length) {
 			read_flash(ip_addr.c_str(), check_addr, 256, &*it); //ugly maybe std::pointer_from will exist some day
-			vector<uint32_t> chunk(it, it+256);
 			std::advance(it, 256);
 			check_addr += 256*4;
 		}

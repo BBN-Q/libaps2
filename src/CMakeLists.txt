@@ -94,6 +94,7 @@ ADD_EXECUTABLE(run_tests
 	../test/test_Sanity.cpp
 	../test/test_datagram.cpp
 	./lib/APS2Datagram.cpp
+	../test/RandomHelpers.cpp
 	../test/test_comms.cpp
 )
 TARGET_LINK_LIBRARIES(run_tests aps2 pthread)
