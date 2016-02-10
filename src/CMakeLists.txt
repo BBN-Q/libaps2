@@ -2,11 +2,12 @@
 #
 # mkdir build
 # cd build
-# cmake -G "MSYS Makefiles" -DHDF5_INCLUDE_DIR:string=/path/to/hdf5 -DCMAKE_BUILD_TYPE=Release/Debug ../src
-#
+# cmake -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=Release/Debug ../src
 # make
 #
 # On Mac/Linux you can skip the '-G "MSYS Makefiles" option'
+#
+# If your HDF5 install is in a non-standard location set the HDF5_ROOT environment variable
 
 PROJECT( libaps2 )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
@@ -16,14 +17,9 @@ set(APS2_VERSION_MINOR 0)
 set(APS2_VERSION_PATCH 0)
 set(APS2_VERSION_STRING ${APS2_VERSION_MAJOR}.${APS2_VERSION_MINOR}.${APS2_VERSION_PATCH})
 
-#Look for hdf5 directly passed; otherwise look for system one
-if(NOT DEFINED HDF5_INCLUDE_DIR)
-	FIND_PACKAGE(HDF5)
-else()
-	LINK_DIRECTORIES( ${LINK_DIRECTORIES} ${HDF5_INCLUDE_DIR}/../lib)
-endif()
-INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIR} )
-INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIR}/cpp )
+#Look for HDF5
+FIND_PACKAGE(HDF5 REQUIRED COMPONENTS C CXX)
+INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIRS} )
 
 #Grab all the header files in the src directory including concol.h
 INCLUDE_DIRECTORIES("./lib/")
@@ -128,9 +124,9 @@ TARGET_LINK_LIBRARIES(dac_bist aps2)
 SET(bin_targets enumerate play_waveform play_sequence flash reset program dac_bist run_tests)
 
 if(WIN32)
-TARGET_LINK_LIBRARIES(aps2 hdf5	hdf5_cpp ws2_32 iphlpapi pthread)
+TARGET_LINK_LIBRARIES(aps2 ${HDF5_LIBRARIES} ws2_32 iphlpapi pthread)
 else(WIN32)
-TARGET_LINK_LIBRARIES(aps2 hdf5	hdf5_cpp pthread)
+TARGET_LINK_LIBRARIES(aps2 ${HDF5_LIBRARIES} hdf5_cpp pthread)
 endif(WIN32)
 
 # installation section
