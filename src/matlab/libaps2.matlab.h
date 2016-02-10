@@ -1,8 +1,8 @@
 /*
  * libaps2.h
  *
- *  Created on: Jun 25, 2012
- *      Author: qlab
+ *	Created on: Jun 25, 2012
+ *	Author: qlab
  */
 
 #ifndef LIBAPS_H_
@@ -104,9 +104,9 @@ EXPORT APS2_STATUS read_configuration_SDRAM(const char*, unsigned int, unsigned 
 EXPORT APS2_STATUS write_flash(const char*, unsigned int, unsigned int*, unsigned int);
 EXPORT APS2_STATUS read_flash(const char*, unsigned int, unsigned int, unsigned int*);
 
-EXPORT double get_flash_erase_done(const char *);
-EXPORT double get_flash_write_done(const char *);
-EXPORT double get_flash_validate_done(const char *);
+EXPORT APS2_FLASH_TASK get_flash_task(const char *);
+EXPORT void clear_flash_progress(const char *);
+EXPORT double get_flash_progress(const char *);
 
 EXPORT uint64_t get_mac_addr(const char*);
 EXPORT APS2_STATUS set_mac_addr(const char*, uint64_t);
