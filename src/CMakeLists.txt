@@ -20,6 +20,7 @@ set(APS2_VERSION_STRING ${APS2_VERSION_MAJOR}.${APS2_VERSION_MINOR}.${APS2_VERSI
 #Look for HDF5
 FIND_PACKAGE(HDF5 REQUIRED COMPONENTS C CXX)
 INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIRS} )
+LINK_DIRECTORIES( ${LINK_DIRECTORIES} ${HDF5_LIBRARY_DIRS} )
 
 #Grab all the header files in the src directory including concol.h
 INCLUDE_DIRECTORIES("./lib/")
@@ -124,9 +125,9 @@ TARGET_LINK_LIBRARIES(dac_bist aps2)
 SET(bin_targets enumerate play_waveform play_sequence flash reset program dac_bist run_tests)
 
 if(WIN32)
-TARGET_LINK_LIBRARIES(aps2 ${HDF5_LIBRARIES} ws2_32 iphlpapi pthread)
+TARGET_LINK_LIBRARIES(aps2 hdf5 hdf5_cpp ws2_32 iphlpapi pthread)
 else(WIN32)
-TARGET_LINK_LIBRARIES(aps2 ${HDF5_LIBRARIES} hdf5_cpp pthread)
+TARGET_LINK_LIBRARIES(aps2 hdf5 hdf5_cpp pthread)
 endif(WIN32)
 
 # installation section
