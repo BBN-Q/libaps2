@@ -117,10 +117,6 @@ ADD_EXECUTABLE(dac_bist
 	./util/DAC_BIST.cpp
 )
 
-ADD_EXECUTABLE(waveforms
-	./C++/waveforms.cpp
-)
-
 TARGET_LINK_LIBRARIES(enumerate aps2)
 TARGET_LINK_LIBRARIES(play_waveform aps2)
 TARGET_LINK_LIBRARIES(play_sequence aps2)
@@ -128,9 +124,8 @@ TARGET_LINK_LIBRARIES(flash aps2)
 TARGET_LINK_LIBRARIES(reset aps2)
 TARGET_LINK_LIBRARIES(program aps2)
 TARGET_LINK_LIBRARIES(dac_bist aps2)
-TARGET_LINK_LIBRARIES(waveforms aps2)
 
-SET(bin_targets enumerate play_waveform play_sequence flash reset program dac_bist waveforms run_tests)
+SET(bin_targets enumerate play_waveform play_sequence flash reset program dac_bist run_tests)
 
 if(WIN32)
 TARGET_LINK_LIBRARIES(aps2 hdf5	hdf5_cpp ws2_32 iphlpapi pthread)
