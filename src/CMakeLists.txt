@@ -150,12 +150,12 @@ INSTALL(FILES "${PROJECT_SOURCE_DIR}/lib/libaps2.h"
 # On linux we need to ship the system libraries
 # TODO: do something similar for windows
 IF(UNIX AND NOT APPLE)
-	GET_FILENAME_COMPONENT(GCC_PATH ${CMAKE_CXX_COMPILER} PATH)
-	FILE(GLOB STDCPP ${GCC_PATH}/../lib64/libstdc++.so.*)
-	FILE(GLOB HDF5LIB ${HDF5_INCLUDE_DIR}/../lib/libhdf5.so.*)
-	FILE(GLOB HDF5CPPLIB ${HDF5_INCLUDE_DIR}/../lib/libhdf5_cpp.so.*)
+	FIND_LIBRARY(LIBGCC NAMES libgcc_s.so.1)
+	FIND_LIBRARY(LIBSTDCPP NAMES libstdc++.so.6)
+	FIND_LIBRARY(HDF5LIB NAMES hdf5)
+	FIND_LIBRARY(HDF5CPPLIB NAMES hdf5_cpp)
 	SET(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS
-		${GCC_PATH}/../lib64/libgcc_s.so.1
+		${LIBGCC}
 		${STDCPP}
 		${HDF5LIB}
 		${HDF5CPPLIB})
