@@ -1,5 +1,5 @@
 [submodule "asio"]
-	path = asio
+	path = deps/asio
 	url = git@github.com:chriskohlhoff/asio.git
 [submodule "deps/Catch"]
 	path = deps/Catch

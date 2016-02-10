@@ -24,7 +24,7 @@ INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIR}/cpp )
 INCLUDE_DIRECTORIES("./lib/")
 
 #ASIO
-INCLUDE_DIRECTORIES( "../asio/asio/include" )
+INCLUDE_DIRECTORIES( "../deps/asio/asio/include" )
 ADD_DEFINITIONS(-DASIO_STANDALONE)
 
 #Catch unit-testing
