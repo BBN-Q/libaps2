@@ -31,6 +31,7 @@ typedef enum APS2_RUN_MODE APS2_RUN_MODE;
 typedef enum APS2_RUN_STATE APS2_RUN_STATE;
 typedef enum TLogLevel TLogLevel;
 typedef enum APS2_BITFILE_STORAGE_MEDIA APS2_BITFILE_STORAGE_MEDIA;
+typedef enum APS2_FLASH_TASK APS2_FLASH_TASK;
 
 EXPORT const char* get_error_msg(APS2_STATUS);
 
