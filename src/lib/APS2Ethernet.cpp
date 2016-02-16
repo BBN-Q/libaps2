@@ -347,8 +347,8 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
 	//Block until the acks come back
 	for (const auto & dg : datagrams){
 	  if ( dg.cmd.ack ) {
-		//ERPOM IO take a long time otherwise should be able to get at least 1MB/s
-		auto timeout = (APS_COMMANDS(dg.cmd.cmd) == APS_COMMANDS::EPROMIO) ? std::chrono::milliseconds(1000) : std::chrono::milliseconds(250);
+		//max of 256kB in a datagram so assume we can get 128kB/s
+		auto timeout = std::chrono::seconds(2);
 		auto ack = read(ipAddr, timeout);
 		dg.check_ack(ack, false);
 	  }
