@@ -7,6 +7,9 @@
 #include "concol.h"
 #include "helpers.h"
 
+#include <iostream>
+#include <iomanip>
+
 #include <chrono>
 
 int main(int argc, char* argv[])
@@ -44,16 +47,12 @@ int main(int argc, char* argv[])
 		}
 		uptime_seconds -= uptime_days;
 		auto uptime_hours = std::chrono::duration_cast<std::chrono::hours>(uptime_seconds);
-		if (uptime_hours.count()) {
-			uptime_pretty << uptime_hours.count() << " hour" << (uptime_hours.count() > 1 ? "s " : " ");
-		}
+		uptime_pretty << std::setfill('0') << std::setw(2) << uptime_hours.count() << ":";
 		uptime_seconds -= uptime_hours;
 		auto uptime_minutes = std::chrono::duration_cast<std::chrono::minutes>(uptime_seconds);
-		if (uptime_minutes.count()) {
-			uptime_pretty << uptime_minutes.count() << " minute" << (uptime_minutes.count() > 1 ? "s " : " ");
-		}
+		uptime_pretty << std::setfill('0') << std::setw(2) << uptime_minutes.count() << ":";
 		uptime_seconds -= uptime_minutes;
-		uptime_pretty << uptime_seconds.count() << " seconds";
+		uptime_pretty << std::fixed << std::setprecision(3) << uptime_seconds.count();
 
 		cout << concol::CYAN << "Device " << ct << " at IPv4 address " << serialBuffer[ct] <<
 		" running firmware version " << print_firmware_version(firmware_version) <<
