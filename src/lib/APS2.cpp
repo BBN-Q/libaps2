@@ -1754,16 +1754,21 @@ string APS2::print_firmware_version(uint32_t version_reg) {
 
 	uint32_t minor = version_reg & 0xff;
 	uint32_t major = (version_reg >> 8) & 0xf;
-	uint32_t note_nibble = (version_reg >> 12) & 0xf;
+	uint32_t sha1_nibble = (version_reg >> 12) & 0xfffff;
 	string note;
-	switch (note_nibble) {
-		case 0xa:
-			note = "alpha";
+	switch (sha1_nibble) {
+		case 0x00000:
+			note = "";
 			break;
-		case 0xb:
-			note = "beta";
+		case 0x0000a:
+			note = "-dev";
+			break;
+		default:
+			std::ostringstream sha1;
+			sha1 << "-dev-" << std::hex << sha1_nibble;
+			note = sha1.str();
 			break;
 	}
-	ret << major << "." << minor << " " << note;
+	ret << major << "." << minor << note;
 	return ret.str();
 }
