@@ -24,7 +24,7 @@ We get the [asio] dependency via a submodule we need the --recursive switch
 
 ### Dependencies
 
-* C++ compiler: Threaded support is important as we use C++11 std::thread. See below for OS specific compilers tested.
+* C++ compiler with good C++11 support. See below for OS specific compilers tested.
 * [cmake](http://www.cmake.org/): Cmake build tool version 2.8 or higher (http://www.cmake.org/)
 * [hdf5](http://www.hdfgroup.org/HDF5/): Currently built against 1.8.13.  Watch out for HDF5 version incompatibilities with other programs (such as Matlab) that ship with a bundled HDF5 library.  You may have to use the environment variable ``HDF5_DISABLE_VERSION_CHECK=1`` to avoid conflict.
 
@@ -52,22 +52,13 @@ Using gcc on Windows is a rapidly moving target.  Our setup has changed every co
 
 Tested on:
 * Windows 7 Professional with gcc 4.9.2
-* Windows 8.1 with gcc 4.9.2
-
-#### Windows 8 and Windows 10
-The network stack in Windows 8 and Windows 10 is too fast for the APS2 and versions of the driver which compile and run under Windows 7 and below will cause APS2 communication errors in Windows 10.  To get a round this, we add a delay in the APSEthernet send_chunk
-[function](https://github.com/BBN-Q/libaps2/blob/79e0bbbc65e0e8e7bf2c76811cf00af453860c3e/src/lib/APSEthernet.cpp#L297).
-
-If you are compiling on Windows 8 or 10, un-comment this line and recompile.
-
-Tested on:
 * Windows 10 Professional with gcc 5.2.0
 
 ### Linux
 Use your distribution's package manager to install the dependencies and it should work out of the box.
 
 Tested on:
-* Linux Mint 17.1 with gcc 4.7, 4.8
+* Linux Mint 17.3 with gcc 4.7, 4.8
 
 ### OS X
 1. Install the command-line developer tools.
