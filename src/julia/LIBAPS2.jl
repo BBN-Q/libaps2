@@ -109,6 +109,10 @@ function enumerate_APS2s()
 end
 
 function connect!(aps::APS2, serial)
+	if !isempty(aps.serial)
+		warn("Disconnecting from $(aps.serial) before connection to $(serial)")
+		disconnect!(aps)
+	end
 	status = ccall((:connect_APS, "libaps2"), APS2_STATUS, (Ptr{UInt8},), serial)
 	check_status(status)
 	aps.serial = serial
