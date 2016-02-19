@@ -19,7 +19,7 @@
 
 classdef APS2 < handle
     properties
-        serial = ''
+        ip_addr = ''
     end
 
     properties (Constant)
@@ -40,24 +40,28 @@ classdef APS2 < handle
         end
 
         function aps2_call(obj, func, varargin)
-            status = calllib('libaps2', func, obj.serial, varargin{:});
+            status = calllib('libaps2', func, obj.ip_addr, varargin{:});
             APS2.check_status(status);
         end
 
         function val = aps2_getter(obj, func, varargin)
-            [status, ~, val] = calllib('libaps2', func, obj.serial, varargin{:}, 0);
+            [status, ~, val] = calllib('libaps2', func, obj.ip_addr, varargin{:}, 0);
             APS2.check_status(status);
         end
 
-        function connect(obj, serial)
-            obj.serial = serial;
+        function connect(obj, ip_addr)
+            if ~isempty(ip_addr)
+              warning('Disconnecting from %s before connecting to %s', obj.serial, ip_addr)
+              disconnect(obj)
+            end
+            obj.ip_addr = ip_addr;
             aps2_call(obj, 'connect_APS');
             obj.init();
         end
 
         function disconnect(obj)
             aps2_call(obj, 'disconnect_APS');
-            obj.serial = '';
+            obj.ip_addr = '';
         end
 
         function init(obj, force)
@@ -235,16 +239,16 @@ classdef APS2 < handle
             'APS2 library call failed with message: %s', calllib('libaps2', 'get_error_msg', status));
         end
 
-        function [serials] = enumerate()
+        function [ip_addrs] = enumerate()
             APS2.load_library();
             [status, numDevices] = calllib('libaps2', 'get_numDevices', 0);
             APS2.check_status(status);
-            serials = cell(1,numDevices);
+            ip_addrs = cell(1,numDevices);
             for ct = 1:numDevices
-                serials{ct} = '';
+                ip_addrs{ct} = '';
             end
-            serialPtr = libpointer('stringPtrPtr', serials);
-            [status, serials] = calllib('libaps2', 'get_deviceSerials', serialPtr);
+            ip_addrPtr = libpointer('stringPtrPtr', ip_addrs);
+            [status, ip_addrs] = calllib('libaps2', 'get_deviceSerials', ip_addrPtr);
             APS2.check_status(status)
         end
 
