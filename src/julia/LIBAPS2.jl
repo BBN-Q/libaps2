@@ -31,8 +31,9 @@ export APS2,
 using Compat
 
 type APS2
-	serial::ASCIIString
+	ip_addr::IPv4
 end
+APS2() = APS2(IPv4(0))
 
 __init__() = push!(Libdl.DL_LOAD_PATH, joinpath(dirname(@__FILE__), "../../build/"))
 
@@ -60,7 +61,7 @@ macro aps2_getter(funcName, dataType)
 	funcNameBis = string(funcName)
 	funcBody = quote
 				val = Array($dataType, 1)
-				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Ptr{$dataType}), aps.serial, val)
+				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Ptr{$dataType}), string(aps.ip_addr), val)
 				check_status(status)
 				return val[1]
 			end
@@ -71,7 +72,7 @@ macro aps2_setter(funcName, dataType)
 	funcProto = :($funcName(aps::APS2, val::$dataType))
 	funcNameBis = string(funcName)
 	funcBody = quote
-				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{UInt8}, $dataType), aps.serial, val)
+				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{UInt8}, $dataType), string(aps.ip_addr), val)
 				check_status(status)
 			end
 	Expr(:function, esc(funcProto), esc(funcBody))
@@ -85,7 +86,7 @@ macro aps2_call(funcName, args...)
 	end
 	funcNameBis = string(funcName)
 	funcBody = quote
-				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{UInt8},), aps.serial, $(argNames...))
+				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{UInt8},), string(aps.ip_addr), $(argNames...))
 				check_status(status)
 			end
 	Expr(:function, esc(funcProto), esc(funcBody))
@@ -99,33 +100,33 @@ end
 
 function enumerate_APS2s()
 	numDevices = get_numDevices()
-	Cserials = Array(Ptr{UInt8}, numDevices)
-	status = ccall((:get_deviceSerials, "libaps2"), APS2_STATUS, (Ptr{Ptr{UInt8}},), Cserials)
-	serials = Array(ASCIIString, 0)
+	Cip_addrs = Array(Ptr{UInt8}, numDevices)
+	status = ccall((:get_deviceSerials, "libaps2"), APS2_STATUS, (Ptr{Ptr{UInt8}},), Cip_addrs)
+	ip_addrs = Array(IPv4, 0)
 	for ct = 1:numDevices
-		push!(serials, bytestring(Cserials[ct]))
+		push!(ip_addrs, IPv4(bytestring(Cip_addrs[ct])))
 	end
-	return (numDevices, serials)
+	return (numDevices, ip_addrs)
 end
 
-function connect!(aps::APS2, serial)
-	if !isempty(aps.serial)
-		warn("Disconnecting from $(aps.serial) before connection to $(serial)")
+function connect!(aps::APS2, ip_addr::IPv4)
+	if aps.ip_addr !== IPv4(0)
+		warn("Disconnecting from $(aps.ip_addr) before connection to $(ip_addr)")
 		disconnect!(aps)
 	end
-	status = ccall((:connect_APS, "libaps2"), APS2_STATUS, (Ptr{UInt8},), serial)
+	status = ccall((:connect_APS, "libaps2"), APS2_STATUS, (Ptr{UInt8},), string(ip_addr))
 	check_status(status)
-	aps.serial = serial
+	aps.ip_addr = ip_addr
 end
 
 function disconnect!(aps::APS2)
-	status = ccall((:disconnect_APS, "libaps2"), APS2_STATUS, (Ptr{UInt8},), aps.serial)
+	status = ccall((:disconnect_APS, "libaps2"), APS2_STATUS, (Ptr{UInt8},), string(aps.ip_addr))
 	check_status(status)
-	aps.serial = ""
+	aps.ip_addr = IPv4(0)
 end
 
 function init(aps::APS2, force=1)
-	status = ccall((:init_APS, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Cint), aps.serial, Cint(force))
+	status = ccall((:init_APS, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Cint), string(aps.ip_addr), Cint(force))
 	check_status(status)
 end
 
@@ -156,28 +157,28 @@ set_logging_level(level) = ccall((:set_logging_level, "libaps2"), APS2_STATUS, (
 @aps2_call trigger
 
 function load_waveform{T<:Integer}(aps::APS2, chan, wf::Vector{T})
-	status = ccall((:set_waveform_int, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Cint, Ptr{Int16}, UInt32), aps.serial, Cint(chan-1), int16(wf), length(wf))
+	status = ccall((:set_waveform_int, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Cint, Ptr{Int16}, UInt32), string(aps.ip_addr), Cint(chan-1), int16(wf), length(wf))
 	check_status(status)
 end
 
 function load_waveform{T<:Real}(aps::APS2, chan, wf::Vector{T})
-	status = ccall((:set_waveform_float, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Cint, Ptr{Float32}, UInt32), aps.serial, Cint(chan-1), float32(wf), length(wf))
+	status = ccall((:set_waveform_float, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Cint, Ptr{Float32}, UInt32), string(aps.ip_addr), Cint(chan-1), float32(wf), length(wf))
 	check_status(status)
 end
 
 function load_sequence(aps::APS2, seqfile)
-	status = ccall((:load_sequence_file, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Ptr{UInt8}), aps.serial, seqfile)
+	status = ccall((:load_sequence_file, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Ptr{UInt8}), string(aps.ip_addr), seqfile)
 	check_status(status)
 end
 
 function read_memory(aps::APS2, addr, numWords)
 	buf = Array(UInt32, numWords)
-	ccall((:read_memory, "libaps2"), Cint, (Ptr{Cchar}, UInt32, Ptr{UInt32}, UInt32), aps.serial, addr, buf, numWords)
+	ccall((:read_memory, "libaps2"), Cint, (Ptr{Cchar}, UInt32, Ptr{UInt32}, UInt32), string(aps.ip_addr), addr, buf, numWords)
 	buf
 end
 
 write_memory(aps::APS2, addr, data::Vector{UInt32}) =
-	ccall((:write_memory, "libaps2"), Cint, (Ptr{Cchar}, UInt32, Ptr{UInt32}, UInt32), aps.serial, addr, data, length(data))
+	ccall((:write_memory, "libaps2"), Cint, (Ptr{Cchar}, UInt32, Ptr{UInt32}, UInt32), string(aps.ip_addr), addr, data, length(data))
 
 
 function create_test_waveform()
