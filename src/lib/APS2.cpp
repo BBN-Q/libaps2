@@ -11,7 +11,7 @@ APS2::APS2(string deviceSerial) :	isOpen{false}, legacy_firmware{false}, deviceS
 APS2::~APS2() = default;
 
 void APS2::connect(shared_ptr<APS2Ethernet> && ethernetRM) {
-	FILE_LOG(logDEBUG) << "APS2::connect";
+	FILE_LOG(logDEBUG) << deviceSerial_ << " APS2::connect";
 	//Hold on to APS2Ethernet class to keep socket alive
 	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
@@ -33,17 +33,18 @@ void APS2::connect(shared_ptr<APS2Ethernet> && ethernetRM) {
 			throw APS2_FAILED_TO_CONNECT;
 		}
 
-		FILE_LOG(logINFO) << "Opened connection to device: " << deviceSerial_;
+		FILE_LOG(logINFO) << deviceSerial_ << " opened connection to device";
 
 		// TODO: restore state information from file
 	}
 }
 
 void APS2::disconnect() {
+	FILE_LOG(logDEBUG) << deviceSerial_ << " APS2::disconnect";
 	if (isOpen) {
 		ethernetRM_->disconnect(deviceSerial_);
 
-		FILE_LOG(logINFO) << "Closed connection to device: " << deviceSerial_;
+		FILE_LOG(logINFO) << deviceSerial_ << " closed connection to device";
 
 		//Release reference to ethernet RM
 		ethernetRM_.reset();
@@ -52,7 +53,7 @@ void APS2::disconnect() {
 }
 
 void APS2::reset(APS_RESET_MODE_STAT mode /* default SOFT_RESET */) {
-	FILE_LOG(logDEBUG1) << "APS2::reset";
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " APS2::reset";
 
 	APS2Command cmd;
 	cmd.sel = 1;
@@ -86,7 +87,7 @@ APS2_STATUS APS2::init(const bool & forceReload, const int & bitFileNum) {
 	bool initialized = (initReg & 0x1) == 0x1;
 
 	if (!initialized || forceReload) {
-		FILE_LOG(logINFO) << "Initializing APS2";
+		FILE_LOG(logINFO) << deviceSerial_ << " initializing APS2";
 
 		// send hard reset to APS2
 		// reset(RECONFIG_EPROM);
@@ -97,7 +98,7 @@ APS2_STATUS APS2::init(const bool & forceReload, const int & bitFileNum) {
 		// sync DAC clock phase with PLL
 		int status = test_PLL_sync();
 		if (status) {
-			FILE_LOG(logERROR) << "DAC PLLs failed to sync";
+			FILE_LOG(logERROR) << deviceSerial_ << " DAC PLLs failed to sync";
 		}
 
 		// align DAC data clock boundaries
@@ -124,7 +125,7 @@ int APS2::setup_DACs() {
 }
 
 APSStatusBank_t APS2::read_status_registers() {
-	FILE_LOG(logDEBUG1) << "APS2::read_status_registers";
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " APS2::read_status_registers";
 	//Query with the status request command
 	APS2Command cmd;
 	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::STATUS);
@@ -141,7 +142,7 @@ APSStatusBank_t APS2::read_status_registers() {
 	//Copy the data back into the status type
 	APSStatusBank_t statusRegs;
 	std::copy(resp_dg.payload.begin(), resp_dg.payload.end(), statusRegs.array);
-	FILE_LOG(logDEBUG1) << print_status_bank(statusRegs);
+	FILE_LOG(logDEBUG1) << deviceSerial_ << print_status_bank(statusRegs);
 	return statusRegs;
 }
 
@@ -159,7 +160,7 @@ uint32_t APS2::get_firmware_version() {
 		version = read_memory(FIRMWARE_VERSION_ADDR, 1)[0];
 	}
 
-	FILE_LOG(logDEBUG) << "Firmware version on FPGA is " << print_firmware_version(version);
+	FILE_LOG(logDEBUG) << deviceSerial_ << " FPGA firmware version " << print_firmware_version(version);
 
 	return version;
 }
@@ -168,7 +169,7 @@ double APS2::get_uptime(){
 	/*
 	* Return the board uptime in seconds.
 	*/
-	FILE_LOG(logDEBUG1) << "APS2::get_uptime";
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " APS2::get_uptime";
 	uint32_t uptime_seconds, uptime_nanoseconds;
 	if ( legacy_firmware ) {
 		//Read the status registers
@@ -213,7 +214,7 @@ double APS2::get_fpga_temperature(){
 
 void APS2::write_bitfile(const string & bitFile, uint32_t start_addr, APS2_BITFILE_STORAGE_MEDIA media) {
 	//Write a bitfile to either configuration DRAM or ERPOM starting at specified address
-	FILE_LOG(logDEBUG1) << "APS2::write_bitfile";
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " APS2::write_bitfile";
 
 	//byte alignment of storage media
 	uint32_t alignment;
@@ -229,18 +230,18 @@ void APS2::write_bitfile(const string & bitFile, uint32_t start_addr, APS2_BITFI
 	//Get the file size in bytes
 	std::ifstream FID (bitFile, std::ios::in|std::ios::binary);
 	if (!FID.is_open()){
-		FILE_LOG(logERROR) << "Unable to open bitfile: " << bitFile;
+		FILE_LOG(logERROR) << deviceSerial_ << " unable to open bitfile: " << bitFile;
 		throw APS2_NO_SUCH_BITFILE;
 	}
 
 	FID.seekg(0, std::ios::end);
 	size_t file_size = FID.tellg();
-	FILE_LOG(logDEBUG) << "Opened bitfile: " << bitFile << " with " << file_size << " bytes";
+	FILE_LOG(logDEBUG) << deviceSerial_ << " opened bitfile: " << bitFile << " with " << file_size << " bytes";
 	FID.seekg(0, std::ios::beg);
 
 	//Figure out padding size for alignment
 	size_t padding_bytes = (alignment - (file_size % alignment)) % alignment;
-	FILE_LOG(logDEBUG1) << "Padding bitfile byte vector with " << padding_bytes << " bytes.";
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " padding bitfile byte vector with " << padding_bytes << " bytes.";
 	//Copy the file data to a 32bit word vector
 	vector<uint32_t> bitfile_words((file_size+padding_bytes)/4, 0xffffffff);
 	FID.read(reinterpret_cast<char *>(bitfile_words.data()), file_size);
@@ -289,8 +290,8 @@ void APS2::write_bitfile(const string & bitFile, uint32_t start_addr, APS2_BITFI
 void APS2::program_bitfile(uint32_t addr) {
 	//Program the bitfile from configuration SDRAM at the specified address
 	//FPGA will reset so connection will be dropped
-	FILE_LOG(logDEBUG1) << "APS2::program_bitfile";
-	FILE_LOG(logINFO) << "Programming bitfile starting at address " << hexn<8> << addr;
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " APS2::program_bitfile";
+	FILE_LOG(logINFO) << deviceSerial_ << " programming bitfile starting at address " << hexn<8> << addr;
 
 	APS2Command cmd;
 	cmd.sel = 1; //necessary for newer firmware to demux to ApsMsgProc
@@ -311,13 +312,13 @@ void APS2::set_sampleRate(const unsigned int & freq){
 }
 
 unsigned int APS2::get_sampleRate() {
-	FILE_LOG(logDEBUG1) << "APS2::get_sampleRate";
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " APS2::get_sampleRate";
 	samplingRate_ = get_PLL_freq();
 	return samplingRate_;
 }
 
 void APS2::clear_channel_data() {
-	FILE_LOG(logINFO) << "Clearing all channel data for APS2 " << deviceSerial_;
+	FILE_LOG(logINFO) << deviceSerial_ << " clearing all channel data for APS2 " << deviceSerial_;
 	for (auto & ch : channels_) {
 		ch.clear_data();
 	}
@@ -330,7 +331,7 @@ void APS2::load_sequence_file(const string & seqFile){
 
 	//First open the file
 	try {
-		FILE_LOG(logINFO) << "Opening sequence file: " << seqFile;
+		FILE_LOG(logINFO) << deviceSerial_ << " opening sequence file: " << seqFile;
 		H5::H5File H5SeqFile(seqFile, H5F_ACC_RDONLY);
 
 		const vector<string> chanStrs = {"chan_1", "chan_2"};
@@ -398,7 +399,7 @@ void APS2::set_markers(const int & dac, const vector<uint8_t> & data) {
 }
 
 void APS2::set_trigger_source(const APS2_TRIGGER_SOURCE & triggerSource){
-	FILE_LOG(logDEBUG) << "Setting trigger source to " << triggerSource;
+	FILE_LOG(logDEBUG) << deviceSerial_ << " setting trigger source to " << triggerSource;
 
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
 
@@ -418,14 +419,14 @@ void APS2::set_trigger_interval(const double & interval) {
 	case APS:
 		// SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
 		clockCycles = interval*0.25*samplingRate_*1e6;
-		FILE_LOG(logDEBUG) << "Setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
+		FILE_LOG(logDEBUG) << deviceSerial_ << " setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
 
 		write_memory(TRIGGER_INTERVAL_ADDR, clockCycles);
 		break;
 	case TDM:
 		// TDM operates on a fixed 100 MHz clock
 		clockCycles = (interval * 100e6);
-		FILE_LOG(logDEBUG) << "Setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
+		FILE_LOG(logDEBUG) << deviceSerial_ << " setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
 
 		write_memory(TDM_TRIGGER_INTERVAL_ADDR, clockCycles);
 		break;
@@ -454,28 +455,30 @@ double APS2::get_trigger_interval() {
 
 void APS2::trigger() {
 	//Apply a software trigger by toggling the trigger line
-	FILE_LOG(logDEBUG) << "Sending software trigger";
+	FILE_LOG(logDEBUG) << deviceSerial_ << " APS2::trigger";
 	uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
-	FILE_LOG(logDEBUG3) << "SEQ_CONTROL register was " << hexn<8> << regVal;
+	FILE_LOG(logDEBUG3) << deviceSerial_ << " SEQ_CONTROL register was " << hexn<8> << regVal;
 	regVal ^= (1 << SOFT_TRIG_BIT);
-	FILE_LOG(logDEBUG3) << "Setting SEQ_CONTROL register to " << hexn<8> << regVal;
+	FILE_LOG(logDEBUG3) << deviceSerial_ << " setting SEQ_CONTROL register to " << hexn<8> << regVal;
 	write_memory(SEQ_CONTROL_ADDR, regVal);
 }
 
 void APS2::run() {
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " APS2::run";
 	switch (host_type) {
 	case APS:
-		FILE_LOG(logDEBUG1) << "Releasing pulse sequencer state machine...";
+		FILE_LOG(logDEBUG1) << deviceSerial_ << " releasing pulse sequencer state machine...";
 		set_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
 		break;
 	case TDM:
-		FILE_LOG(logDEBUG1) << "Enabling TDM trigger";
+		FILE_LOG(logDEBUG1) << deviceSerial_ << " enabling TDM trigger";
 		clear_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
 		break;
 	}
 }
 
 void APS2::stop() {
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " APS2::stop";
 	switch (host_type) {
 	case APS:
 		//Put the state machine back in reset
@@ -492,12 +495,12 @@ APS2_RUN_STATE APS2::get_runState(){
 }
 
 void APS2::set_run_mode(const APS2_RUN_MODE & mode) {
-	FILE_LOG(logDEBUG) << "Setting run mode to " << mode;
+	FILE_LOG(logDEBUG) << deviceSerial_ << " setting run mode to " << mode;
 
 	vector<uint64_t> instructions = WF_SEQ;
 	// inject waveform length into the instruction
 	size_t wfCount = (std::max(channels_[0].get_length(), channels_[1].get_length()) / 4) - 1;
-	FILE_LOG(logDEBUG2) << "Setting WFM instruction count = " << wfCount;
+	FILE_LOG(logDEBUG2) << deviceSerial_ <<  " setting WFM instruction count = " << wfCount;
 	instructions[1] |= wfCount << 24;
 	switch (mode) {
 		case RUN_SEQUENCE:
@@ -555,16 +558,16 @@ vector<uint32_t> APS2::read_memory(uint32_t addr, uint32_t numWords){
 }
 
 void APS2::write_configuration_SDRAM(uint32_t addr, const vector<uint32_t> & data) {
-	FILE_LOG(logDEBUG2) << "APS2::write_configuration_SDRAM";
+	FILE_LOG(logDEBUG2) << deviceSerial_ << " APS2::write_configuration_SDRAM";
 	//Write data to configuratoin SDRAM
 
 	//SDRAM writes must be 8 byte aligned
 	if ( (addr & 0x7) != 0) {
-		FILE_LOG(logERROR) << "Attempted to write configuration SDRAM at an address not aligned to 8 bytes";
+		FILE_LOG(logERROR) << deviceSerial_ << " attempted to write configuration SDRAM at an address not aligned to 8 bytes";
 		throw APS2_UNALIGNED_MEMORY_ACCESS;
 	}
 	if ( (data.size() % 2) != 0) {
-		FILE_LOG(logERROR) << "Attempted to write configuration SDRAM with data not a multiple of 8 bytes";
+		FILE_LOG(logERROR) << deviceSerial_ << " attempted to write configuration SDRAM with data not a multiple of 8 bytes";
 		throw APS2_UNALIGNED_MEMORY_ACCESS;
 	}
 
@@ -578,7 +581,7 @@ void APS2::write_configuration_SDRAM(uint32_t addr, const vector<uint32_t> & dat
 }
 
 vector<uint32_t> APS2::read_configuration_SDRAM(uint32_t addr, uint32_t num_words) {
-	FILE_LOG(logDEBUG2) << "APS2::read_configuration_SDRAM";
+	FILE_LOG(logDEBUG2) << deviceSerial_ << " APS2::read_configuration_SDRAM";
 	//Send the read request
 	APS2Command cmd;
 	cmd.r_w = 1;
@@ -596,7 +599,7 @@ vector<uint32_t> APS2::read_configuration_SDRAM(uint32_t addr, uint32_t num_word
 
 //SPI read/write
 void APS2::write_SPI(vector<uint32_t> & msg) {
-	FILE_LOG(logDEBUG2) << "APS2::write_SPI";
+	FILE_LOG(logDEBUG2) << deviceSerial_ << " APS2::write_SPI";
 
 	// push on "end of message"
 	APSChipConfigCommand_t cmd;
@@ -614,7 +617,7 @@ void APS2::write_SPI(vector<uint32_t> & msg) {
 
 uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & addr) {
 	// reads a single byte from the target SPI device
-	FILE_LOG(logDEBUG2) << "APS2::read_SPI";
+	FILE_LOG(logDEBUG2) << deviceSerial_ << " APS2::read_SPI";
 
 	// build message
 	APSChipConfigCommand_t cmd;
@@ -645,7 +648,7 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & ad
 			cmd.instr = pllinstr.packed;
 			break;
 		default:
-			FILE_LOG(logERROR) << "Invalid read_SPI target " << myhex << target;
+			FILE_LOG(logERROR) << deviceSerial_ << " invalid read_SPI target " << myhex << target;
 			return 0;
 	}
 	cmd.spicnt_data = 1; // request 1 byte
@@ -668,25 +671,25 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & ad
 	//We expect a single datagram back with a single word
 	auto result = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
 	if ( result.cmd.mode_stat != 0x00 ) {
-		FILE_LOG(logERROR) << "read_SPI response datagram reported error: " << result.cmd.mode_stat;
+		FILE_LOG(logERROR) << deviceSerial_ << " read_SPI response datagram reported error: " << result.cmd.mode_stat;
 		throw APS2_COMMS_ERROR;
 	}
 	if ( result.payload.size() != 1 ) {
-		FILE_LOG(logERROR) << "read_SPI response datagram unexpected size: expected 1, got " << result.payload.size();
+		FILE_LOG(logERROR) << deviceSerial_ << " read_SPI response datagram unexpected size: expected 1, got " << result.payload.size();
 	}
 	return result.payload[0] >> 24; // first response is in MSB of 32-bit word
 }
 
 //Flash read/write
 void APS2::write_flash(uint32_t addr, vector<uint32_t> & data) {
-	FILE_LOG(logDEBUG1) << "APS2::write_flash";
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " APS2::write_flash";
 
 	// erase before write
 	erase_flash(addr, sizeof(uint32_t) * data.size());
 
 	// resize data to a multiple of 64 words (256 bytes)
 	int pad_words = (64 - (data.size() % 64)) % 64;
-	FILE_LOG(logDEBUG1) << "Flash write: padding payload with " << pad_words << " words";
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " flash write: padding payload with " << pad_words << " words";
 	data.resize(data.size() + pad_words, 0xffffffff);
 
 	APS2Command cmd;
@@ -695,7 +698,7 @@ void APS2::write_flash(uint32_t addr, vector<uint32_t> & data) {
 	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::EPROMIO);
 	cmd.mode_stat = EPROM_RW;
 	auto dgs = APS2Datagram::chunk(cmd, addr, data, 0x0100); //max chunk_size is limited wrapping in Ethernet frames
-	FILE_LOG(logDEBUG1) << "Flash write chunked into " << dgs.size() << " datagrams.";
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " flash write chunked into " << dgs.size() << " datagrams.";
 	flash_task = WRITING;
 	flash_task_progress = 0;
 	//Write 1 at a time so we can update progress
@@ -706,17 +709,17 @@ void APS2::write_flash(uint32_t addr, vector<uint32_t> & data) {
 }
 
 void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
-	FILE_LOG(logDEBUG1) << "APS2::erase_flash";
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " APS2::erase_flash";
 	flash_task = ERASING;
 	flash_task_progress = 0;
 
 	// each erase command erases 64 KB of data starting at addr
 	if ((start_addr % (1 << 16)) != 0){
-		FILE_LOG(logERROR) << "EPROM memory erase command addr was not 64KB aligned!";
+		FILE_LOG(logERROR) << deviceSerial_ << " EPROM memory erase command addr was not 64KB aligned!";
 		throw APS2_UNALIGNED_MEMORY_ACCESS;
 	}
 
-	FILE_LOG(logDEBUG) << "Erasing " << num_bytes / (1<10) << " kbytes starting at EPROM address " << hexn<8> << start_addr;
+	FILE_LOG(logDEBUG) << deviceSerial_ <<  " erasing " << num_bytes / (1<10) << " kbytes starting at EPROM address " << hexn<8> << start_addr;
 
 	APS2Command cmd;
 	cmd.ack = 1;
@@ -727,7 +730,7 @@ void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
 	uint32_t addr{start_addr};
 	uint32_t end_addr{start_addr+num_bytes};
 	do {
-		FILE_LOG(logDEBUG2) << "Erasing 64kB page at EPROM addr " << hexn<8> << addr;
+		FILE_LOG(logDEBUG2) << deviceSerial_ << " erasing 64kB page at EPROM addr " << hexn<8> << addr;
 		//Have noticed we don't always get a response so try a few times to make sure
 		unsigned tryct = 0;
 		while (tryct < 5) {
@@ -735,7 +738,7 @@ void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
 				ethernetRM_->send(deviceSerial_, {{cmd, addr, {}}});
 			} catch (APS2_STATUS status) {
 				if (status == APS2_RECEIVE_TIMEOUT) {
-					FILE_LOG(logERROR) << "Flash erase timed out. Retrying...";
+					FILE_LOG(logERROR) << deviceSerial_ << " flash erase timed out. Retrying...";
 					tryct++;
 				}
 				else {
@@ -748,7 +751,7 @@ void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
 			break;
 		}
 		if (tryct == 5) {
-			FILE_LOG(logERROR) << "Flash erase failed with timeout.";
+			FILE_LOG(logERROR) << deviceSerial_ << " flash erase failed with timeout.";
 			throw APS2_RECEIVE_TIMEOUT;
 		}
 
@@ -833,7 +836,7 @@ void APS2::set_dhcp_enable(const bool & dhcp_enable) {
 
 //Create/restore setup SPI sequence
 void APS2::write_SPI_setup() {
-	FILE_LOG(logINFO) << "Writing SPI startup sequence";
+	FILE_LOG(logINFO) << deviceSerial_ << " writing SPI startup sequence";
 	vector<uint32_t> msg = build_VCXO_SPI_msg(VCXO_INIT);
 	vector<uint32_t> pll_msg = build_PLL_SPI_msg(PLL_INIT);
 	msg.insert(msg.end(), pll_msg.begin(), pll_msg.end());
@@ -864,7 +867,7 @@ vector<uint32_t> APS2::build_DAC_SPI_msg(const CHIPCONFIG_IO_TARGET & target, co
 			cmd.target = CHIPCONFIG_IO_TARGET_DAC_1_SINGLE;
 			break;
 		default:
-			FILE_LOG(logERROR) << "Unexpected CHIPCONFIG_IO_TARGET";
+			FILE_LOG(logERROR) << deviceSerial_ << " unexpected CHIPCONFIG_IO_TARGET";
 			throw runtime_error("Unexpected CHIPCONFIG_IO_TARGET");
 	}
 	for (auto ad : addrData) {
@@ -895,7 +898,7 @@ vector<uint32_t> APS2::build_VCXO_SPI_msg(const vector<uint8_t> & data) {
 	cmd.spicnt_data = 0;
 
 	if (data.size() % 4 != 0) {
-		FILE_LOG(logERROR) << "VCXO messages must be 4-byte aligned";
+		FILE_LOG(logERROR) << deviceSerial_ << " VCXO messages must be 4-byte aligned";
 		throw runtime_error("VCXO messages must be 4-byte aligned");
 	}
 
@@ -910,7 +913,7 @@ vector<uint32_t> APS2::build_VCXO_SPI_msg(const vector<uint8_t> & data) {
 
 int APS2::setup_PLL() {
 	// set the on-board PLL to its default state (two 1.2 GHz outputs to DAC's, 300 MHz sys_clk to FPGA, and 400 MHz mem_clk to FPGA)
-	FILE_LOG(logINFO) << "Running base-line setup of PLL";
+	FILE_LOG(logINFO) << deviceSerial_ << " running base-line setup of PLL";
 
 	// Disable DDRs
 	// int ddrMask = CSRMSK_CHA_DDR | CSRMSK_CHB_DDR;
@@ -945,7 +948,7 @@ int APS2::set_PLL_freq(const int & freq) {
 	uint32_t pllCyclesAddr, pllBypassAddr;
 	uint8_t pllCyclesVal, pllBypassVal;
 
-	FILE_LOG(logDEBUG) << "Setting PLL FPGA: Freq.: " << freq;
+	FILE_LOG(logDEBUG) << deviceSerial_ << " setting PLL FPGA: Freq.: " << freq;
 
 	pllCyclesAddr = 0x190;
 	pllBypassAddr = 0x191;
@@ -964,8 +967,8 @@ int APS2::set_PLL_freq(const int & freq) {
 
 	// bypass divider if freq == 1200
 	pllBypassVal = (freq==1200) ?	0x80 : 0x00;
-	FILE_LOG(logDEBUG2) << "Setting PLL cycles addr: " << myhex << pllCyclesAddr << " val: " << int(pllCyclesVal);
-	FILE_LOG(logDEBUG2) << "Setting PLL bypass addr: " << myhex << pllBypassAddr << " val: " << int(pllBypassVal);
+	FILE_LOG(logDEBUG2) << deviceSerial_ << " setting PLL cycles addr: " << myhex << pllCyclesAddr << " val: " << int(pllCyclesVal);
+	FILE_LOG(logDEBUG2) << deviceSerial_ << " setting PLL bypass addr: " << myhex << pllBypassAddr << " val: " << int(pllBypassVal);
 
 	// Disable DDRs
 	// int ddr_mask = CSRMSK_CHA_DDR | CSRMSK_CHB_DDR;
@@ -1017,7 +1020,7 @@ int APS2::test_PLL_sync() {
 	const vector<uint32_t> CH_PHASE_ADDR = {PHASE_COUNT_A_ADDR, PHASE_COUNT_B_ADDR};
 	const vector<int> CH_PLL_RESET_BIT = {PLL_CHA_RST_BIT, PLL_CHB_RST_BIT};
 
-	FILE_LOG(logINFO) << "Running channel sync procedure";
+	FILE_LOG(logINFO) << deviceSerial_ << " running channel sync procedure";
 
 	// Disable DAC FIFOs
 	for (int dac = 0; dac < NUM_CHANNELS; dac++) {
@@ -1034,7 +1037,7 @@ int APS2::test_PLL_sync() {
 			ch_phase = read_memory(CH_PHASE_ADDR[ch], 1)[0];
 			// register returns a value in [0, 2^16]. Re-interpret as an angle in [0, 180].
 			ch_phase_deg = 180 * ch_phase / (1 << 16);
-			FILE_LOG(logDEBUG1) << "Measured DAC " << ((ch == 0) ? "A" : "B") << " phase of " << ch_phase_deg;
+			FILE_LOG(logDEBUG1) << deviceSerial_ << " measured DAC " << ((ch == 0) ? "A" : "B") << " phase of " << ch_phase_deg;
 
 			if (ch_phase_deg < lowPhaseCutoff) {
 				// done with this channel
@@ -1053,7 +1056,7 @@ int APS2::test_PLL_sync() {
 				clear_bit(RESETS_ADDR, {CH_PLL_RESET_BIT[ch]});
 			}
 			if (ct == MAX_PHASE_TEST_CNT-1) {
-				FILE_LOG(logINFO) << "DAC " << ((ch==0) ? "A" : "B") << " failed to sync";
+				FILE_LOG(logERROR) << deviceSerial_ << " DAC " << ((ch==0) ? "A" : "B") << " failed to sync";
 				// return -3;
 			}
 		}
@@ -1066,7 +1069,7 @@ int APS2::test_PLL_sync() {
 		enable_DAC_FIFO(dac);
 	}
 
-	FILE_LOG(logINFO) << "Sync test complete";
+	FILE_LOG(logINFO) << deviceSerial_ << " sync test complete";
 
 	return 0;
 }
@@ -1075,13 +1078,13 @@ void APS2::check_clocks_status() {
 	/*
 	 * Reads the locked status of the clock distribution PLL and the FPGA MMCM's (SYS_CLK, CFG_CLK and MEM_CLK)
 	 */
-	FILE_LOG(logDEBUG1) << "APS2::check_clocks_status";
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " APS2::check_clocks_status";
 
 	//PLL chips are reported through status registers
 	APSStatusBank_t statusRegs = read_status_registers();
 
 	//First check the clock distribution PLL (the bottom three bits should be high)
-	FILE_LOG(logDEBUG1) << "PLL status: " << hexn<8> << statusRegs.pllStatus;
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " PLL status: " << hexn<8> << statusRegs.pllStatus;
  	if ((statusRegs.pllStatus & 0x3) != 0x3){
  		throw APS2_PLL_LOST_LOCK;
  	}
@@ -1104,7 +1107,7 @@ void APS2::check_clocks_status() {
 
 int APS2::get_PLL_freq() {
 	// Poll APS2 PLL chip to determine current frequency in MHz
-	FILE_LOG(logDEBUG1) << "APS2::get_PLL_freq";
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " APS2::get_PLL_freq";
 
 	int freq = 0;
 	uint16_t pll_cycles_addr = 0x190;
@@ -1113,8 +1116,8 @@ int APS2::get_PLL_freq() {
 	uint32_t pll_cycles_val = read_SPI(CHIPCONFIG_TARGET_PLL, pll_cycles_addr);
 	uint32_t pll_bypass_val = read_SPI(CHIPCONFIG_TARGET_PLL, pll_bypass_addr);
 
-	FILE_LOG(logDEBUG3) << "pll_cycles_val = " << hexn<2> << pll_cycles_val;
-	FILE_LOG(logDEBUG3) << "pll_bypass_val = " << hexn<2> << pll_bypass_val;
+	FILE_LOG(logDEBUG3) << deviceSerial_ << " pll_cycles_val = " << hexn<2> << pll_cycles_val;
+	FILE_LOG(logDEBUG3) << deviceSerial_ << " pll_bypass_val = " << hexn<2> << pll_bypass_val;
 
 	// select frequency based on pll cycles setting
 	// the values here should match the reverse lookup in APS2::set_PLL_freq
@@ -1134,7 +1137,7 @@ int APS2::get_PLL_freq() {
 		}
 	}
 
-	FILE_LOG(logDEBUG1) << "PLL frequency " << freq;
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " PLL frequency " << freq;
 
 	return freq;
 }
@@ -1165,7 +1168,7 @@ void APS2::disable_DAC_clock(const int & dac) {
 void APS2::setup_VCXO() {
 	// Write the standard VCXO setup
 
-	FILE_LOG(logINFO) << "Setting up VCX0";
+	FILE_LOG(logINFO) << deviceSerial_ << " setting up VCX0";
 
 	// ensure the oscillator is disabled before programming
 	//TODO: fix!
@@ -1189,16 +1192,16 @@ void APS2::setup_DAC(const int & dac)
 	uint8_t edgeMSD, edgeMHD;
 
 	if (dac < 0 || dac >= NUM_CHANNELS) {
-		FILE_LOG(logERROR) << "FPGA::setup_DAC: unknown DAC, " << dac;
+		FILE_LOG(logERROR) << deviceSerial_ << " APS2::setup_DAC unknown DAC, " << dac;
 		throw APS2_INVALID_DAC;
 	}
-	FILE_LOG(logINFO) << "Setting up DAC " << dac;
+	FILE_LOG(logINFO) << deviceSerial_ << " setting up DAC " << dac;
 
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
 
 	// Step 0: check control clock divider
 	data = read_SPI(targets[dac], DAC_CONTROLLERCLOCK_ADDR);
-	FILE_LOG(logDEBUG1) << "DAC controller clock divider register = " << (data & 0xf);
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " DAC controller clock divider register = " << (data & 0xf);
 	// Max freq is 1.2GS/s so dividing by 128 gets us below 10MHz for sure
 	msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLERCLOCK_ADDR, 5}});
 	write_SPI(msg);
@@ -1210,15 +1213,15 @@ void APS2::setup_DAC(const int & dac)
 
 	// TODO: remove int(... & 0x1F)
 	data = read_SPI(targets[dac], DAC_INTERRUPT_ADDR);
-	FILE_LOG(logDEBUG2) <<	"Reg: " << myhex << int(DAC_INTERRUPT_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) << deviceSerial_ << " reg: " << myhex << int(DAC_INTERRUPT_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 	data = read_SPI(targets[dac], DAC_MSDMHD_ADDR);
-	FILE_LOG(logDEBUG2) <<	"Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) << deviceSerial_ << " reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 	data = read_SPI(targets[dac], DAC_SD_ADDR);
-	FILE_LOG(logDEBUG2) <<	"Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) << deviceSerial_ << " reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 
 	// Ensure that surveilance and auto modes are off
 	data = read_SPI(targets[dac], DAC_CONTROLLER_ADDR);
-	FILE_LOG(logDEBUG2) <<	"Reg: " << myhex << int(DAC_CONTROLLER_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) << deviceSerial_ << " reg: " << myhex << int(DAC_CONTROLLER_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 	data = 0;
 	msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLER_ADDR, data}});
 	write_SPI(msg);
@@ -1231,42 +1234,42 @@ void APS2::setup_DAC(const int & dac)
 	set_DAC_SD(dac, SD);
 
 	for (MSD = 0; MSD < 16; MSD++) {
-		FILE_LOG(logDEBUG2) <<	"Setting MSD: " << int(MSD);
+		FILE_LOG(logDEBUG2) << deviceSerial_ <<	" setting MSD: " << int(MSD);
 
 		data = (MSD << 4) | MHD;
 		msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
 		write_SPI(msg);
-		FILE_LOG(logDEBUG2) <<	"Write Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+		FILE_LOG(logDEBUG2) << deviceSerial_ <<	" write Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 
 		data = read_SPI(targets[dac], DAC_SD_ADDR);
-		FILE_LOG(logDEBUG2) <<	"Read Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+		FILE_LOG(logDEBUG2) << deviceSerial_ <<	" read Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 
 		bool check = data & 1;
-		FILE_LOG(logDEBUG2) << "Check: " << check;
+		FILE_LOG(logDEBUG2) << deviceSerial_ << " check: " << check;
 		if (!check)
 			break;
 	}
 	edgeMSD = MSD;
-	FILE_LOG(logDEBUG) << "Found MSD: " << int(edgeMSD);
+	FILE_LOG(logDEBUG) << deviceSerial_ << " found MSD: " << int(edgeMSD);
 
 	// Clear the MSD, then slide right (with MHD)
 	MSD = 0;
 	for (MHD = 0; MHD < 16; MHD++) {
-		FILE_LOG(logDEBUG2) <<	"Setting MHD: " << int(MHD);
+		FILE_LOG(logDEBUG2) << deviceSerial_ <<	" setting MHD: " << int(MHD);
 
 		data = (MSD << 4) | MHD;
 		msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
 		write_SPI(msg);
 
 		data = read_SPI(targets[dac], DAC_SD_ADDR);
-		FILE_LOG(logDEBUG2) << "Read: " << myhex << int(data & 0xFF);
+		FILE_LOG(logDEBUG2) << deviceSerial_ << " read: " << myhex << int(data & 0xFF);
 		bool check = data & 1;
-		FILE_LOG(logDEBUG2) << "Check: " << check;
+		FILE_LOG(logDEBUG2) << deviceSerial_ << " check: " << check;
 		if (!check)
 			break;
 	}
 	edgeMHD = MHD;
-	FILE_LOG(logDEBUG) << "Found MHD = " << int(edgeMHD);
+	FILE_LOG(logDEBUG) << deviceSerial_ << " found MHD = " << int(edgeMHD);
 	SD = (edgeMHD - edgeMSD) / 2;
 
 	// Clear MSD and MHD
@@ -1293,14 +1296,14 @@ void APS2::setup_DAC(const int & dac)
 
 void APS2::set_DAC_SD(const int & dac, const uint8_t & sd) {
 	//Sets the sample delay
-	FILE_LOG(logDEBUG) << "Setting SD = " << int(sd);
+	FILE_LOG(logDEBUG) << deviceSerial_ << " setting SD = " << int(sd);
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
 	auto msg = build_DAC_SPI_msg(targets[dac], {{DAC_SD_ADDR, ((sd & 0xf) << 4)}});
 	write_SPI(msg);
 }
 
 void APS2::run_chip_config(uint32_t addr /* default = 0 */) {
-	FILE_LOG(logINFO) << "Running chip config from address " << hexn<8> << addr;
+	FILE_LOG(logINFO) << deviceSerial_ << " running chip config from address " << hexn<8> << addr;
 	// construct the chip config command
 	APS2Command cmd;
 	cmd.ack = 1;
@@ -1311,12 +1314,12 @@ void APS2::run_chip_config(uint32_t addr /* default = 0 */) {
 void APS2::enable_DAC_FIFO(const int & dac) {
 
 	if (dac < 0 || dac >= NUM_CHANNELS) {
-		FILE_LOG(logERROR) << "FPGA::setup_DAC: unknown DAC, " << dac;
+		FILE_LOG(logERROR) << deviceSerial_ << " APS2::enable_DAC_FIFO unknown DAC, " << dac;
 		throw APS2_INVALID_DAC;
 	}
 
 	uint8_t data = 0;
-	FILE_LOG(logDEBUG) << "Enabling DAC " << dac << " FIFO";
+	FILE_LOG(logDEBUG) << deviceSerial_ << "enabling DAC " << dac << " FIFO";
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
 
 	// set sync bit (Reg 0, bit 2)
@@ -1331,11 +1334,11 @@ void APS2::enable_DAC_FIFO(const int & dac) {
 
 	// read back FIFO phase to ensure we are in a safe zone
 	data = read_SPI(targets[dac], DAC_FIFOSTAT_ADDR);
-	FILE_LOG(logDEBUG2) << "Read: " << myhex << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) << deviceSerial_ << " read: " << myhex << int(data & 0xFF);
 
 	// phase (FIFOPHASE) is in bits <6:4>
 	data = (data & 0x70) >> 4;
-	FILE_LOG(logDEBUG) << "FIFO phase = " << int(data);
+	FILE_LOG(logDEBUG) << deviceSerial_ << " FIFO phase = " << int(data);
 
 	// fix the FIFO phase if too close together
 	// want to get to a phase of 3 or 4, but can only change it by decreasing in steps of 2 (mod 8),
@@ -1343,7 +1346,7 @@ void APS2::enable_DAC_FIFO(const int & dac) {
 	// reduce the problem to making 0, 1, 2, 3 move towards 2
 	int8_t offset = ((data + 1) / 2) % 4;
 	offset = mymod(offset - 2, 4);
-	FILE_LOG(logDEBUG) << "Setting FIFO offset = " << int(offset);
+	FILE_LOG(logDEBUG) << deviceSerial_ << " setting FIFO offset = " << int(offset);
 
 	msg = build_DAC_SPI_msg(targets[dac], {{DAC_FIFOSTAT_ADDR, offset}});
 	write_SPI(msg);
@@ -1351,14 +1354,14 @@ void APS2::enable_DAC_FIFO(const int & dac) {
 	// verify by measuring FIFO offset again
 	data = read_SPI(targets[dac], DAC_FIFOSTAT_ADDR);
 	data = (data & 0x70) >> 4;
-	FILE_LOG(logDEBUG) << "FIFO phase = " << int(data);
+	FILE_LOG(logDEBUG) << deviceSerial_ << " FIFO phase = " << int(data);
 }
 
 void APS2::disable_DAC_FIFO(const int & dac) {
 	uint8_t data, mask;
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
 
-	FILE_LOG(logDEBUG1) << "Disable DAC " << dac << " FIFO";
+	FILE_LOG(logDEBUG1) << deviceSerial_ << " disable DAC " << dac << " FIFO";
 	// clear sync bit
 	data = read_SPI(targets[dac], DAC_SYNC_ADDR);
 	mask = (0x1 << 2);
@@ -1379,7 +1382,7 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	const vector<int> FPGA_Reg_ResetBits = {DAC_BIST_CHA_RST_BIT, DAC_BIST_CHB_RST_BIT};
 	uint8_t regVal;
 
-	FILE_LOG(logINFO) << "Running DAC BIST for DAC " << dac;
+	FILE_LOG(logINFO) << deviceSerial_ << " running DAC BIST for DAC " << dac;
 
 	// A few helper lambdas
 
@@ -1395,31 +1398,31 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 		vector<uint32_t> bistVals;
 		//Read the on-board values first
 		bistVals.push_back(read_memory(FPGA_Reg_Phase1[dac], 1)[0]);
-		FILE_LOG(logDEBUG1) << "FPGA Phase 1 BIST " << hexn<8> << bistVals.back();
+		FILE_LOG(logDEBUG1) << deviceSerial_ << " FPGA Phase 1 BIST " << hexn<8> << bistVals.back();
 		bistVals.push_back(read_memory(FPGA_Reg_Phase2[dac], 1)[0]);
-		FILE_LOG(logDEBUG1) << "FPGA Phase 2 BIST " << hexn<8> << bistVals.back();
+		FILE_LOG(logDEBUG1) << deviceSerial_ << " FPGA Phase 2 BIST " << hexn<8> << bistVals.back();
 
 		//Now the DAC registers
 		//LVDS Phase 1 Reg 17 (SEL1=0; SEL0=0; SIGREAD=1; SYNC_EN=1; LVDS_EN=1)
 		//Not the BIST byte ordering seems to be backwards to the data sheet
 		write_reg(17, 0x26);
 		bistVals.push_back( (read_reg(18) << 24) | (read_reg(19) << 16) | (read_reg(20) << 8) | read_reg(21) );
-		FILE_LOG(logDEBUG1) << "LVDS Phase 1 BIST " << hexn<8> << bistVals.back();
+		FILE_LOG(logDEBUG1) << deviceSerial_ << " LVDS Phase 1 BIST " << hexn<8> << bistVals.back();
 
 		//LVDS Phase 2
 		write_reg(17, 0x66);
 		bistVals.push_back( (read_reg(18) << 24) | (read_reg(19) << 16) | (read_reg(20) << 8) | read_reg(21) );
-		FILE_LOG(logDEBUG1) << "LVDS Phase 2 BIST " << hexn<8> << bistVals.back();
+		FILE_LOG(logDEBUG1) << deviceSerial_ << " LVDS Phase 2 BIST " << hexn<8> << bistVals.back();
 
 		//SYNC Phase 1
 		write_reg(17, 0xA6);
 		bistVals.push_back( (read_reg(18) << 24) | (read_reg(19) << 16) | (read_reg(20) << 8) | read_reg(21) );
-		FILE_LOG(logDEBUG1) << "SYNC Phase 1 BIST " << hexn<8> << bistVals.back();
+		FILE_LOG(logDEBUG1) << deviceSerial_ << " SYNC Phase 1 BIST " << hexn<8> << bistVals.back();
 
 		//SYNC Phase 2
 		write_reg(17, 0xE6);
 		bistVals.push_back( (read_reg(18) << 24) | (read_reg(19) << 16) | (read_reg(20) << 8) | read_reg(21) );
-		FILE_LOG(logDEBUG1) << "SYNC Phase 2 BIST " << hexn<8> << bistVals.back();
+		FILE_LOG(logDEBUG1) << deviceSerial_ << " SYNC Phase 2 BIST " << hexn<8> << bistVals.back();
 
 		return bistVals;
 	};
@@ -1452,8 +1455,8 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 		uint32_t phase1BIST = calc_bist(oddSamples);
 		uint32_t phase2BIST = calc_bist(evenSamples);
 
-		FILE_LOG(logDEBUG) << "Expected phase 1 BIST register " << hexn<8> << phase1BIST;
-		FILE_LOG(logDEBUG) << "Expected phase 2 BIST register " << hexn<8> << phase2BIST;
+		FILE_LOG(logDEBUG) << deviceSerial_ << " expected phase 1 BIST register " << hexn<8> << phase1BIST;
+		FILE_LOG(logDEBUG) << deviceSerial_ << " expected phase 2 BIST register " << hexn<8> << phase2BIST;
 
 	//Load the test vector and setup software triggered waveform mode
 	//Clear the channel data on both channels so we get the right waveform length
@@ -1560,7 +1563,7 @@ int APS2::set_offset_register(const int & dac, const float & offset) {
 	 * offset - offset in normalized full range (-1, 1)
 	 */
 	int16_t scaledOffset = offset * MAX_WF_AMP;
-	FILE_LOG(logINFO) << "Setting DAC " << dac << "	zero register to " << scaledOffset;
+	FILE_LOG(logINFO) << deviceSerial_ << " setting DAC " << dac << "	zero register to " << scaledOffset;
 
 	//Read current value
 	uint32_t val = read_memory(ZERO_OUT_ADDR, 1)[0];
@@ -1605,7 +1608,7 @@ void APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
 	// disable cache
 	write_memory(CACHE_CONTROL_ADDR, 0);
 
-	FILE_LOG(logDEBUG2) << "Loading waveform of length " << wfData.size() << " at address " << myhex << startAddr;
+	FILE_LOG(logDEBUG2) << deviceSerial_ << " loading waveform of length " << wfData.size() << " at address " << myhex << startAddr;
 	vector<uint32_t> packedData;
 	for (size_t ct=0; ct < wfData.size(); ct += 2) {
 		packedData.push_back(((uint32_t)wfData[ct] << 16) | (uint16_t)wfData[ct+1]);
@@ -1617,7 +1620,7 @@ void APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
 }
 
 void APS2::write_sequence(const vector<uint64_t> & data) {
-	FILE_LOG(logDEBUG2) << "Loading sequence of length " << data.size();
+	FILE_LOG(logDEBUG2) << deviceSerial_ << " loading sequence of length " << data.size();
 
 	// pack into uint32_t vector
 	vector<uint32_t> packed_instructions;
@@ -1638,7 +1641,7 @@ void APS2::write_sequence(const vector<uint64_t> & data) {
 int APS2::write_memory_map(const uint32_t & wfA, const uint32_t & wfB, const uint32_t & seq) { /* see header for defaults */
 	/* Writes the partitioning of external memory to registers. Takes 3 offsets
 	 * (in bytes) for wfA/B and seq data */
-	FILE_LOG(logDEBUG2) << "Writing memory map with offsets wfA: " << wfA << ", wfB: " << wfB << ", seq: " << seq;
+	FILE_LOG(logDEBUG2) << deviceSerial_ << " writing memory map with offsets wfA: " << wfA << ", wfB: " << wfB << ", seq: " << seq;
 
 	write_memory(WFA_OFFSET_ADDR, MEMORY_ADDR + wfA);
 	write_memory(WFB_OFFSET_ADDR, MEMORY_ADDR + wfB);
