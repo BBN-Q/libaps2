@@ -50,8 +50,8 @@ classdef APS2 < handle
         end
 
         function connect(obj, ip_addr)
-            if ~isempty(ip_addr)
-              warning('Disconnecting from %s before connecting to %s', obj.serial, ip_addr)
+            if ~isempty(obj.ip_addr)
+              warning('Disconnecting from %s before connecting to %s', obj.ip_addr, ip_addr)
               disconnect(obj)
             end
             obj.ip_addr = ip_addr;
