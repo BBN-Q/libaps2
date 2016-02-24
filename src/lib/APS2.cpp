@@ -15,22 +15,24 @@ void APS2::connect(shared_ptr<APS2Ethernet> && ethernetRM) {
 	//Hold on to APS2Ethernet class to keep socket alive
 	ethernetRM_ = ethernetRM;
 	if (!isOpen) {
-		ethernetRM_->connect(deviceSerial_);
-		//Figure out whether this is an APS2 or TDM and what register map to use
 		try {
-			APSStatusBank_t statusRegs = read_status_registers();
-			if ( statusRegs.userFirmwareVersion != 0xbadda555 ) {
-				legacy_firmware = true;
-			}
-			if ((statusRegs.hostFirmwareVersion & (1 << APS2_HOST_TYPE_BIT)) == (1 << APS2_HOST_TYPE_BIT)) {
-				host_type = TDM;
-			} else {
-				host_type = APS;
-			}
+			ethernetRM_->connect(deviceSerial_);
 		}
 		catch(...) {
-			disconnect();
+			//release reference to APS2Ethernet
+			ethernetRM_.reset();
 			throw APS2_FAILED_TO_CONNECT;
+		}
+
+		//Figure out whether this is an APS2 or TDM and what register map to use
+		APSStatusBank_t statusRegs = read_status_registers();
+		if ( statusRegs.userFirmwareVersion != 0xbadda555 ) {
+			legacy_firmware = true;
+		}
+		if ((statusRegs.hostFirmwareVersion & (1 << APS2_HOST_TYPE_BIT)) == (1 << APS2_HOST_TYPE_BIT)) {
+			host_type = TDM;
+		} else {
+			host_type = APS;
 		}
 
 		FILE_LOG(logINFO) << deviceSerial_ << " opened connection to device";

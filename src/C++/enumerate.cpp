@@ -33,7 +33,12 @@ int main(int argc, char* argv[])
 	get_deviceSerials(serialBuffer);
 
 	for (unsigned ct=0; ct < numDevices; ct++) {
-		connect_APS(serialBuffer[ct]);
+		APS2_STATUS status;
+		status = connect_APS(serialBuffer[ct]);
+		if (status != APS2_OK) {
+			cout << concol::RED << "Failed to connect to " << serialBuffer[ct] << concol::RESET << endl;
+			continue;
+		}
 		uint32_t firmware_version{0};
 		get_firmware_version(serialBuffer[ct], &firmware_version);
 		double uptime{0};

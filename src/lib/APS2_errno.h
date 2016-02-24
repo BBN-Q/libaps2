@@ -42,7 +42,7 @@ static std::map<APS2_STATUS, std::string> messages = {
 	{APS2_PLL_LOST_LOCK, "The PLL chip has lost its lock.  Try power cycling the module."},
 	{APS2_MMCM_LOST_LOCK, "The FPGA MMCM has lost its lock.  Try resetting the module."},
 	{APS2_UNKNOWN_RUN_MODE, "Unknown APS2 run mode.  Available options are RUN_SEQUENCE, TRIG_WAVEFORM, CW_WAVEFORM"},
-	{APS2_FAILED_TO_CONNECT, "Unable to connect to requested APS2.  Make sure it is connected to network."},
+	{APS2_FAILED_TO_CONNECT, "Unable to connect to requested APS2.  Make sure it is connected to network and that no other system is connected."},
 	{APS2_INVALID_DAC, "API call requested invalide DAC channel.  Only 2 channels per module."},
 	{APS2_NO_SUCH_BITFILE, "Could not find bitfile at location specified."},
 	{APS2_MAC_ADDR_VALIDATION_FAILURE, "Failed to validate the update to the MAC address in flash memory."},

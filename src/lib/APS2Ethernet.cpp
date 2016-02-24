@@ -295,12 +295,17 @@ void APS2Ethernet::connect(string serial) {
 	// tcp_sockets_.insert(serial, std::make_unique<tcp::socket>(ios_));
 	// lowly C++11
 	std::unique_ptr<tcp::socket> sock(new tcp::socket(ios_));
-	asio::error_code ec;
 	FILE_LOG(logDEBUG1) << "Trying to connect to TCP port";
-	sock->connect(tcp::endpoint(asio::ip::address_v4::from_string(serial), TCP_PORT), ec);
-	if (ec) {
-	  FILE_LOG(logERROR) << "Failed to connect to " << serial << " with error: " << ec.message();
-	  throw APS2_SOCKET_FAILURE;
+	std::future<void> connect_result = sock->async_connect(tcp::endpoint(asio::ip::address_v4::from_string(serial), TCP_PORT), asio::use_future);
+	if ( connect_result.wait_for(std::chrono::seconds(3)) == std::future_status::timeout) {
+		FILE_LOG(logERROR) << "Timed out trying to connect to " << serial;
+		throw APS2_FAILED_TO_CONNECT;
+	}
+	try {
+		connect_result.get();
+	} catch(std::system_error e) {
+		FILE_LOG(logERROR) << "Failed to connect to " << serial << " with error: " << e.what();
+		throw APS2_FAILED_TO_CONNECT;
 	}
 
 	tcp_sockets_.insert(std::make_pair(serial, std::move(sock)));
@@ -463,8 +468,8 @@ APS2Datagram APS2Ethernet::read(string ipAddr, std::chrono::milliseconds timeout
 	auto read_with_timeout = [&]() {
 	  std::future<size_t> read_result = tcp_sockets_[ipAddr]->async_receive(asio::buffer(buf), asio::use_future);
 	  if (read_result.wait_for(timeout) == std::future_status::timeout) {
-		FILE_LOG(logERROR) << "TCP receive timed out!";
-		throw APS2_RECEIVE_TIMEOUT;
+			FILE_LOG(logERROR) << "TCP receive timed out!";
+			throw APS2_RECEIVE_TIMEOUT;
 	  }
 	};
 
