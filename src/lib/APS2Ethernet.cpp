@@ -342,10 +342,18 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
 			}
 			FILE_LOG(logDEBUG3) << "Sending datagram with command word " << hexn<8> << dg.cmd.packed <<
 			" to address " << hexn<8> << dg.addr << " with payload size " << std::dec << dg.payload.size() << " for total size " << data.size();
-			std::error_code ec;
-			asio::write(*tcp_sockets_[ipAddr], asio::buffer(data), ec); //TODO should this be async?
-			if ( ec ) {
-				FILE_LOG(logERROR) << "Failed to send datagram with error: " << ec.message();
+
+			std::future<size_t> write_result = asio::async_write(*tcp_sockets_[ipAddr], asio::buffer(data), asio::use_future);
+			if ( write_result.wait_for(COMMS_TIMEOUT) == std::future_status::timeout) {
+				FILE_LOG(logERROR) << ipAddr << " write timed out";
+				throw APS2_COMMS_ERROR;
+			}
+			try {
+				size_t bytes_written = write_result.get();
+				FILE_LOG(logDEBUG3) << "Wrote " << bytes_written << " bytes";
+			} catch(std::system_error e) {
+				FILE_LOG(logERROR) << ipAddr << " write errored with message: " << e.what();
+				throw APS2_COMMS_ERROR;
 			}
 		}
 		//Block until the acks come back
