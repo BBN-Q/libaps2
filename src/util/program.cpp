@@ -75,8 +75,7 @@ void progress_bar(string label, double percent ){
 int main (int argc, char* argv[])
 {
 
-	concol::concolinit();
-	cout << concol::RED << "BBN AP2 Firmware Programming Executable" << concol::RESET << endl;
+	print_title("BBN AP2 Firmware Programming Utility");
 
 	argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
 	option::Stats	stats(usage, argc, argv);
@@ -91,6 +90,7 @@ int main (int argc, char* argv[])
 		option::printUsage(std::cout, usage);
 		return 0;
 	}
+
 
 	for (option::Option* opt = options[UNKNOWN]; opt; opt = opt->next())
 	 std::cout << "Unknown option: " << opt->name << "\n";
@@ -124,18 +124,16 @@ int main (int argc, char* argv[])
 
 	PROGRAM_TARGET target;
 	if (options[PROG_MODE]) {
-		string target_in(options[PROG_MODE].arg);
-		if (!target_in.compare("DRAM")) {
-			target = TARGET_DRAM;
-		}
-		else if (!target_in.compare("EPROM")){
-			target = TARGET_EPROM;
-		}
-		else if (!target_in.compare("BACKUP")){
-			target = TARGET_EPROM_BACKUP;
-		}
-		else{
-			std::cerr << "Unrecognized programming mode " << target_in;
+		string target_str(options[PROG_MODE].arg);
+		std::map<string, PROGRAM_TARGET> target_map {
+			{"DRAM", TARGET_DRAM},
+			{"EPROM", TARGET_EPROM},
+			{"BACKUP", TARGET_EPROM_BACKUP}
+		};
+		if (target_map.count(target_str)) {
+			target = target_map[target_str];
+		} else {
+			std::cerr << "Unrecognized programming mode " << target_str;
 			return -1;
 		}
 	} else {
