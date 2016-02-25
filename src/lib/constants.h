@@ -15,19 +15,19 @@ using std::vector;
 #define CONSTANTS_H_
 
 //Some maximum sizes of things we can fit
-static const int MAX_APS_CHANNELS = 2;
+const int MAX_APS_CHANNELS = 2;
 
-static const int APS_WAVEFORM_UNIT_LENGTH = 4;
+const int APS_WAVEFORM_UNIT_LENGTH = 4;
 
-static const int MAX_WF_LENGTH = 131072;
-static const int MAX_WF_AMP = 8191;
-static const int WF_MODULUS = 4;
-static const size_t MAX_LL_LENGTH = (1 << 24);
+const int MAX_WF_LENGTH = 131072;
+const int MAX_WF_AMP = 8191;
+const int WF_MODULUS = 4;
+const size_t MAX_LL_LENGTH = (1 << 24);
 
-static const int APS_READTIMEOUT = 1000;
-static const int APS_WRITETIMEOUT = 500;
+const int APS_READTIMEOUT = 1000;
+const int APS_WRITETIMEOUT = 500;
 
-static const int MAX_PHASE_TEST_CNT = 20;
+const int MAX_PHASE_TEST_CNT = 20;
 
 //Chip config SPI commands for setting up DAC,PLL,VXCO
 //Possible target bytes
@@ -78,7 +78,7 @@ union DACCommand_t {
 	DACCommand_t() {this->packed = 0;};
 };
 
-static const uint16_t NUM_STATUS_REGISTERS = 16;
+const uint16_t NUM_STATUS_REGISTERS = 16;
 
 enum class APS_COMMANDS : uint32_t {
 	RESET           = 0x0,
@@ -221,96 +221,96 @@ enum CONFIGURATION_SOURCE {
 };
 
 // APS2 registers
-static const uint32_t CSR_AXI_OFFSET          = 0x44A00000u;
-static const uint32_t PLL_STATUS_ADDR         = CSR_AXI_OFFSET + 0*4;
-static const uint32_t PHASE_COUNT_A_ADDR      = CSR_AXI_OFFSET + 1*4;
-static const uint32_t PHASE_COUNT_B_ADDR      = CSR_AXI_OFFSET + 2*4;
-static const uint32_t CACHE_STATUS_ADDR       = CSR_AXI_OFFSET + 3*4;
-static const uint32_t CACHE_CONTROL_ADDR      = CSR_AXI_OFFSET + 4*4;
-static const uint32_t WFA_OFFSET_ADDR         = CSR_AXI_OFFSET + 5*4;
-static const uint32_t WFB_OFFSET_ADDR         = CSR_AXI_OFFSET + 6*4;
-static const uint32_t SEQ_OFFSET_ADDR         = CSR_AXI_OFFSET + 7*4;
-static const uint32_t RESETS_ADDR             = CSR_AXI_OFFSET + 8*4;
-static const uint32_t SEQ_CONTROL_ADDR        = CSR_AXI_OFFSET + 9*4;
-static const uint32_t ZERO_OUT_ADDR           = CSR_AXI_OFFSET + 10*4;
-static const uint32_t TRIGGER_WORD_ADDR       = CSR_AXI_OFFSET + 11*4;
-static const uint32_t TRIGGER_INTERVAL_ADDR   = CSR_AXI_OFFSET + 12*4;
-static const uint32_t DAC_BIST_CHA_PH1_ADDR   = CSR_AXI_OFFSET + 13*4;
-static const uint32_t DAC_BIST_CHA_PH2_ADDR   = CSR_AXI_OFFSET + 14*4;
-static const uint32_t DAC_BIST_CHB_PH1_ADDR   = CSR_AXI_OFFSET + 15*4;
-static const uint32_t DAC_BIST_CHB_PH2_ADDR   = CSR_AXI_OFFSET + 16*4;
-static const uint32_t DMA_STATUS_ADDR         = CSR_AXI_OFFSET + 17*4;
-static const uint32_t SATA_STATUS_ADDR        = CSR_AXI_OFFSET + 18*4;
-static const uint32_t INIT_STATUS_ADDR        = CSR_AXI_OFFSET + 19*4;
-static const uint32_t UPTIME_SECONDS_ADDR     = CSR_AXI_OFFSET + 20*4;
-static const uint32_t UPTIME_NANOSECONDS_ADDR = CSR_AXI_OFFSET + 21*4;
-static const uint32_t FIRMWARE_VERSION_ADDR   = CSR_AXI_OFFSET + 22*4;
-static const uint32_t TEMPERATURE_ADDR        = CSR_AXI_OFFSET + 23*4;
+const uint32_t CSR_AXI_OFFSET          = 0x44A00000u;
+const uint32_t PLL_STATUS_ADDR         = CSR_AXI_OFFSET + 0*4;
+const uint32_t PHASE_COUNT_A_ADDR      = CSR_AXI_OFFSET + 1*4;
+const uint32_t PHASE_COUNT_B_ADDR      = CSR_AXI_OFFSET + 2*4;
+const uint32_t CACHE_STATUS_ADDR       = CSR_AXI_OFFSET + 3*4;
+const uint32_t CACHE_CONTROL_ADDR      = CSR_AXI_OFFSET + 4*4;
+const uint32_t WFA_OFFSET_ADDR         = CSR_AXI_OFFSET + 5*4;
+const uint32_t WFB_OFFSET_ADDR         = CSR_AXI_OFFSET + 6*4;
+const uint32_t SEQ_OFFSET_ADDR         = CSR_AXI_OFFSET + 7*4;
+const uint32_t RESETS_ADDR             = CSR_AXI_OFFSET + 8*4;
+const uint32_t SEQ_CONTROL_ADDR        = CSR_AXI_OFFSET + 9*4;
+const uint32_t ZERO_OUT_ADDR           = CSR_AXI_OFFSET + 10*4;
+const uint32_t TRIGGER_WORD_ADDR       = CSR_AXI_OFFSET + 11*4;
+const uint32_t TRIGGER_INTERVAL_ADDR   = CSR_AXI_OFFSET + 12*4;
+const uint32_t DAC_BIST_CHA_PH1_ADDR   = CSR_AXI_OFFSET + 13*4;
+const uint32_t DAC_BIST_CHA_PH2_ADDR   = CSR_AXI_OFFSET + 14*4;
+const uint32_t DAC_BIST_CHB_PH1_ADDR   = CSR_AXI_OFFSET + 15*4;
+const uint32_t DAC_BIST_CHB_PH2_ADDR   = CSR_AXI_OFFSET + 16*4;
+const uint32_t DMA_STATUS_ADDR         = CSR_AXI_OFFSET + 17*4;
+const uint32_t SATA_STATUS_ADDR        = CSR_AXI_OFFSET + 18*4;
+const uint32_t INIT_STATUS_ADDR        = CSR_AXI_OFFSET + 19*4;
+const uint32_t UPTIME_SECONDS_ADDR     = CSR_AXI_OFFSET + 20*4;
+const uint32_t UPTIME_NANOSECONDS_ADDR = CSR_AXI_OFFSET + 21*4;
+const uint32_t FIRMWARE_VERSION_ADDR   = CSR_AXI_OFFSET + 22*4;
+const uint32_t TEMPERATURE_ADDR        = CSR_AXI_OFFSET + 23*4;
 
 // TDM registers
-static const uint32_t TDM_RESETS_ADDR  = CSR_AXI_OFFSET + 0*4;
-static const uint32_t TDM_TRIGGER_WORD = CSR_AXI_OFFSET + 1*4;
-static const uint32_t TDM_TRIGGER_INTERVAL_ADDR = CSR_AXI_OFFSET + 2*4;
-static const uint32_t TDM_TRIGGER_CONTROL_ADDR  = CSR_AXI_OFFSET + 3*4;
+const uint32_t TDM_RESETS_ADDR  = CSR_AXI_OFFSET + 0*4;
+const uint32_t TDM_TRIGGER_WORD = CSR_AXI_OFFSET + 1*4;
+const uint32_t TDM_TRIGGER_INTERVAL_ADDR = CSR_AXI_OFFSET + 2*4;
+const uint32_t TDM_TRIGGER_CONTROL_ADDR  = CSR_AXI_OFFSET + 3*4;
 
 // APS2 memory map
-static const uint32_t MEMORY_ADDR = 0x00000000u;
-static const uint32_t WFA_OFFSET  = 0;
-static const uint32_t WFB_OFFSET  = 0x10000000u;
-static const uint32_t SEQ_OFFSET  = 0x20000000u;
+const uint32_t MEMORY_ADDR = 0x00000000u;
+const uint32_t WFA_OFFSET  = 0;
+const uint32_t WFB_OFFSET  = 0x10000000u;
+const uint32_t SEQ_OFFSET  = 0x20000000u;
 
 // sequencer control bits
-static const int SM_ENABLE_BIT = 0; // state machine enable
-static const int TRIGSRC_BIT = 1; // trigger source (0 = external, 1 = internal, 2 = software)
-static const int SOFT_TRIG_BIT = 3;
+const int SM_ENABLE_BIT = 0; // state machine enable
+const int TRIGSRC_BIT = 1; // trigger source (0 = external, 1 = internal, 2 = software)
+const int SOFT_TRIG_BIT = 3;
 
 // PLL bits
-static const int PLL_CHA_RST_BIT = 8;
-static const int PLL_CHB_RST_BIT = 9;
-static const int IO_CHA_RST_BIT = 10;
-static const int IO_CHB_RST_BIT = 11;
-static const int DAC_BIST_CHA_RST_BIT = 12;
-static const int DAC_BIST_CHB_RST_BIT = 13;
+const int PLL_CHA_RST_BIT = 8;
+const int PLL_CHB_RST_BIT = 9;
+const int IO_CHA_RST_BIT = 10;
+const int IO_CHB_RST_BIT = 11;
+const int DAC_BIST_CHA_RST_BIT = 12;
+const int DAC_BIST_CHB_RST_BIT = 13;
 
 // HOST_STATUS bits
-static const int APS2_HOST_TYPE_BIT = 24;
+const int APS2_HOST_TYPE_BIT = 24;
 
 // USER_STATUS bits
-static const int MMCM_SYS_LOCK_BIT = 31;
-static const int MMCM_CFG_LOCK_BIT = 30;
-static const int MIG_C0_LOCK_BIT   = 24;
-static const int MIG_C0_CAL_BIT    = 25;
-static const int MIG_C1_LOCK_BIT   = 26;
-static const int MIG_C1_CAL_BIT    = 27;
-static const int AXI_RESET_BIT     = 21;
-static const int AXI_RESETN_BIT    = 20;
+const int MMCM_SYS_LOCK_BIT = 31;
+const int MMCM_CFG_LOCK_BIT = 30;
+const int MIG_C0_LOCK_BIT   = 24;
+const int MIG_C0_CAL_BIT    = 25;
+const int MIG_C1_LOCK_BIT   = 26;
+const int MIG_C1_CAL_BIT    = 27;
+const int AXI_RESET_BIT     = 21;
+const int AXI_RESETN_BIT    = 20;
 
 // TDM reset control bits
-static const int TDM_TRIGGER_RESET_BIT = 0;
+const int TDM_TRIGGER_RESET_BIT = 0;
 
 // DAC SPI Addresses
-static const uint8_t DAC_SYNC_ADDR = 0x0;
-static const uint8_t DAC_INTERRUPT_ADDR = 0x1; // LVDS[7] SYNC[6]
-static const uint8_t DAC_MSDMHD_ADDR = 0x4; // MSD[7:4] MHD[3:0]
-static const uint8_t DAC_SD_ADDR = 0x5; // SD[7:4] CHECK[0]
-static const uint8_t DAC_CONTROLLER_ADDR = 0x6; // LSURV[7] LAUTO[6] LFLT[5:2] LTRH[1:0]
-static const uint8_t DAC_FIFOSTAT_ADDR = 0x7; // FIFOSTAT[7] FIFOPHASE[6:4] VALID[3] CHANGE[2] OFFSET[1:0]
-static const uint8_t DAC_CONTROLLERCLOCK_ADDR = 0x16;
+const uint8_t DAC_SYNC_ADDR = 0x0;
+const uint8_t DAC_INTERRUPT_ADDR = 0x1; // LVDS[7] SYNC[6]
+const uint8_t DAC_MSDMHD_ADDR = 0x4; // MSD[7:4] MHD[3:0]
+const uint8_t DAC_SD_ADDR = 0x5; // SD[7:4] CHECK[0]
+const uint8_t DAC_CONTROLLER_ADDR = 0x6; // LSURV[7] LAUTO[6] LFLT[5:2] LTRH[1:0]
+const uint8_t DAC_FIFOSTAT_ADDR = 0x7; // FIFOSTAT[7] FIFOPHASE[6:4] VALID[3] CHANGE[2] OFFSET[1:0]
+const uint8_t DAC_CONTROLLERCLOCK_ADDR = 0x16;
 
 // EPROM MEMORY MAP
-static const uint32_t EPROM_SPI_CONFIG_ADDR = 0x0;
-static const uint32_t EPROM_USER_IMAGE_ADDR = 0x00010000;
-static const uint32_t EPROM_BASE_IMAGE_ADDR = 0x01000000;
-static const uint32_t EPROM_MACIP_ADDR      = 0x00FF0000;
-static const uint32_t EPROM_IP_OFFSET       = 8;
-static const uint32_t EPROM_DHCP_OFFSET     = 12;
+const uint32_t EPROM_SPI_CONFIG_ADDR = 0x0;
+const uint32_t EPROM_USER_IMAGE_ADDR = 0x00010000;
+const uint32_t EPROM_BASE_IMAGE_ADDR = 0x01000000;
+const uint32_t EPROM_MACIP_ADDR      = 0x00FF0000;
+const uint32_t EPROM_IP_OFFSET       = 8;
+const uint32_t EPROM_DHCP_OFFSET     = 12;
 
 // APS ethernet type
-static const uint16_t APS_PROTO = 0xBB4E;
+const uint16_t APS_PROTO = 0xBB4E;
 
-static const uint16_t UDP_PORT_OLD = 0xbb4e;
-static const uint16_t UDP_PORT = 0xbb4f;
-static const uint16_t TCP_PORT = 0xbb4e;
+const uint16_t UDP_PORT_OLD = 0xbb4e;
+const uint16_t UDP_PORT = 0xbb4f;
+const uint16_t TCP_PORT = 0xbb4e;
 
 // PLL/DAC SPI routines go through sets of address/data pairs
 typedef std::pair<uint16_t, uint8_t> SPI_AddrData_t;
@@ -318,7 +318,7 @@ typedef std::pair<uint16_t, uint8_t> SPI_AddrData_t;
 // Startup sequences
 
 // PLL setup sequence (modified for 300 MHz FPGA sys_clk and 1.2 GHz DACs)
-static const vector<SPI_AddrData_t> PLL_INIT = {
+const vector<SPI_AddrData_t> PLL_INIT = {
 	{0x0,	0x99},	// Use SDO, Long instruction mode
 	{0x10, 0x7C},	// Enable PLL, set charge pump to 4.8ma
 	{0x11, 0x5},	 // Set reference divider R to 5 to divide 125 MHz reference to 25 MHz
@@ -347,21 +347,21 @@ static const vector<SPI_AddrData_t> PLL_INIT = {
 	{0x232, 0x1}	 // Update registers with pending writes.
 };
 
-static const vector<SPI_AddrData_t> PLL_SET_CAL_FLAG = {
+const vector<SPI_AddrData_t> PLL_SET_CAL_FLAG = {
 	{0x18, 0x75},	// Initiate Calibration.	Must be followed by Update Registers Command
 	{0x232, 0x1}	// Set bit 0 to 1 to simultaneously update all registers with pending writes.
 };
 
-static const vector<SPI_AddrData_t> PLL_CLEAR_CAL_FLAG = {
+const vector<SPI_AddrData_t> PLL_CLEAR_CAL_FLAG = {
 	{0x18, 0x74},	// Initiate Calibration.	Must be followed by Update Registers Command
 	{0x232, 0x1}	// Set bit 0 to 1 to simultaneously update all registers with pending writes.
 };
 
 // VCXO setup sequence
-static const vector<uint8_t> VCXO_INIT = {0x8, 0x60, 0x0, 0x4, 0x64, 0x91, 0x0, 0x61};
+const vector<uint8_t> VCXO_INIT = {0x8, 0x60, 0x0, 0x4, 0x64, 0x91, 0x0, 0x61};
 
 // "waveform mode" sequence
-static const vector<uint64_t> WF_SEQ = {
+const vector<uint64_t> WF_SEQ = {
 	0x2100400000000000L, // WAIT for trig
 	0x0100000000000000L, // WFM
 	0x6000000000000000L	// GOTO 0
