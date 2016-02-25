@@ -139,7 +139,7 @@ APSStatusBank_t APS2::read_status_registers() {
 	ethernetRM_->send(deviceSerial_, {{cmd, 0, {}}});
 
 	//Read the response
-	auto resp_dg = ethernetRM_->read(deviceSerial_, std::chrono::milliseconds(100));
+	auto resp_dg = ethernetRM_->read(deviceSerial_, COMMS_TIMEOUT);
 
 	//Copy the data back into the status type
 	APSStatusBank_t statusRegs;
@@ -554,7 +554,7 @@ vector<uint32_t> APS2::read_memory(uint32_t addr, uint32_t numWords){
 
 	//Read the response
 	//We expect a single datagram back
-	auto result = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
+	auto result = ethernetRM_->read(deviceSerial_, COMMS_TIMEOUT);
 	//TODO: error checking
 	return result.payload;
 }
@@ -594,7 +594,7 @@ vector<uint32_t> APS2::read_configuration_SDRAM(uint32_t addr, uint32_t num_word
 
 	//Read the response
 	//We expect a single datagram back
-	auto result = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
+	auto result = ethernetRM_->read(deviceSerial_, COMMS_TIMEOUT);
 	//TODO: error checking
 	return result.payload;
 }
@@ -671,7 +671,7 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & ad
 
 	//Read the response
 	//We expect a single datagram back with a single word
-	auto result = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
+	auto result = ethernetRM_->read(deviceSerial_, COMMS_TIMEOUT);
 	if ( result.cmd.mode_stat != 0x00 ) {
 		FILE_LOG(logERROR) << deviceSerial_ << " read_SPI response datagram reported error: " << result.cmd.mode_stat;
 		throw APS2_COMMS_ERROR;
@@ -775,7 +775,7 @@ vector<uint32_t> APS2::read_flash(uint32_t addr, uint32_t num_words) {
 
 	//Read the response
 	//We expect a single datagram back
-	auto result = ethernetRM_->read(deviceSerial_, std::chrono::seconds(1));
+	auto result = ethernetRM_->read(deviceSerial_, COMMS_TIMEOUT);
 	//TODO: error checking
 	return result.payload;
 }

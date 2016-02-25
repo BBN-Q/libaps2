@@ -8,6 +8,7 @@
 #include <vector>
 using std::vector;
 #include <cstdlib> //size_t
+#include <chrono>
 
 #include "logger.h"
 
@@ -24,8 +25,7 @@ const int MAX_WF_AMP = 8191;
 const int WF_MODULUS = 4;
 const size_t MAX_LL_LENGTH = (1 << 24);
 
-const int APS_READTIMEOUT = 1000;
-const int APS_WRITETIMEOUT = 500;
+const std::chrono::seconds COMMS_TIMEOUT = std::chrono::seconds(3);
 
 const int MAX_PHASE_TEST_CNT = 20;
 

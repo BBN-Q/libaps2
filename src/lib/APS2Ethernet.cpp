@@ -297,7 +297,7 @@ void APS2Ethernet::connect(string serial) {
 	std::unique_ptr<tcp::socket> sock(new tcp::socket(ios_));
 	FILE_LOG(logDEBUG1) << "Trying to connect to TCP port";
 	std::future<void> connect_result = sock->async_connect(tcp::endpoint(asio::ip::address_v4::from_string(serial), TCP_PORT), asio::use_future);
-	if ( connect_result.wait_for(std::chrono::seconds(3)) == std::future_status::timeout) {
+	if ( connect_result.wait_for(COMMS_TIMEOUT) == std::future_status::timeout) {
 		FILE_LOG(logERROR) << "Timed out trying to connect to " << serial;
 		throw APS2_FAILED_TO_CONNECT;
 	}
@@ -352,10 +352,9 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
 	//Block until the acks come back
 	for (const auto & dg : datagrams){
 	  if ( dg.cmd.ack ) {
-		//max of 256kB in a datagram so assume we can get 128kB/s
-		auto timeout = std::chrono::seconds(2);
-		auto ack = read(ipAddr, timeout);
-		dg.check_ack(ack, false);
+			auto timeout = COMMS_TIMEOUT;
+			auto ack = read(ipAddr, timeout);
+			dg.check_ack(ack, false);
 	  }
 	}
 
@@ -452,7 +451,7 @@ void APS2Ethernet::send_chunk(string serial, vector<APS2EthernetPacket> chunk, b
 	if (noACK) return;
 
 	//Wait for acknowledge from final packet in chunk and error check
-	auto ack = read(serial, std::chrono::seconds(1));
+	auto ack = read(serial, COMMS_TIMEOUT);
 	APS2Datagram dg;
 	dg.cmd.packed = chunk.back().header.command.packed;
 	dg.addr = chunk.back().header.addr;
