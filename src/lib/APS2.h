@@ -134,7 +134,7 @@ public:
 
 private:
 
-	string deviceSerial_;
+	string ipAddr_;
 	vector<Channel> channels_;
 	shared_ptr<APS2Ethernet> ethernetRM_;
 	unsigned samplingRate_;

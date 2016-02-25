@@ -43,14 +43,14 @@ Getter calls return the value in the appropriate pointer.
 	This method sends out a broadcast packet to find all APS2's on the local
 	subnet and returns the number of devices found.
 
-`APS2_STATUS get_deviceSerials(const char** deviceIPs)`
+`APS2_STATUS get_device_IPs(const char** deviceIPs)`
 
 	Populates `deviceIPs[]` with C strings of APS2 IP addresses. The caller is
 	responsible for sizing deviceIPs appropriately. For example, in C++::
 
 		int numDevices = get_numDevices();
 		const char** serialBuffer = new const char*[numDevices];
-		get_deviceSerials(serialBuffer);
+		get_device_IPs(serialBuffer);
 
 `APS2_STATUS connect_APS(const char* deviceIP)`
 

@@ -248,7 +248,7 @@ classdef APS2 < handle
                 ip_addrs{ct} = '';
             end
             ip_addrPtr = libpointer('stringPtrPtr', ip_addrs);
-            [status, ip_addrs] = calllib('libaps2', 'get_deviceSerials', ip_addrPtr);
+            [status, ip_addrs] = calllib('libaps2', 'get_device_IPs', ip_addrPtr);
             APS2.check_status(status)
         end
 

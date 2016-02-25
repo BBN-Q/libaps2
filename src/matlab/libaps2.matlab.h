@@ -37,7 +37,7 @@ typedef enum APS2_RESET_MODE APS2_RESET_MODE;
 EXPORT const char* get_error_msg(APS2_STATUS);
 
 EXPORT APS2_STATUS get_numDevices(unsigned int*);
-EXPORT APS2_STATUS get_deviceSerials(const char**);
+EXPORT APS2_STATUS get_device_IPs(const char**);
 
 EXPORT APS2_STATUS connect_APS(const char*);
 EXPORT APS2_STATUS disconnect_APS(const char*);

@@ -101,7 +101,7 @@ end
 function enumerate_APS2s()
 	numDevices = get_numDevices()
 	Cip_addrs = Array(Ptr{UInt8}, numDevices)
-	status = ccall((:get_deviceSerials, "libaps2"), APS2_STATUS, (Ptr{Ptr{UInt8}},), Cip_addrs)
+	status = ccall((:get_device_IPs, "libaps2"), APS2_STATUS, (Ptr{Ptr{UInt8}},), Cip_addrs)
 	ip_addrs = Array(IPv4, 0)
 	for ct = 1:numDevices
 		push!(ip_addrs, IPv4(bytestring(Cip_addrs[ct])))

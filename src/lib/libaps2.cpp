@@ -131,7 +131,7 @@ APS2_STATUS get_numDevices(unsigned int* numDevices) {
 	}
 }
 
-APS2_STATUS get_deviceSerials(const char** deviceSerialsOut) {
+APS2_STATUS get_device_IPs(const char** deviceSerialsOut) {
 	/*
 	Fill in an array of char* with null-terminated char arrays with the
 	enumerated device ip addresses.

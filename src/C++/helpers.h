@@ -25,7 +25,7 @@ string get_device_id() {
 		return "";
 
 	const char ** serialBuffer = new const char*[numDevices];
-	get_deviceSerials(serialBuffer);
+	get_device_IPs(serialBuffer);
 
 	for (unsigned cnt=0; cnt < numDevices; cnt++) {
 		cout << concol::CYAN << "Device " << cnt << " serial #: " << serialBuffer[cnt] << concol::RESET << endl;

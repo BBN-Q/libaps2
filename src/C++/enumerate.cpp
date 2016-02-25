@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
 
 	//Get IP strings and firmware versions
 	const char ** serialBuffer = new const char*[numDevices];
-	get_deviceSerials(serialBuffer);
+	get_device_IPs(serialBuffer);
 
 	for (unsigned ct=0; ct < numDevices; ct++) {
 		APS2_STATUS status;

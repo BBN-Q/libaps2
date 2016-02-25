@@ -68,8 +68,8 @@ TEST_CASE("enumeration", "[enumerate]"){
 
 	const char ** serialBuffer = new const char*[numDevices];
 
-	SECTION("get_deviceSerials returns a list of valid IP addresses"){
-			get_deviceSerials(serialBuffer);
+	SECTION("get_device_IPs returns a list of valid IP addresses"){
+			get_device_IPs(serialBuffer);
 
 		for (size_t ct = 0; ct < numDevices; ct++) {
 			string ipAddr = string(serialBuffer[ct]);
