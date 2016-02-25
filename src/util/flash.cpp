@@ -91,8 +91,8 @@ bool spi_prompt() {
 	return get_yes_no_input();
 }
 
-bool get_soft_reset_input() {
-	cout << concol::YELLOW << "Do you want to soft reset FPGA [y/N]: " << concol::RESET;
+bool get_reset_input() {
+	cout << concol::YELLOW << "Do you want to reset FPGA [y/N]: " << concol::RESET;
 	return get_yes_no_input();
 }
 
@@ -200,10 +200,8 @@ int main(int argc, char* argv[])
 	}
 
 	if (options[RESET] || interactiveMode) {
-		bool softReset = get_soft_reset_input();
-		#define SOFT_RESET 1
-		#define HARD_RESET 0
-		if (softReset) reset(deviceSerial.c_str(), SOFT_RESET);
+		bool reset_requested = get_reset_input();
+		if (reset_requested) reset(deviceSerial.c_str(), RECONFIG_EPROM_USER);
 	}
 
 	disconnect_APS(deviceSerial.c_str());

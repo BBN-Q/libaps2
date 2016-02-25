@@ -28,7 +28,7 @@ public:
 	void disconnect();
 
 	APS2_STATUS init(const bool & = false, const int & bitFileNum = 0);
-	void reset(APS_RESET_MODE_STAT mode = APS_RESET_MODE_STAT::SOFT_RESET);
+	void reset(APS2_RESET_MODE);
 
 	int setup_VCXO() const;
 	int setup_PLL() const;

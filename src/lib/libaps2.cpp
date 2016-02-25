@@ -178,8 +178,15 @@ APS2_STATUS disconnect_APS(const char* deviceSerial) {
 	return status;
 }
 
-APS2_STATUS reset(const char* deviceSerial, int mode) {
-	return aps2_call(deviceSerial, &APS2::reset, static_cast<APS_RESET_MODE_STAT>(mode));
+APS2_STATUS reset(const char* deviceSerial, APS2_RESET_MODE mode) {
+	switch (mode) {
+		case RESET_TCP:
+			//For TCP we may not have an APS2 device (we can't connect) so directly call APS2Ethernet method
+			get_interface()->reset_tcp(deviceSerial);
+			return APS2_OK;
+		default:
+			return aps2_call(deviceSerial, &APS2::reset, mode);
+	}
 }
 
 //Initialize an APS unit

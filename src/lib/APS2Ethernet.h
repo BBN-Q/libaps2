@@ -39,6 +39,7 @@ public:
 	set<string> enumerate();
 	void connect(string serial);
 	void disconnect(string serial);
+	void reset_tcp(const string &);
 	void send(string, const vector<APS2Datagram> &);
 	int send(string serial, APS2EthernetPacket msg, bool checkResponse=true);
 	int send(string serial, vector<APS2EthernetPacket> msg, unsigned ackEvery=1);

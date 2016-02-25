@@ -330,6 +330,21 @@ void APS2Ethernet::disconnect(string serial) {
   }
 }
 
+void APS2Ethernet::reset_tcp(const string & ip_addr_str) {
+	//Make sure it is a valid IP
+	typedef asio::ip::address_v4 addrv4;
+	asio::error_code ec;
+	addrv4 ip_addr = addrv4::from_string(ip_addr_str, ec);
+	if (ec) {
+		FILE_LOG(logERROR) << "Invalid IP address: " << ec.message();
+		throw APS2_INVALID_IP_ADDR;
+	}
+
+	udp::endpoint endpoint(ip_addr, UDP_PORT);
+	uint8_t reset_tcp_byte = 0x02;
+	udp_socket_.send_to(asio::buffer(&reset_tcp_byte, 1), endpoint);
+}
+
 void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
 	FILE_LOG(logDEBUG2) << "APS2Ethernet::send";
 	if (devInfo_[ipAddr].supports_tcp) {

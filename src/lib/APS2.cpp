@@ -54,19 +54,25 @@ void APS2::disconnect() {
 	}
 }
 
-void APS2::reset(APS_RESET_MODE_STAT mode /* default SOFT_RESET */) {
+void APS2::reset(APS2_RESET_MODE mode) {
 	FILE_LOG(logDEBUG1) << deviceSerial_ << " APS2::reset";
 
 	APS2Command cmd;
 	cmd.sel = 1;
 	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::RESET);
-	cmd.mode_stat = static_cast<uint32_t>(mode);
 
 	//For EPROM reset we can specify the image to load
 	//Use user image for now
-	uint32_t addr{0};
-	if (mode == APS_RESET_MODE_STAT::RECONFIG_EPROM) {
-		addr = EPROM_USER_IMAGE_ADDR;
+	uint32_t addr = 0;
+	switch (mode) {
+		case RECONFIG_EPROM_USER:
+			addr = EPROM_USER_IMAGE_ADDR;
+			break;
+		case RECONFIG_EPROM_BASE:
+			addr = EPROM_BASE_IMAGE_ADDR;
+			break;
+		default:
+			throw APS2_UNKNOWN_ERROR;
 	}
 
 	//Send the command

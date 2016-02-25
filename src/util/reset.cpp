@@ -2,78 +2,114 @@
 
 #include "headings.h"
 #include "libaps2.h"
-#include "constants.h"
+
+#include "../C++/helpers.h"
+#include "../C++/optionparser.h"
 
 #include <concol.h>
 
-using namespace std;
+using std::cout;
+using std::endl;
 
-int get_device_id() {
-	cout << "Choose device ID [0]: ";
-	string input = "";
-	getline(cin, input);
+enum	optionIndex { UNKNOWN, HELP, IP_ADDR, RESET_MODE, LOG_LEVEL};
+const option::Descriptor usage[] =
+{
+	{UNKNOWN, 0,"" , ""		, option::Arg::None, "USAGE: reset [options]\n\n"
+																					 "Options:" },
+	{HELP,		0,"" , "help", option::Arg::None, "	--help	\tPrint usage and exit." },
+	{IP_ADDR,	0,"", "ipAddr", option::Arg::NonEmpty, "	--ipAddr	\tIP address of unit to program (optional)." },
+	{RESET_MODE, 0,"", "resetMode", option::Arg::NonEmpty, "	--resetMode	\tWhat type of reset to do (USER_IMAGE,BASE_IMAGE,TCP) (optional)." },
+	{LOG_LEVEL,	0,"", "logLevel", option::Arg::Numeric, "	--logLevel	\t(optional) Logging level level to print (optional; default=3/DEBUG)." },
 
-	if (input.length() == 0) {
-		return 0;
+	{UNKNOWN, 0,"" ,	""	 , option::Arg::None, "\nExamples:\n"
+																					 "	flash --IP\n"
+																					 "	flash --SPI\n" },
+	{0,0,0,0,0,0}
+};
+
+APS2_RESET_MODE get_reset_mode() {
+	cout << concol::RED << "Reset options:" << concol::RESET << endl;
+	cout << "1) Reset to user image" << endl;
+	cout << "2) Reset to backup image" << endl;
+	cout << "3) Reset tcp connection" << endl << endl;
+	cout << "Choose option [1]: ";
+
+	char input;
+	cin.get(input);
+	switch (input) {
+		case '1':
+		default:
+			return RECONFIG_EPROM_USER;
+			break;
+		case '2':
+			return RECONFIG_EPROM_BASE;
+			break;
+		case '3':
+		return RESET_TCP;
+			break;
 	}
-	int device_id;
-	stringstream mystream(input);
-
-	mystream >> device_id;
-	return device_id;
 }
 
 int main (int argc, char* argv[])
 {
 
-	concol::concolinit();
-	cout << concol::RED << "BBN AP2 Test Executable" << concol::RESET << endl;
+	print_title("BBN APS2 Reset Utility");
 
+	argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
+	option::Stats	stats(usage, argc, argv);
+	option::Option *options = new option::Option[stats.options_max];
+	option::Option *buffer = new option::Option[stats.buffer_max];
+	option::Parser parse(usage, argc, argv, options, buffer);
+
+	if (parse.error())
+	 return -1;
+
+	if (options[HELP]) {
+		option::printUsage(std::cout, usage);
+		return 0;
+	}
 
 	//Logging level
 	TLogLevel logLevel = logDEBUG1;
-	// if (options[LOG_LEVEL]) {
-	//	 logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
-	// }
-	set_logging_level(logLevel);
-	set_log("stdout");
-
-	cout << concol::RED << "Enumerating devices" << concol::RESET << endl;
-
-	unsigned numDevices;
-	get_numDevices(&numDevices);
-
-	cout << concol::RED << numDevices << " APS device" << (numDevices > 1 ? "s": "")	<< " found" << concol::RESET << endl;
-
-	if (numDevices < 1)
-		return 0;
-
-	cout << concol::RED << "Attempting to get serials" << concol::RESET << endl;
-
-	const char ** serialBuffer = new const char*[numDevices];
-	get_deviceSerials(serialBuffer);
-
-	for (unsigned cnt=0; cnt < numDevices; cnt++) {
-		cout << concol::RED << "Device " << cnt << " serial #: " << serialBuffer[cnt] << concol::RESET << endl;
+	if (options[LOG_LEVEL]) {
+		logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
 	}
+	set_logging_level(logLevel);
 
 	string deviceSerial;
-
-	if (numDevices == 1) {
-		deviceSerial = string(serialBuffer[0]);
+	if (options[IP_ADDR]) {
+		deviceSerial = string(options[IP_ADDR].arg);
+		cout << "Programming device " << deviceSerial << endl;
 	} else {
-		deviceSerial = string(serialBuffer[get_device_id()]);
+		deviceSerial = get_device_id();
 	}
 
-	cout << concol::RED << "Connecting to device serial #: " << deviceSerial << concol::RESET << endl;
+	APS2_RESET_MODE mode;
+	if (options[RESET_MODE]) {
+		std::map<string, APS2_RESET_MODE> mode_map{
+			{"USER_IMAGE", RECONFIG_EPROM_USER},
+			{"BASE_IMAGE", RECONFIG_EPROM_BASE},
+			{"TCP", RESET_TCP}};
+		string mode_str(options[RESET_MODE].arg);
+		if ( mode_map.count(mode_str)) {
+			mode = mode_map[mode_str];
+		} else {
+			std::cerr << concol::RED << "Unexpected reset mode" << concol::RESET << endl;
+			return -1;
+		}
+	} else {
+		mode = get_reset_mode();
+	}
 
-	connect_APS(deviceSerial.c_str());
+	if (mode != RESET_TCP) {
+		connect_APS(deviceSerial.c_str());
+	}
 
-	reset(deviceSerial.c_str(), static_cast<int>(APS_RESET_MODE_STAT::RECONFIG_EPROM));
+	reset(deviceSerial.c_str(), mode);
 
-	disconnect_APS(deviceSerial.c_str());
-
-	delete[] serialBuffer;
+	if (mode != RESET_TCP) {
+		disconnect_APS(deviceSerial.c_str());
+	}
 
 	cout << concol::RED << "Finished!" << concol::RESET << endl;
 

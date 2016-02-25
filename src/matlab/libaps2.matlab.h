@@ -32,6 +32,7 @@ typedef enum APS2_RUN_STATE APS2_RUN_STATE;
 typedef enum TLogLevel TLogLevel;
 typedef enum APS2_BITFILE_STORAGE_MEDIA APS2_BITFILE_STORAGE_MEDIA;
 typedef enum APS2_FLASH_TASK APS2_FLASH_TASK;
+typedef enum APS2_RESET_MODE APS2_RESET_MODE;
 
 EXPORT const char* get_error_msg(APS2_STATUS);
 
@@ -41,7 +42,7 @@ EXPORT APS2_STATUS get_deviceSerials(const char**);
 EXPORT APS2_STATUS connect_APS(const char*);
 EXPORT APS2_STATUS disconnect_APS(const char*);
 
-EXPORT APS2_STATUS reset(const char*, int);
+EXPORT APS2_STATUS reset(const char*, APS2_RESET_MODE);
 EXPORT APS2_STATUS init_APS(const char*, int);
 
 EXPORT APS2_STATUS get_firmware_version(const char*, unsigned int*);
