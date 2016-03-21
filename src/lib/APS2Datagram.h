@@ -15,6 +15,8 @@ using std::vector;
 #include <cstdint>
 #include <string>
 using std::string;
+#include <set>
+using std::set;
 
 //APS Command Protocol
 // ACK SEQ SEL R/W CMD<3:0> MODE/STAT<7:0> CNT<15:0>

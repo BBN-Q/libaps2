@@ -1,3 +1,7 @@
+#include <fstream>
+#include <stdexcept> //std::runtime_error
+using std::endl;
+
 #include "APS2.h"
 #include "APS2Datagram.h"
 
@@ -664,7 +668,7 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & ad
 			cmd.instr = pllinstr.packed;
 			break;
 		default:
-			FILE_LOG(logERROR) << ipAddr_ << " invalid read_SPI target " << myhex << target;
+			FILE_LOG(logERROR) << ipAddr_ << " invalid read_SPI target " << hexn<1> << target;
 			return 0;
 	}
 	cmd.spicnt_data = 1; // request 1 byte
@@ -884,7 +888,7 @@ vector<uint32_t> APS2::build_DAC_SPI_msg(const CHIPCONFIG_IO_TARGET & target, co
 			break;
 		default:
 			FILE_LOG(logERROR) << ipAddr_ << " unexpected CHIPCONFIG_IO_TARGET";
-			throw runtime_error("Unexpected CHIPCONFIG_IO_TARGET");
+			throw std::runtime_error("Unexpected CHIPCONFIG_IO_TARGET");
 	}
 	for (auto ad : addrData) {
 		cmd.instr = ad.first;
@@ -915,7 +919,7 @@ vector<uint32_t> APS2::build_VCXO_SPI_msg(const vector<uint8_t> & data) {
 
 	if (data.size() % 4 != 0) {
 		FILE_LOG(logERROR) << ipAddr_ << " VCXO messages must be 4-byte aligned";
-		throw runtime_error("VCXO messages must be 4-byte aligned");
+		throw std::runtime_error("VCXO messages must be 4-byte aligned");
 	}
 
 	// pack 4 bytes into 1 32-bit word
@@ -983,8 +987,8 @@ int APS2::set_PLL_freq(const int & freq) {
 
 	// bypass divider if freq == 1200
 	pllBypassVal = (freq==1200) ?	0x80 : 0x00;
-	FILE_LOG(logDEBUG2) << ipAddr_ << " setting PLL cycles addr: " << myhex << pllCyclesAddr << " val: " << int(pllCyclesVal);
-	FILE_LOG(logDEBUG2) << ipAddr_ << " setting PLL bypass addr: " << myhex << pllBypassAddr << " val: " << int(pllBypassVal);
+	FILE_LOG(logDEBUG2) << ipAddr_ << " setting PLL cycles addr: " << hexn<2> << pllCyclesAddr << " val: " << hexn<2> << int(pllCyclesVal);
+	FILE_LOG(logDEBUG2) << ipAddr_ << " setting PLL bypass addr: " << hexn<2> << pllBypassAddr << " val: " << hexn<2> << int(pllBypassVal);
 
 	// Disable DDRs
 	// int ddr_mask = CSRMSK_CHA_DDR | CSRMSK_CHB_DDR;
@@ -1229,15 +1233,15 @@ void APS2::setup_DAC(const int & dac)
 
 	// TODO: remove int(... & 0x1F)
 	data = read_SPI(targets[dac], DAC_INTERRUPT_ADDR);
-	FILE_LOG(logDEBUG2) << ipAddr_ << " reg: " << myhex << int(DAC_INTERRUPT_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) << ipAddr_ << " reg: " << hexn<2> << int(DAC_INTERRUPT_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 	data = read_SPI(targets[dac], DAC_MSDMHD_ADDR);
-	FILE_LOG(logDEBUG2) << ipAddr_ << " reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) << ipAddr_ << " reg: " << hexn<2> << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 	data = read_SPI(targets[dac], DAC_SD_ADDR);
-	FILE_LOG(logDEBUG2) << ipAddr_ << " reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) << ipAddr_ << " reg: " << hexn<2> << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 
 	// Ensure that surveilance and auto modes are off
 	data = read_SPI(targets[dac], DAC_CONTROLLER_ADDR);
-	FILE_LOG(logDEBUG2) << ipAddr_ << " reg: " << myhex << int(DAC_CONTROLLER_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) << ipAddr_ << " reg: " << hexn<2> << int(DAC_CONTROLLER_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 	data = 0;
 	msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLER_ADDR, data}});
 	write_SPI(msg);
@@ -1255,10 +1259,10 @@ void APS2::setup_DAC(const int & dac)
 		data = (MSD << 4) | MHD;
 		msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
 		write_SPI(msg);
-		FILE_LOG(logDEBUG2) << ipAddr_ <<	" write Reg: " << myhex << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+		FILE_LOG(logDEBUG2) << ipAddr_ <<	" write Reg: " << hexn<2> << int(DAC_MSDMHD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 
 		data = read_SPI(targets[dac], DAC_SD_ADDR);
-		FILE_LOG(logDEBUG2) << ipAddr_ <<	" read Reg: " << myhex << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
+		FILE_LOG(logDEBUG2) << ipAddr_ <<	" read Reg: " << hexn<2> << int(DAC_SD_ADDR & 0x1F) << " Val: " << int(data & 0xFF);
 
 		bool check = data & 1;
 		FILE_LOG(logDEBUG2) << ipAddr_ << " check: " << check;
@@ -1278,7 +1282,7 @@ void APS2::setup_DAC(const int & dac)
 		write_SPI(msg);
 
 		data = read_SPI(targets[dac], DAC_SD_ADDR);
-		FILE_LOG(logDEBUG2) << ipAddr_ << " read: " << myhex << int(data & 0xFF);
+		FILE_LOG(logDEBUG2) << ipAddr_ << " read: " << hexn<2> << int(data & 0xFF);
 		bool check = data & 1;
 		FILE_LOG(logDEBUG2) << ipAddr_ << " check: " << check;
 		if (!check)
@@ -1350,7 +1354,7 @@ void APS2::enable_DAC_FIFO(const int & dac) {
 
 	// read back FIFO phase to ensure we are in a safe zone
 	data = read_SPI(targets[dac], DAC_FIFOSTAT_ADDR);
-	FILE_LOG(logDEBUG2) << ipAddr_ << " read: " << myhex << int(data & 0xFF);
+	FILE_LOG(logDEBUG2) << ipAddr_ << " read: " << hexn<2> << int(data & 0xFF);
 
 	// phase (FIFOPHASE) is in bits <6:4>
 	data = (data & 0x70) >> 4;
@@ -1624,7 +1628,7 @@ void APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
 	// disable cache
 	write_memory(CACHE_CONTROL_ADDR, 0);
 
-	FILE_LOG(logDEBUG2) << ipAddr_ << " loading waveform of length " << wfData.size() << " at address " << myhex << startAddr;
+	FILE_LOG(logDEBUG2) << ipAddr_ << " loading waveform of length " << wfData.size() << " at address " << hexn<8> << startAddr;
 	vector<uint32_t> packedData;
 	for (size_t ct=0; ct < wfData.size(); ct += 2) {
 		packedData.push_back(((uint32_t)wfData[ct] << 16) | (uint16_t)wfData[ct+1]);

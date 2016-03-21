@@ -7,7 +7,9 @@
 #ifndef APS2_H
 #define APS2_H
 
-#include "headings.h"
+#include <memory>
+using std::shared_ptr;
+
 #include "APS2Ethernet.h"
 #include "Channel.h"
 #include "APS2_errno.h"

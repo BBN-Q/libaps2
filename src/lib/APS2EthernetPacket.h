@@ -2,7 +2,6 @@
 #ifndef APS2ETHERNETPACKET_H_
 #define APS2ETHERNETPACKET_H_
 
-#include "headings.h"
 #include "MACAddr.h"
 #include "APS2Datagram.h"
 

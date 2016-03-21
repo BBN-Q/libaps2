@@ -1,6 +1,5 @@
 #include <iostream>
 
-#include "headings.h"
 #include "libaps2.h"
 
 #include "../C++/helpers.h"

@@ -1,5 +1,8 @@
 #include "MACAddr.h"
 
+#include <sstream>
+#include <iomanip>
+
 MACAddr::MACAddr() : addr(MAC_ADDR_LEN, 0){}
 
 MACAddr::MACAddr(const string & macStr){

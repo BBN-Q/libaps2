@@ -4,8 +4,11 @@
  */
 
 #include <sstream>
+#include <memory>
+using std::weak_ptr;
+#include <map>
+using std::map;
 
-#include "headings.h"
 #include "libaps2.h"
 #include "APS2.h"
 #include "APS2Ethernet.h"

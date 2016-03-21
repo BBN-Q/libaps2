@@ -3,13 +3,21 @@
 // Original authors: Colm Ryan, Blake Johnson, Brian Donovan
 // Copyright 2016, Raytheon BBN Technologies
 
-#include "APS2Ethernet.h"
 
 #ifdef _WIN32
 #include "iphlpapi.h"
 #else
 #include <ifaddrs.h>
 #endif
+#include <unordered_map>
+using std::unordered_map;
+#include <queue>
+using std::queue;
+
+#include "APS2Ethernet.h"
+#include "helpers.h"
+#include "logger.h"
+#include "constants.h"
 
 APS2Ethernet::APS2Ethernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
 	FILE_LOG(logDEBUG) << "APS2Ethernet::APS2Ethernet";

@@ -1,7 +1,10 @@
-#include "headings.h"
-
 #ifndef MACADDR_H_
 #define MACADDR_H_
+
+#include <string>
+using std::string;
+#include <vector>
+using std::vector;
 
 struct EthernetDevInfo;
 

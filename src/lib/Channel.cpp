@@ -5,7 +5,6 @@
  *			Author: cryan
  */
 
-#include "headings.h"
 #include "Channel.h"
 
 Channel::Channel() : number{-1}, offset_{0.0}, scale_{1.0}, enabled_{true}, waveform_(0), trigDelay_{0}{}

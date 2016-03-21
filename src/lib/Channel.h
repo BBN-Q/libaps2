@@ -9,7 +9,18 @@
 #ifndef CHANNEL_H_
 #define CHANNEL_H_
 
-#include "headings.h"
+#include <vector>
+using std::vector;
+#include <cstddef> //size_t
+#include <cstdint> //fixed width integers
+#include <string>
+using std::string;
+#include <math.h> //ceil
+#include <algorithm> //max_element
+#include "H5Cpp.h"
+
+#include "constants.h"
+#include "helpers.h"
 
 class Channel {
 public:

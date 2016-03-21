@@ -1,4 +1,8 @@
+#include <arpa/inet.h>
+
 #include "APS2EthernetPacket.h"
+#include "constants.h"
+
 
 APS2EthernetPacket::APS2EthernetPacket() : header{{}, {}, APS_PROTO, 0, APS2Command(), 0}, payload(0){};
 

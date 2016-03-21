@@ -9,17 +9,20 @@
 #include <memory>
 #include <future>
 #include <chrono>
-
-#include "headings.h"
-#include "MACAddr.h"
-#include "APS2Datagram.h"
-#include "APS2EthernetPacket.h"
-#include "APS2_errno.h"
+#include <unordered_map>
+using std::unordered_map;
+#include <queue>
+using std::queue;
 
 #include "asio.hpp"
 #include <asio/use_future.hpp>
 using asio::ip::udp;
 using asio::ip::tcp;
+
+#include "MACAddr.h"
+#include "APS2Datagram.h"
+#include "APS2EthernetPacket.h"
+#include "APS2_errno.h"
 
 struct EthernetDevInfo {
 	MACAddr macAddr;
