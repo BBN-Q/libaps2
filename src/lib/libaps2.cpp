@@ -10,6 +10,7 @@
 #include "APS2.h"
 #include "APS2Ethernet.h"
 #include "asio.hpp"
+#include "version.hpp"
 
 weak_ptr<APS2Ethernet> ethernetRM; //resource manager for the asio ethernet interface
 map<string, std::unique_ptr<APS2>> APSs; //map to hold on to the APS instances
@@ -26,6 +27,7 @@ InitAndCleanUp::InitAndCleanUp() {
 	//Open the default log file
 	FILE* pFile = fopen("libaps2.log", "a");
 	Output2FILE::Stream() = pFile;
+	FILE_LOG(logINFO) << "libaps2 version: " << get_driver_version();
 }
 
 InitAndCleanUp::~InitAndCleanUp() {

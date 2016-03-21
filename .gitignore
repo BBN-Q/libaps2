@@ -1,3 +1,4 @@
 build/
 _build/
 debug/
+src/lib/version.hpp
