@@ -61,28 +61,3 @@ void print_title(const string & title){
 	cout << concol::BOLDMAGENTA << title << concol::RESET << endl;
 	cout << endl;
 }
-
-//Copy of APS2::print_firmware_version
-string print_firmware_version(uint32_t version_reg) {
-	std::ostringstream ret;
-
-	uint32_t minor = version_reg & 0xff;
-	uint32_t major = (version_reg >> 8) & 0xf;
-	uint32_t sha1_nibble = (version_reg >> 12) & 0xfffff;
-	string note;
-	switch (sha1_nibble) {
-		case 0x00000:
-			note = "";
-			break;
-		case 0x0000a:
-			note = "-dev";
-			break;
-		default:
-			std::ostringstream sha1;
-			sha1 << "-dev-" << std::hex << sha1_nibble;
-			note = sha1.str();
-			break;
-	}
-	ret << major << "." << minor << note;
-	return ret.str();
-}
