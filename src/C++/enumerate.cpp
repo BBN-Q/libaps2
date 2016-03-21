@@ -39,8 +39,9 @@ int main(int argc, char* argv[])
 			cout << concol::RED << "Failed to connect to " << serialBuffer[ct] << concol::RESET << endl;
 			continue;
 		}
-		uint32_t firmware_version{0};
-		get_firmware_version(serialBuffer[ct], &firmware_version);
+
+		char version_string[64];
+		get_firmware_version(serialBuffer[ct], nullptr, nullptr, nullptr, version_string);
 		double uptime{0};
 		get_uptime(serialBuffer[ct], &uptime);
 		std::chrono::duration<float> uptime_seconds(uptime);
@@ -60,7 +61,7 @@ int main(int argc, char* argv[])
 		uptime_pretty << std::fixed << std::setprecision(3) << uptime_seconds.count();
 
 		cout << concol::CYAN << "Device " << ct << " at IPv4 address " << serialBuffer[ct] <<
-		" running firmware version " << print_firmware_version(firmware_version) <<
+		" running firmware version " << version_string <<
 		" has been up " << uptime_pretty.str() << concol::RESET << endl;
 		disconnect_APS(serialBuffer[ct]);
 	}

@@ -155,9 +155,7 @@ APSStatusBank_t APS2::read_status_registers() {
 }
 
 uint32_t APS2::get_firmware_version() {
-	/*
-	* Return the board firmware encoded bottom 16 bits of the firmware register
-	*/
+	//Return the firmware version register value
 	uint32_t version;
 	if (legacy_firmware) {
 		// Reads version information from status registers
@@ -171,6 +169,16 @@ uint32_t APS2::get_firmware_version() {
 	FILE_LOG(logDEBUG) << ipAddr_ << " FPGA firmware version " << print_firmware_version(version);
 
 	return version;
+}
+
+uint32_t APS2::get_firmware_git_sha1() {
+	//Return the firmware version register value
+	return read_memory(FIRMWARE_GIT_SHA1_ADDR, 1)[0];
+}
+
+uint32_t APS2::get_firmware_build_timestamp() {
+	//Return the firmware version register value
+	return read_memory(FIRMWARE_BUILD_TIMESTAMP_ADDR, 1)[0];
 }
 
 double APS2::get_uptime(){

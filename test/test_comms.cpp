@@ -176,7 +176,7 @@ TEST_CASE("sequencer SDRAM write/read", "[sequencer SDRAM]") {
 	SECTION("basic write/read") {
 		//Older firmware is too slow for long write tests
 		uint32_t firmware_version;
-		get_firmware_version(ip_addr.c_str(), &firmware_version);
+		get_firmware_version(ip_addr.c_str(), &firmware_version, nullptr, nullptr, nullptr);
 		size_t testLength = ( (firmware_version & 0x00000fff) >= 0x300) ? (1 << 25) : (1 << 21);
 		bool passed;
 		//sequence
@@ -199,7 +199,7 @@ TEST_CASE("configuration SDRAM writing and reading", "[configuration SDRAM]") {
 
 	//Older firmware is too slow for long write tests
 	uint32_t firmware_version;
-	get_firmware_version(ip_addr.c_str(), &firmware_version);
+	get_firmware_version(ip_addr.c_str(), &firmware_version, nullptr, nullptr, nullptr);
 	size_t testLength = ( (firmware_version & 0x00000fff) >= 0x300) ? (1 << 22) : (1 << 18);
 	//write to configuration memory
 	auto test_vec = RandomHelpers::random_data(testLength/4);

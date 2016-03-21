@@ -216,31 +216,33 @@ enum CONFIGURATION_SOURCE {
 };
 
 // APS2 registers
-const uint32_t CSR_AXI_OFFSET          = 0x44A00000u;
-const uint32_t PLL_STATUS_ADDR         = CSR_AXI_OFFSET + 0*4;
-const uint32_t PHASE_COUNT_A_ADDR      = CSR_AXI_OFFSET + 1*4;
-const uint32_t PHASE_COUNT_B_ADDR      = CSR_AXI_OFFSET + 2*4;
-const uint32_t CACHE_STATUS_ADDR       = CSR_AXI_OFFSET + 3*4;
-const uint32_t CACHE_CONTROL_ADDR      = CSR_AXI_OFFSET + 4*4;
-const uint32_t WFA_OFFSET_ADDR         = CSR_AXI_OFFSET + 5*4;
-const uint32_t WFB_OFFSET_ADDR         = CSR_AXI_OFFSET + 6*4;
-const uint32_t SEQ_OFFSET_ADDR         = CSR_AXI_OFFSET + 7*4;
-const uint32_t RESETS_ADDR             = CSR_AXI_OFFSET + 8*4;
-const uint32_t SEQ_CONTROL_ADDR        = CSR_AXI_OFFSET + 9*4;
-const uint32_t ZERO_OUT_ADDR           = CSR_AXI_OFFSET + 10*4;
-const uint32_t TRIGGER_WORD_ADDR       = CSR_AXI_OFFSET + 11*4;
-const uint32_t TRIGGER_INTERVAL_ADDR   = CSR_AXI_OFFSET + 12*4;
-const uint32_t DAC_BIST_CHA_PH1_ADDR   = CSR_AXI_OFFSET + 13*4;
-const uint32_t DAC_BIST_CHA_PH2_ADDR   = CSR_AXI_OFFSET + 14*4;
-const uint32_t DAC_BIST_CHB_PH1_ADDR   = CSR_AXI_OFFSET + 15*4;
-const uint32_t DAC_BIST_CHB_PH2_ADDR   = CSR_AXI_OFFSET + 16*4;
-const uint32_t DMA_STATUS_ADDR         = CSR_AXI_OFFSET + 17*4;
-const uint32_t SATA_STATUS_ADDR        = CSR_AXI_OFFSET + 18*4;
-const uint32_t INIT_STATUS_ADDR        = CSR_AXI_OFFSET + 19*4;
-const uint32_t UPTIME_SECONDS_ADDR     = CSR_AXI_OFFSET + 20*4;
-const uint32_t UPTIME_NANOSECONDS_ADDR = CSR_AXI_OFFSET + 21*4;
-const uint32_t FIRMWARE_VERSION_ADDR   = CSR_AXI_OFFSET + 22*4;
-const uint32_t TEMPERATURE_ADDR        = CSR_AXI_OFFSET + 23*4;
+const uint32_t CSR_AXI_OFFSET                = 0x44A00000u;
+const uint32_t PLL_STATUS_ADDR               = CSR_AXI_OFFSET + 0*4;
+const uint32_t PHASE_COUNT_A_ADDR            = CSR_AXI_OFFSET + 1*4;
+const uint32_t PHASE_COUNT_B_ADDR            = CSR_AXI_OFFSET + 2*4;
+const uint32_t CACHE_STATUS_ADDR             = CSR_AXI_OFFSET + 3*4;
+const uint32_t CACHE_CONTROL_ADDR            = CSR_AXI_OFFSET + 4*4;
+const uint32_t WFA_OFFSET_ADDR               = CSR_AXI_OFFSET + 5*4;
+const uint32_t WFB_OFFSET_ADDR               = CSR_AXI_OFFSET + 6*4;
+const uint32_t SEQ_OFFSET_ADDR               = CSR_AXI_OFFSET + 7*4;
+const uint32_t RESETS_ADDR                   = CSR_AXI_OFFSET + 8*4;
+const uint32_t SEQ_CONTROL_ADDR              = CSR_AXI_OFFSET + 9*4;
+const uint32_t ZERO_OUT_ADDR                 = CSR_AXI_OFFSET + 10*4;
+const uint32_t TRIGGER_WORD_ADDR             = CSR_AXI_OFFSET + 11*4;
+const uint32_t TRIGGER_INTERVAL_ADDR         = CSR_AXI_OFFSET + 12*4;
+const uint32_t DAC_BIST_CHA_PH1_ADDR         = CSR_AXI_OFFSET + 13*4;
+const uint32_t DAC_BIST_CHA_PH2_ADDR         = CSR_AXI_OFFSET + 14*4;
+const uint32_t DAC_BIST_CHB_PH1_ADDR         = CSR_AXI_OFFSET + 15*4;
+const uint32_t DAC_BIST_CHB_PH2_ADDR         = CSR_AXI_OFFSET + 16*4;
+const uint32_t DMA_STATUS_ADDR               = CSR_AXI_OFFSET + 17*4;
+const uint32_t SATA_STATUS_ADDR              = CSR_AXI_OFFSET + 18*4;
+const uint32_t INIT_STATUS_ADDR              = CSR_AXI_OFFSET + 19*4;
+const uint32_t UPTIME_SECONDS_ADDR           = CSR_AXI_OFFSET + 20*4;
+const uint32_t UPTIME_NANOSECONDS_ADDR       = CSR_AXI_OFFSET + 21*4;
+const uint32_t FIRMWARE_VERSION_ADDR         = CSR_AXI_OFFSET + 22*4;
+const uint32_t FIRMWARE_GIT_SHA1_ADDR        = CSR_AXI_OFFSET + 23*4;
+const uint32_t FIRMWARE_BUILD_TIMESTAMP_ADDR = CSR_AXI_OFFSET + 24*4;
+const uint32_t TEMPERATURE_ADDR              = CSR_AXI_OFFSET + 25*4;
 
 // TDM registers
 const uint32_t TDM_RESETS_ADDR  = CSR_AXI_OFFSET + 0*4;

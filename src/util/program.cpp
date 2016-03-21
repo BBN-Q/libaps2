@@ -222,9 +222,9 @@ int main (int argc, char* argv[])
 				return -1;
 			}
 
-			uint32_t newVersion{0};
-			get_firmware_version(deviceSerial.c_str(), &newVersion);
-			cout << concol::RED << "Device came up with firmware version: " << print_firmware_version(newVersion) << endl;
+			char new_firmware_version[64];
+			get_firmware_version(deviceSerial.c_str(), nullptr, nullptr, nullptr, new_firmware_version);
+			cout << concol::RED << "Device came up with firmware version: " << new_firmware_version << endl;
 			break;
 		}
 

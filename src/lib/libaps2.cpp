@@ -194,8 +194,63 @@ APS2_STATUS init_APS(const char* deviceSerial, int forceReload) {
 	return aps2_call(deviceSerial, &APS2::init, bool(forceReload), 0);
 }
 
-APS2_STATUS get_firmware_version(const char* deviceSerial, uint32_t* version) {
-	return aps2_getter(deviceSerial, &APS2::get_firmware_version, version);
+APS2_STATUS get_firmware_version(const char* ipAddr, uint32_t* version, uint32_t* git_sha1, uint32_t* build_timestamp, char* version_string) {
+	APS2_STATUS status = APS2_OK;
+	if ( version != nullptr ) {
+		status = aps2_getter(ipAddr, &APS2::get_firmware_version, version);
+		if (status != APS2_OK) { return status; }
+	}
+	if ( git_sha1 != nullptr ) {
+		status = aps2_getter(ipAddr, &APS2::get_firmware_git_sha1, git_sha1);
+		if (status != APS2_OK) { return status; }
+	}
+	if ( build_timestamp != nullptr ) {
+		status = aps2_getter(ipAddr, &APS2::get_firmware_build_timestamp, build_timestamp);
+		if (status != APS2_OK) { return status; }
+	}
+	if ( version_string != nullptr ) {
+		uint32_t my_version;
+		uint32_t my_git_sha1;
+		uint32_t my_build_timestamp;
+		if ( version == nullptr ) {
+			status = aps2_getter(ipAddr, &APS2::get_firmware_version, &my_version);
+			if (status != APS2_OK) { return status; }
+		} else {
+			my_version = *version;
+		}
+		if ( git_sha1 == nullptr ) {
+			status = aps2_getter(ipAddr, &APS2::get_firmware_git_sha1, &my_git_sha1);
+			if (status != APS2_OK) { return status; }
+		} else {
+			my_git_sha1 = *git_sha1;
+		}
+		if ( build_timestamp == nullptr ) {
+			status = aps2_getter(ipAddr, &APS2::get_firmware_build_timestamp, &my_build_timestamp);
+			if (status != APS2_OK) { return status; }
+		} else {
+			my_build_timestamp = *build_timestamp;
+		}
+		//put together the version string
+		unsigned tag_minor = my_version & 0xff;
+		unsigned tag_major = (my_version >> 8) & 0xff;
+		unsigned commits_since = (my_version >> 16) & 0xfff;
+		bool is_dirty = ((my_version >> 28) & 0xf) == 0xd;
+		std::ostringstream version_stream;
+		version_stream << "v" << tag_major << "." << tag_minor;
+		if ( commits_since > 0 ) {
+			version_stream << "-" << commits_since << "-g" << std::hex << my_git_sha1 << std::dec;
+		}
+		if (is_dirty) {
+			version_stream << "-dirty";
+		}
+		unsigned year = (my_build_timestamp >> 24) & 0xff;
+		unsigned month = (my_build_timestamp >> 16) & 0xff;
+		unsigned day = (my_build_timestamp >> 8) & 0xff;
+		version_stream << " 20" << std::hex << year << "-" << month << "-" << day;
+		const string tmp_string = version_stream.str();
+		std::strcpy(version_string, tmp_string.c_str());
+	}
+	return status;
 }
 
 APS2_STATUS get_uptime(const char* deviceSerial, double* upTime) {

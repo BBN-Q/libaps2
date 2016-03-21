@@ -39,6 +39,8 @@ public:
 	uint32_t read_status_register(const STATUS_REGISTERS &);
 
 	uint32_t get_firmware_version();
+	uint32_t get_firmware_git_sha1();
+	uint32_t get_firmware_build_timestamp();
 	double get_uptime();
 	double get_fpga_temperature();
 
