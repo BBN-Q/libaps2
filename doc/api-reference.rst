@@ -74,11 +74,17 @@ Getter calls return the value in the appropriate pointer.
 	this procedure has already been run and return immediately. To force the
 	driver to run the initialization procedure, call with `force` = 1.
 
-`APS2_STATUS get_firmware_version(const char* deviceIP, uint32_t* version)`
+`APS2_STATUS get_firmware_version(const char* deviceIP, uint32_t* version, uint32_t* git_sha1, uint32_t* build_timestamp, char* version_string)`
 
-	Returns the version number of the currently loaded firmware. The major version
-	number is contained in bits 15-8, while the minor version number is in bits
-	7-0. So, a returned value of 513 indicates version 2.1.
+	`version` returns the version number of the currently loaded firmware. The
+	major version number is contained in bits 15-8, while the minor version number
+	is in bits 7-0. So, a returned value of 513 indicates version 2.1. Bits 28-16
+	give the number of commits since the tag and the top nibble set to d indicates
+	a dirty working tree. `git_sha1` is the first 8 hexadecimal digits of the git
+	SHA1 of the latest commit. `build_timestamp` is the build timestamp as a
+	hexadecimal string YYMMDDhh. The `version_string` will combine the previous
+	values into a human readable string similar to what is returned from `git
+	describe`. Pass a null pointer for any unused terms. 
 
 `APS2_STATUS get_uptime(const char* deviceIP, double* upTime)`
 
