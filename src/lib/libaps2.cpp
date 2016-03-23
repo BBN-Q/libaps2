@@ -9,11 +9,11 @@ using std::weak_ptr;
 #include <map>
 using std::map;
 
-#include "libaps2.h"
+#include "asio.hpp"
 #include "APS2.h"
 #include "APS2Ethernet.h"
-#include "asio.hpp"
 #include "version.hpp"
+#include "libaps2.h"
 
 weak_ptr<APS2Ethernet> ethernetRM; //resource manager for the asio ethernet interface
 map<string, std::unique_ptr<APS2>> APSs; //map to hold on to the APS instances
