@@ -72,7 +72,7 @@ classdef APS2 < handle
         end
 
         function [ver, ver_str, git_sha1, build_timestamp] = get_firmware_version(obj)
-            [status, ver, git_sha1, build_timestamp, ver_str] = calllib('libaps2', 'get_firmware_version', obj.ip_addr, 0, 0, 0, blanks(64));
+            [status, ~, ver, git_sha1, build_timestamp, ver_str] = calllib('libaps2', 'get_firmware_version', obj.ip_addr, 0, 0, 0, blanks(64));
             APS2.check_status(status);
         end
 
