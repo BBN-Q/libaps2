@@ -45,7 +45,7 @@ EXPORT APS2_STATUS disconnect_APS(const char*);
 EXPORT APS2_STATUS reset(const char*, APS2_RESET_MODE);
 EXPORT APS2_STATUS init_APS(const char*, int);
 
-EXPORT APS2_STATUS get_firmware_version(const char*, unsigned int*);
+EXPORT APS2_STATUS get_firmware_version(const char*, unsigned int*, unsigned int*, unsigned int*, char*);
 EXPORT APS2_STATUS get_uptime(const char*, double*);
 EXPORT APS2_STATUS get_fpga_temperature(const char*, double*);
 

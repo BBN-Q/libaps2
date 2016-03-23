@@ -71,11 +71,9 @@ classdef APS2 < handle
             aps2_call(obj, 'init_APS', force)
         end
 
-        function val = get_firmware_version(obj)
-            ver = aps2_getter(obj, 'get_firmware_version');
-            major_ver = bitshift(ver, -8);
-            minor_ver = bitand(ver, hex2dec('FF'));
-            val = sprintf('%d.%d', major_ver, minor_ver);
+        function [ver, ver_str, git_sha1, build_timestamp] = get_firmware_version(obj)
+            [status, ver, git_sha1, build_timestamp, ver_str] = calllib('libaps2', 'get_firmware_version', obj.ip_addr, 0, 0, 0, blanks(64));
+            APS2.check_status(status);
         end
 
         function val = get_uptime(obj)

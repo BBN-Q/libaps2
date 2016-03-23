@@ -132,6 +132,16 @@ end
 
 set_logging_level(level) = ccall((:set_logging_level, "libaps2"), APS2_STATUS, (Cint,), level)
 
+function get_firmware_version(aps::APS2)
+	ver = Ref{UInt32}(0)
+	git_sha1 = Ref{UInt32}(0)
+	build_timestamp = Ref{UInt32}(0)
+	ver_string = Array(UInt8, 64)
+	status = ccall((:get_firmware_version, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Ref{UInt32}, Ref{UInt32}, Ref{UInt32}, Ptr{UInt8}), string(aps.ip_addr), ver, git_sha1, build_timestamp, ver_string)
+	check_status(status)
+	return (ver[], git_sha1[], build_timestamp[], bytestring(pointer(ver_string)))
+end
+
 @aps2_getter get_firmware_version UInt32
 @aps2_getter get_uptime Float64
 @aps2_getter get_fpga_temperature Float64
