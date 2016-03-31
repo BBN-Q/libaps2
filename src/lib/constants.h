@@ -240,9 +240,9 @@ const uint32_t INIT_STATUS_ADDR              = CSR_AXI_OFFSET + 19*4;
 const uint32_t UPTIME_SECONDS_ADDR           = CSR_AXI_OFFSET + 20*4;
 const uint32_t UPTIME_NANOSECONDS_ADDR       = CSR_AXI_OFFSET + 21*4;
 const uint32_t FIRMWARE_VERSION_ADDR         = CSR_AXI_OFFSET + 22*4;
-const uint32_t FIRMWARE_GIT_SHA1_ADDR        = CSR_AXI_OFFSET + 23*4;
-const uint32_t FIRMWARE_BUILD_TIMESTAMP_ADDR = CSR_AXI_OFFSET + 24*4;
-const uint32_t TEMPERATURE_ADDR              = CSR_AXI_OFFSET + 25*4;
+const uint32_t TEMPERATURE_ADDR              = CSR_AXI_OFFSET + 23*4;
+const uint32_t FIRMWARE_GIT_SHA1_ADDR        = CSR_AXI_OFFSET + 24*4;
+const uint32_t FIRMWARE_BUILD_TIMESTAMP_ADDR = CSR_AXI_OFFSET + 25*4;
 
 // TDM registers
 const uint32_t TDM_RESETS_ADDR  = CSR_AXI_OFFSET + 0*4;
