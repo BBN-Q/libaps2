@@ -360,7 +360,7 @@ const vector<uint8_t> VCXO_INIT = {0x8, 0x60, 0x0, 0x4, 0x64, 0x91, 0x0, 0x61};
 // "waveform mode" sequence
 const vector<uint64_t> WF_SEQ = {
 	0x2100400000000000L, // WAIT for trig
-	0x0100000000000000L, // WFM
+	0x0d00000000000000L, // WFM broadcast to both engines and write flag high
 	0x6000000000000000L	// GOTO 0
 };
 
