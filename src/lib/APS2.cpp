@@ -386,19 +386,32 @@ bool APS2::get_channel_enabled(const int & dac) const{
 }
 
 void APS2::set_channel_offset(const int & dac, const float & offset){
-	//Update the waveform in driver
-	channels_[dac].set_offset(offset);
-	//Write to device if necessary
-	if (!channels_[dac].waveform_.empty()){
-		write_waveform(dac, channels_[dac].prep_waveform());
-	}
+	//Scale offset to Q0.13 fixed point
+	int16_t offset_fixed = offset * MAX_WF_AMP;
 
-	//Update TAZ register
-	set_offset_register(dac, channels_[dac].get_offset());
+	//read the current value
+	uint32_t val = read_memory(CHANNEL_OFFSET_ADDR, 1)[0];
+
+	//Overwrite the upper/lower word
+	if (dac == 0) {
+		//Top half
+		val = (static_cast<uint32_t>(offset_fixed) << 16) | (val & 0xffff);
+	} else {
+		//Bottom half
+		val = (val & 0xffff0000) | (offset_fixed & 0xffff);
+	}
+	write_memory(CHANNEL_OFFSET_ADDR, val);
 }
 
 float APS2::get_channel_offset(const int & dac) const{
-	return channels_[dac].get_offset();
+	//get register val
+	uint32_t val = read_memory(CHANNEL_OFFSET_ADDR, 1)[0];
+
+	//extract upper/lower half
+	int16_t offset_fixed = static_cast<int16_t>((dac == 0 ? val >> 16 : val) & 0xffff);
+
+	//covert back to float
+	return static_cast<float>(offset_fixed)/MAX_WF_AMP;
 }
 
 void APS2::set_channel_scale(const int & dac, const float & scale){
@@ -560,7 +573,7 @@ void APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
 	ethernetRM_->send(ipAddr_, dgs);
 }
 
-vector<uint32_t> APS2::read_memory(uint32_t addr, uint32_t numWords){
+vector<uint32_t> APS2::read_memory(uint32_t addr, uint32_t numWords) const{
 	//TODO: handle numWords that require mulitple requests
 
 	//Send the read request
@@ -1497,7 +1510,7 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	write_reg(0, regVal);
 
 	// Step 2: set the zero register to 0x0000 for signed data (note inconsistency between page 44 and 45 of manual)
-	set_offset_register(dac, 0);
+	set_channel_offset(dac, 0);
 
 	// Step 3 and 4 : run data clock for 16 cycles -- should happen with ethernet latency for free
 
@@ -1575,30 +1588,6 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 
 	bool passed = (readResults[0] == phase2BIST) && (readResults[1] == phase1BIST) && (readResults[2] == phase2BIST) && (readResults[3] == phase1BIST) && (readResults[4] == phase2BIST) && (readResults[5] == phase1BIST);
 	return passed;
-}
-
-int APS2::set_offset_register(const int & dac, const float & offset) {
-	/* APS2::set_offset_register
-	 * Write the zero register for the associated channel
-	 * offset - offset in normalized full range (-1, 1)
-	 */
-	int16_t scaledOffset = offset * MAX_WF_AMP;
-	FILE_LOG(logINFO) << ipAddr_ << " setting DAC " << dac << "	zero register to " << scaledOffset;
-
-	//Read current value
-	uint32_t val = read_memory(ZERO_OUT_ADDR, 1)[0];
-
-	//Overwrite the correct bits
-	if (dac == 0) {
-		//Top bits
-		val = (static_cast<uint32_t>(scaledOffset) << 16) | (val & 0xffff);
-	} else {
-		//Bottom bits
-		val = (val & 0xffff0000) | (scaledOffset & 0xffff);
-	}
-
-	write_memory(ZERO_OUT_ADDR, val);
-	return 0;
 }
 
 void APS2::set_bit(const uint32_t & addr, std::initializer_list<int> bits) {

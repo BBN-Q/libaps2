@@ -61,7 +61,6 @@ public:
 	float get_channel_offset(const int &) const;
 	void set_channel_scale(const int &, const float &);
 	float get_channel_scale(const int &) const;
-	int set_offset_register(const int &, const float &);
 
 	template <typename T>
 	void set_waveform(const int & dac, const vector<T> & data){
@@ -97,7 +96,7 @@ public:
 	//Memory read/write
 	void write_memory(const uint32_t & addr, const vector<uint32_t> & data);
 	void write_memory(const uint32_t & addr, const uint32_t & data);
-	vector<uint32_t> read_memory(uint32_t, uint32_t);
+	vector<uint32_t> read_memory(uint32_t, uint32_t) const;
 
 	//SPI read/write
 	void write_SPI(vector<uint32_t> &);
