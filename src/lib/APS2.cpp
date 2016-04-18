@@ -377,15 +377,15 @@ void APS2::load_sequence_file(const string & seqFile){
 	}
 }
 
-void APS2::set_channel_enabled(const int & dac, const bool & enable){
+void APS2::set_channel_enabled(int dac, bool enable){
 	channels_[dac].set_enabled(enable);
 }
 
-bool APS2::get_channel_enabled(const int & dac) const{
+bool APS2::get_channel_enabled(int dac) const{
 	return channels_[dac].get_enabled();
 }
 
-void APS2::set_channel_offset(const int & dac, const float & offset){
+void APS2::set_channel_offset(int dac, float offset){
 	//Scale offset to Q0.13 fixed point
 	int16_t offset_fixed = offset * MAX_WF_AMP;
 
@@ -403,7 +403,7 @@ void APS2::set_channel_offset(const int & dac, const float & offset){
 	write_memory(CHANNEL_OFFSET_ADDR, val);
 }
 
-float APS2::get_channel_offset(const int & dac) const{
+float APS2::get_channel_offset(int dac) const{
 	//get register val
 	uint32_t val = read_memory(CHANNEL_OFFSET_ADDR, 1)[0];
 
@@ -421,7 +421,9 @@ void APS2::set_channel_scale(const int & dac, const float & scale){
 	}
 }
 
-float APS2::get_channel_scale(const int & dac) const{
+
+
+float APS2::get_channel_scale(int dac) const{
 	return channels_[dac].get_scale();
 }
 

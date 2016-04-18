@@ -55,12 +55,12 @@ public:
 	double get_trigger_interval();
 	void trigger();
 
-	void set_channel_enabled(const int &, const bool &);
-	bool get_channel_enabled(const int &) const;
-	void set_channel_offset(const int &, const float &);
-	float get_channel_offset(const int &) const;
-	void set_channel_scale(const int &, const float &);
-	float get_channel_scale(const int &) const;
+	void set_channel_enabled(int, bool);
+	bool get_channel_enabled(int) const;
+	void set_channel_offset(int, float);
+	float get_channel_offset(int) const;
+	void set_channel_scale(int, float);
+	float get_channel_scale(int) const;
 
 	template <typename T>
 	void set_waveform(const int & dac, const vector<T> & data){
