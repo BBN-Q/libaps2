@@ -414,17 +414,43 @@ float APS2::get_channel_offset(int dac) const{
 	return static_cast<float>(offset_fixed)/MAX_WF_AMP;
 }
 
-void APS2::set_channel_scale(const int & dac, const float & scale){
-	channels_[dac].set_scale(scale);
-	if (!channels_[dac].waveform_.empty()){
-		write_waveform(dac, channels_[dac].prep_waveform());
-	}
+void APS2::set_channel_scale(int dac, float scale){
+	//write register for future getting
+	uint32_t reg_addr = dac == 0 ? CHANNEL_A_SCALE_ADDR : CHANNEL_B_SCALE_ADDR;
+	write_memory(reg_addr, static_cast<uint32_t>(scale));
+
+	//update correction matrix
+	update_correction_matrix();
 }
 
-
-
 float APS2::get_channel_scale(int dac) const{
-	return channels_[dac].get_scale();
+	//get register value
+	uint32_t reg_addr = dac == 0 ? CHANNEL_A_SCALE_ADDR : CHANNEL_B_SCALE_ADDR;
+	uint32_t val = read_memory(reg_addr, 1)[0];
+	//convert back to float
+	return static_cast<float>(val);
+}
+
+void APS2::update_correction_matrix() {
+	//Update the 2x2 correction matrix assuming an mixer amplitude imbalance, phase skew and independent channel scales
+	// [i_scale, 0;0, q_scale] * [amp, amp*tan(phi); 0, 1/cos(phi)] = [i_scale*amp, i_scale*amp*tan(phi); 0, q_scale*1/cos(phi)]}
+	float amp_imbalance = static_cast<float>(read_memory(MIXER_AMP_IMBALANCE_ADDR, 1)[0]);
+	float phase_skew = static_cast<float>(read_memory(MIXER_PHASE_SKEW_ADDR, 1)[0]);
+	float i_scale = static_cast<float>(read_memory(CHANNEL_A_SCALE_ADDR, 1)[0]);
+	float q_scale = static_cast<float>(read_memory(CHANNEL_B_SCALE_ADDR, 1)[0]);
+
+	//calculate matrix terms and convert to Q2.13 fixed point
+	int32_t correction_matrix_00 = static_cast<int32_t>(i_scale* amp_imbalance * MAX_WF_AMP);
+	int32_t correction_matrix_01 = static_cast<int32_t>(i_scale* amp_imbalance * tan(phase_skew) * MAX_WF_AMP);
+	int32_t correction_matrix_10 = 0;
+	int32_t correction_matrix_11 = static_cast<int32_t>(q_scale/cos(phase_skew) * MAX_WF_AMP);
+
+	//Slot into registers and write to memory
+	uint32_t row0, row1;
+	row0 = (correction_matrix_00 << 16) | (correction_matrix_01 & 0xffff );
+	write_memory(CORRECTION_MATRIX_ROW0_ADDR, row0);
+	row1 = (correction_matrix_10 << 16) | (correction_matrix_11 & 0xffff );
+	write_memory(CORRECTION_MATRIX_ROW0_ADDR, row1);
 }
 
 void APS2::set_markers(const int & dac, const vector<uint8_t> & data) {

@@ -21,7 +21,7 @@ const int MAX_APS_CHANNELS = 2;
 const int APS_WAVEFORM_UNIT_LENGTH = 4;
 
 const int MAX_WF_LENGTH = 131072;
-const int MAX_WF_AMP = 8191;
+const int MAX_WF_AMP = (1 << 13) - 1; //14 bit signed DAC
 const int WF_MODULUS = 4;
 const size_t MAX_LL_LENGTH = (1 << 24);
 
@@ -243,6 +243,13 @@ const uint32_t FIRMWARE_VERSION_ADDR         = CSR_AXI_OFFSET + 22*4;
 const uint32_t TEMPERATURE_ADDR              = CSR_AXI_OFFSET + 23*4;
 const uint32_t FIRMWARE_GIT_SHA1_ADDR        = CSR_AXI_OFFSET + 24*4;
 const uint32_t FIRMWARE_BUILD_TIMESTAMP_ADDR = CSR_AXI_OFFSET + 25*4;
+const uint32_t CORRECTION_MATRIX_ROW0_ADDR   = CSR_AXI_OFFSET + 26*4;
+const uint32_t CORRECTION_MATRIX_ROW1_ADDR   = CSR_AXI_OFFSET + 27*4;
+const uint32_t CHANNEL_A_SCALE_ADDR          = CSR_AXI_OFFSET + 28*4;
+const uint32_t CHANNEL_B_SCALE_ADDR          = CSR_AXI_OFFSET + 29*4;
+const uint32_t MIXER_AMP_IMBALANCE_ADDR      = CSR_AXI_OFFSET + 30*4;
+const uint32_t MIXER_PHASE_SKEW_ADDR         = CSR_AXI_OFFSET + 31*4;
+const uint32_t WAVEFORM_LENGTH_ADDR          = CSR_AXI_OFFSET + 32*4;
 
 // TDM registers
 const uint32_t TDM_RESETS_ADDR  = CSR_AXI_OFFSET + 0*4;
@@ -359,6 +366,7 @@ const vector<uint8_t> VCXO_INIT = {0x8, 0x60, 0x0, 0x4, 0x64, 0x91, 0x0, 0x61};
 
 // "waveform mode" sequence
 const vector<uint64_t> WF_SEQ = {
+	0xa100610000000000L, //set NCO 0 frequency
 	0x2100400000000000L, // WAIT for trig
 	0x0d00000000000000L, // WFM broadcast to both engines and write flag high
 	0x6000000000000000L	// GOTO 0

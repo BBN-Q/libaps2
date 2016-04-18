@@ -62,6 +62,12 @@ public:
 	void set_channel_scale(int, float);
 	float get_channel_scale(int) const;
 
+	void set_mixer_amplitude_imbalance(float);
+	float get_mixer_amplitud_imbalance();
+	void set_mixer_phase_skew(float);
+	float get_mixer_phase_skew();
+	void update_correction_matrix();
+
 	template <typename T>
 	void set_waveform(const int & dac, const vector<T> & data){
 		channels_[dac].set_waveform(data);
