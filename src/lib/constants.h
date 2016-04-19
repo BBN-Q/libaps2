@@ -377,9 +377,9 @@ const vector<uint64_t> WF_SEQ_TRIG = {
 
 const vector<uint64_t> WF_SEQ_CW = {
 	0xa100610000000000L, // set NCO 0 frequency
-	0x9100400000000000L, // WAIT for sync to implement NCO frequency update
+	0x9100800000000000L, // WAIT for sync to implement NCO frequency update
 	//insert waveform instructions here
-	0x6000000000000001L	//  GOTO 2 for continuous WF output
+	0x6000000000000002L	//  GOTO 2 for continuous WF output
 };
 
 #endif /* CONSTANTS_H_ */

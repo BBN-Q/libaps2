@@ -579,6 +579,7 @@ APS2_RUN_STATE APS2::get_runState(){
 void APS2::set_run_mode(const APS2_RUN_MODE & mode) {
 	FILE_LOG(logDEBUG) << ipAddr_ << " setting run mode to " << mode;
 
+	//If necessary pull the correct instruction sequence scaffold
 	vector<uint64_t> instructions;
 	switch (mode) {
 		case RUN_SEQUENCE:
@@ -608,26 +609,26 @@ void APS2::set_run_mode(const APS2_RUN_MODE & mode) {
 	auto goto_entry = std::prev(instructions.end());
 	if ( wf_length_a == wf_length_b ) {
 		//single broadcast wf instruction with write flag high
-		instructions.insert(goto_entry, 0x0d00000000000000L | (wf_length_a << 24));
+		instructions.insert(goto_entry, 0x0d00000000000000L | ((wf_length_a/4 -1) << 24));
 	}
 	else if ( wf_length_b == 0 ) {
 		//single wf instruction to a with write flag high
-		instructions.insert(goto_entry, 0x0500000000000000L | (wf_length_a << 24));
+		instructions.insert(goto_entry, 0x0500000000000000L | ((wf_length_a/4 -1) << 24));
 	}
 	else if ( wf_length_a == 0 ) {
 		//single wf instruction to b with write flag high
-		instructions.insert(goto_entry, 0x0900000000000000L | (wf_length_b << 24));
+		instructions.insert(goto_entry, 0x0900000000000000L | ((wf_length_b/4 -1) << 24));
 	}
 	else {
 		//wf instruction to with write flag low; wf insruction to b with write flag high
-		instructions.insert(goto_entry, 0x0400000000000000L | (wf_length_a << 24));
+		instructions.insert(goto_entry, 0x0400000000000000L | ((wf_length_a/4 -1) << 24));
 		goto_entry = std::prev(instructions.end());
-		instructions.insert(goto_entry, 0x0900000000000000L | (wf_length_b << 24));
+		instructions.insert(goto_entry, 0x0900000000000000L | ((wf_length_b/4 -1) << 24));
 	}
 
 	FILE_LOG(logDEBUG2) << ipAddr_ << " writing waveform mode sequence:";
 	for (auto instr : instructions) {
-		FILE_LOG(logDEBUG2) << hexn<16> << instr;
+		FILE_LOG(logDEBUG2) << "\t" << hexn<16> << instr;
 	}
 	write_sequence(instructions);
 }
@@ -1706,7 +1707,6 @@ void APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
 	 * ch = channel (0-1)
 	 * wfData = bits 0-13: signed 14-bit waveform data, bits 14-15: marker data
 	 */
-
 
 	// disable cache
 	write_memory(CACHE_CONTROL_ADDR, 0);
