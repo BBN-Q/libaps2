@@ -63,7 +63,7 @@ public:
 	float get_channel_scale(int) const;
 
 	void set_mixer_amplitude_imbalance(float);
-	float get_mixer_amplitud_imbalance();
+	float get_mixer_amplitude_imbalance();
 	void set_mixer_phase_skew(float);
 	float get_mixer_phase_skew();
 	void update_correction_matrix();

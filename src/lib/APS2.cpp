@@ -418,17 +418,38 @@ void APS2::set_channel_scale(int dac, float scale){
 	//write register for future getting
 	uint32_t reg_addr = dac == 0 ? CHANNEL_A_SCALE_ADDR : CHANNEL_B_SCALE_ADDR;
 	write_memory(reg_addr, reinterpret_cast<uint32_t&>(scale));
-
 	//update correction matrix
 	update_correction_matrix();
 }
 
 float APS2::get_channel_scale(int dac) const{
-	//get register value
+	//get register value and convert back to float
 	uint32_t reg_addr = dac == 0 ? CHANNEL_A_SCALE_ADDR : CHANNEL_B_SCALE_ADDR;
-	uint32_t val = read_memory(reg_addr, 1)[0];
-	//convert back to float
-	return reinterpret_cast<float&>(val);
+	return reinterpret_cast<float&>(read_memory(reg_addr, 1)[0]);
+}
+
+void APS2::set_mixer_amplitude_imbalance(float amp) {
+	//write register for future getting
+	write_memory(MIXER_AMP_IMBALANCE_ADDR, reinterpret_cast<uint32_t&>(amp));
+	//update correction matrix
+	update_correction_matrix();
+}
+
+float APS2::get_mixer_amplitude_imbalance() {
+	//get register value and convert back to float
+	return reinterpret_cast<float&>(read_memory(MIXER_AMP_IMBALANCE_ADDR, 1)[0]);
+}
+
+void APS2::set_mixer_phase_skew(float skew) {
+	//write register for future getting
+	write_memory(MIXER_PHASE_SKEW_ADDR, reinterpret_cast<uint32_t&>(skew));
+	//update correction matrix
+	update_correction_matrix();
+}
+
+float APS2::get_mixer_phase_skew() {
+	//get register value and convert back to float
+	return reinterpret_cast<float&>(read_memory(MIXER_PHASE_SKEW_ADDR, 1)[0]);
 }
 
 void APS2::update_correction_matrix() {
@@ -440,8 +461,8 @@ void APS2::update_correction_matrix() {
 	float q_scale = reinterpret_cast<float&>(read_memory(CHANNEL_B_SCALE_ADDR, 1)[0]);
 
 	//calculate matrix terms and convert to Q2.13 fixed point
-	int32_t correction_matrix_00 = static_cast<int32_t>(i_scale* amp_imbalance * MAX_WF_AMP);
-	int32_t correction_matrix_01 = static_cast<int32_t>(i_scale* amp_imbalance * tan(phase_skew) * MAX_WF_AMP);
+	int32_t correction_matrix_00 = static_cast<int32_t>(i_scale * amp_imbalance * MAX_WF_AMP);
+	int32_t correction_matrix_01 = static_cast<int32_t>(i_scale * amp_imbalance * tan(phase_skew) * MAX_WF_AMP);
 	int32_t correction_matrix_10 = 0;
 	int32_t correction_matrix_11 = static_cast<int32_t>(q_scale/cos(phase_skew) * MAX_WF_AMP);
 
