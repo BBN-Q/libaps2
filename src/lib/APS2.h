@@ -9,6 +9,7 @@
 
 #include <memory>
 using std::shared_ptr;
+#include <assert.h>
 
 #include "APS2Ethernet.h"
 #include "Channel.h"
@@ -59,6 +60,10 @@ public:
 	bool get_channel_enabled(int) const;
 	void set_channel_offset(int, float);
 	float get_channel_offset(int) const;
+
+	//the next six functions assume we can store a float in a 4 byte register on the device
+	static_assert(sizeof(float) == 4, "libaps2 assumes it can store a float in 4 bytes");
+
 	void set_channel_scale(int, float);
 	float get_channel_scale(int) const;
 
