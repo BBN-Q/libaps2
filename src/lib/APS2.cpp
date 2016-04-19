@@ -416,7 +416,7 @@ float APS2::get_channel_offset(int dac) const{
 
 void APS2::set_channel_scale(int dac, float scale){
 	//write register for future getting
-	uint32_t reg_addr = dac == 0 ? CHANNEL_A_SCALE_ADDR : CHANNEL_B_SCALE_ADDR;
+	uint32_t reg_addr = dac == 0 ? CH_A_SCALE_ADDR : CH_B_SCALE_ADDR;
 	write_memory(reg_addr, reinterpret_cast<uint32_t&>(scale));
 	//update correction matrix
 	update_correction_matrix();
@@ -424,7 +424,7 @@ void APS2::set_channel_scale(int dac, float scale){
 
 float APS2::get_channel_scale(int dac) const{
 	//get register value and convert back to float
-	uint32_t reg_addr = dac == 0 ? CHANNEL_A_SCALE_ADDR : CHANNEL_B_SCALE_ADDR;
+	uint32_t reg_addr = dac == 0 ? CH_A_SCALE_ADDR : CH_B_SCALE_ADDR;
 	return reinterpret_cast<float&>(read_memory(reg_addr, 1)[0]);
 }
 
@@ -457,8 +457,8 @@ void APS2::update_correction_matrix() {
 	// [i_scale, 0;0, q_scale] * [amp, amp*tan(phi); 0, 1/cos(phi)] = [i_scale*amp, i_scale*amp*tan(phi); 0, q_scale*1/cos(phi)]}
 	float amp_imbalance = reinterpret_cast<float&>(read_memory(MIXER_AMP_IMBALANCE_ADDR, 1)[0]);
 	float phase_skew = reinterpret_cast<float&>(read_memory(MIXER_PHASE_SKEW_ADDR, 1)[0]);
-	float i_scale = reinterpret_cast<float&>(read_memory(CHANNEL_A_SCALE_ADDR, 1)[0]);
-	float q_scale = reinterpret_cast<float&>(read_memory(CHANNEL_B_SCALE_ADDR, 1)[0]);
+	float i_scale = reinterpret_cast<float&>(read_memory(CH_A_SCALE_ADDR, 1)[0]);
+	float q_scale = reinterpret_cast<float&>(read_memory(CH_B_SCALE_ADDR, 1)[0]);
 
 	//calculate matrix terms and convert to Q2.13 fixed point
 	int32_t correction_matrix_00 = static_cast<int32_t>(i_scale * amp_imbalance * MAX_WF_AMP);
@@ -579,27 +579,73 @@ APS2_RUN_STATE APS2::get_runState(){
 void APS2::set_run_mode(const APS2_RUN_MODE & mode) {
 	FILE_LOG(logDEBUG) << ipAddr_ << " setting run mode to " << mode;
 
-	vector<uint64_t> instructions = WF_SEQ;
-	// inject waveform length into the instruction
-	size_t wfCount = (std::max(channels_[0].get_length(), channels_[1].get_length()) / 4) - 1;
-	FILE_LOG(logDEBUG2) << ipAddr_ <<  " setting WFM instruction count = " << wfCount;
-	instructions[1] |= wfCount << 24;
+	vector<uint64_t> instructions;
 	switch (mode) {
 		case RUN_SEQUENCE:
 			// don't need to do anything... already there
-			break;
+			return;
 		case TRIG_WAVEFORM:
-			write_sequence(instructions);
+			instructions = WF_SEQ_TRIG;
 			break;
 		case CW_WAVEFORM:
-			// remove the WAIT instruction
-			instructions.erase(instructions.begin());
-			write_sequence(instructions);
+			instructions = WF_SEQ_CW;
 			break;
 		default:
 			// unknown mode
 			throw APS2_UNKNOWN_RUN_MODE;
 	}
+	//set SSB frequency
+	instructions[0] |= read_memory(WF_SSB_FREQ_ADDR, 1)[0];
+
+	// inject waveform lengths into the instructions
+	size_t wf_length_a, wf_length_b;
+	wf_length_a = read_memory(CH_A_WF_LENGTH_ADDR, 1)[0];
+	wf_length_b = read_memory(CH_B_WF_LENGTH_ADDR, 1)[0];
+	if ((wf_length_a == 0) && (wf_length_b == 0)) {
+		throw APS2_NO_WFS;
+	}
+	//get insertion point before end
+	auto goto_entry = std::prev(instructions.end());
+	if ( wf_length_a == wf_length_b ) {
+		//single broadcast wf instruction with write flag high
+		instructions.insert(goto_entry, 0x0d00000000000000L | (wf_length_a << 24));
+	}
+	else if ( wf_length_b == 0 ) {
+		//single wf instruction to a with write flag high
+		instructions.insert(goto_entry, 0x0500000000000000L | (wf_length_a << 24));
+	}
+	else if ( wf_length_a == 0 ) {
+		//single wf instruction to b with write flag high
+		instructions.insert(goto_entry, 0x0900000000000000L | (wf_length_b << 24));
+	}
+	else {
+		//wf instruction to with write flag low; wf insruction to b with write flag high
+		instructions.insert(goto_entry, 0x0400000000000000L | (wf_length_a << 24));
+		goto_entry = std::prev(instructions.end());
+		instructions.insert(goto_entry, 0x0900000000000000L | (wf_length_b << 24));
+	}
+
+	FILE_LOG(logDEBUG2) << ipAddr_ << " writing waveform mode sequence:";
+	for (auto instr : instructions) {
+		FILE_LOG(logDEBUG2) << hexn<16> << instr;
+	}
+	write_sequence(instructions);
+}
+
+void APS2::set_waveform_frequency(float freq){
+	//frequency gets converted to portion of circle per 300MHz clock cycle in range [-0.5, 0.5)
+	if (abs(freq) > 150e6) {
+		throw APS2_WAVEFORM_FREQ_OVERFLOW;
+	}
+	int32_t freq_increment = static_cast<int32_t>(freq * (1/300e6) * (1 << 28));
+	FILE_LOG(logDEBUG2) << ipAddr_ << " writing waveform frequency increment: " << freq_increment;
+	write_memory(WF_SSB_FREQ_ADDR, freq_increment);
+}
+
+float APS2::get_waveform_frequency(){
+	//frequency gets converted to portion of circle per 300MHz clock cycle in range [-0.5, 0.5)
+	int32_t freq_increment = static_cast<int32_t>(read_memory(WF_SSB_FREQ_ADDR, 1)[0]);
+	return static_cast<float>(freq_increment) / (1 << 28) * 300e6;
 }
 
 // FPGA memory read/write
@@ -1661,17 +1707,22 @@ void APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
 	 * wfData = bits 0-13: signed 14-bit waveform data, bits 14-15: marker data
 	 */
 
-	uint32_t startAddr = (ch == 0) ? MEMORY_ADDR+WFA_OFFSET : MEMORY_ADDR+WFB_OFFSET;
 
 	// disable cache
 	write_memory(CACHE_CONTROL_ADDR, 0);
 
+	//write the data
+	uint32_t startAddr = (ch == 0) ? MEMORY_ADDR+WFA_OFFSET : MEMORY_ADDR+WFB_OFFSET;
 	FILE_LOG(logDEBUG2) << ipAddr_ << " loading waveform of length " << wfData.size() << " at address " << hexn<8> << startAddr;
 	vector<uint32_t> packedData;
 	for (size_t ct=0; ct < wfData.size(); ct += 2) {
 		packedData.push_back(((uint32_t)wfData[ct] << 16) | (uint16_t)wfData[ct+1]);
 	}
 	write_memory(startAddr, packedData);
+
+	//write the length register
+	uint32_t length_addr = (ch == 0) ? CH_A_WF_LENGTH_ADDR : CH_B_WF_LENGTH_ADDR;
+	write_memory(length_addr, wfData.size());
 
 	// enable cache
 	write_memory(CACHE_CONTROL_ADDR, 1);

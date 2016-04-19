@@ -82,6 +82,8 @@ public:
 	void set_markers(const int &, const vector<uint8_t> &);
 
 	void set_run_mode(const APS2_RUN_MODE &);
+	void set_waveform_frequency(float);
+	float get_waveform_frequency();
 
 	void write_sequence(const vector<uint64_t> &);
 	void clear_channel_data();

@@ -245,11 +245,13 @@ const uint32_t FIRMWARE_GIT_SHA1_ADDR        = CSR_AXI_OFFSET + 24*4;
 const uint32_t FIRMWARE_BUILD_TIMESTAMP_ADDR = CSR_AXI_OFFSET + 25*4;
 const uint32_t CORRECTION_MATRIX_ROW0_ADDR   = CSR_AXI_OFFSET + 26*4;
 const uint32_t CORRECTION_MATRIX_ROW1_ADDR   = CSR_AXI_OFFSET + 27*4;
-const uint32_t CHANNEL_A_SCALE_ADDR          = CSR_AXI_OFFSET + 28*4;
-const uint32_t CHANNEL_B_SCALE_ADDR          = CSR_AXI_OFFSET + 29*4;
+const uint32_t CH_A_SCALE_ADDR               = CSR_AXI_OFFSET + 28*4;
+const uint32_t CH_B_SCALE_ADDR               = CSR_AXI_OFFSET + 29*4;
 const uint32_t MIXER_AMP_IMBALANCE_ADDR      = CSR_AXI_OFFSET + 30*4;
 const uint32_t MIXER_PHASE_SKEW_ADDR         = CSR_AXI_OFFSET + 31*4;
-const uint32_t WAVEFORM_LENGTH_ADDR          = CSR_AXI_OFFSET + 32*4;
+const uint32_t CH_A_WF_LENGTH_ADDR           = CSR_AXI_OFFSET + 32*4;
+const uint32_t CH_B_WF_LENGTH_ADDR           = CSR_AXI_OFFSET + 33*4;
+const uint32_t WF_SSB_FREQ_ADDR              = CSR_AXI_OFFSET + 34*4;
 
 // TDM registers
 const uint32_t TDM_RESETS_ADDR  = CSR_AXI_OFFSET + 0*4;
@@ -365,11 +367,19 @@ const vector<SPI_AddrData_t> PLL_CLEAR_CAL_FLAG = {
 const vector<uint8_t> VCXO_INIT = {0x8, 0x60, 0x0, 0x4, 0x64, 0x91, 0x0, 0x61};
 
 // "waveform mode" sequence
-const vector<uint64_t> WF_SEQ = {
-	0xa100610000000000L, //set NCO 0 frequency
+const vector<uint64_t> WF_SEQ_TRIG = {
+	0xa100610000000000L, // set NCO 0 frequency
+	0xa100210000000000L, // reset phase
 	0x2100400000000000L, // WAIT for trig
-	0x0d00000000000000L, // WFM broadcast to both engines and write flag high
-	0x6000000000000000L	// GOTO 0
+	//insert waveform instructions here
+	0x6000000000000001L	//  GOTO 1 to reset phase and wait for trigger again
+};
+
+const vector<uint64_t> WF_SEQ_CW = {
+	0xa100610000000000L, // set NCO 0 frequency
+	0x9100400000000000L, // WAIT for sync to implement NCO frequency update
+	//insert waveform instructions here
+	0x6000000000000001L	//  GOTO 2 for continuous WF output
 };
 
 #endif /* CONSTANTS_H_ */
