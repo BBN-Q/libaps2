@@ -1716,7 +1716,7 @@ void APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
 	FILE_LOG(logDEBUG2) << ipAddr_ << " loading waveform of length " << wfData.size() << " at address " << hexn<8> << startAddr;
 	vector<uint32_t> packedData;
 	for (size_t ct=0; ct < wfData.size(); ct += 2) {
-		packedData.push_back(((uint32_t)wfData[ct] << 16) | (uint16_t)wfData[ct+1]);
+		packedData.push_back(((uint32_t)wfData[ct+1] << 16) | (uint16_t)wfData[ct]);
 	}
 	write_memory(startAddr, packedData);
 
