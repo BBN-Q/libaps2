@@ -13,6 +13,8 @@ export APS2,
 	stop,
 	trigger,
 	set_run_mode,
+	set_waveform_frequency,
+	get_waveform_frequency,
 	set_trigger_source,
 	get_trigger_source,
 	set_trigger_interval,
@@ -150,6 +152,8 @@ end
 @aps2_call stop
 
 @aps2_setter set_run_mode Cint
+@aps2_setter set_waveform_frequency Float32
+@aps2_getter get_waveform_frequency Float32
 
 @aps2_setter set_channel_offset Float32
 @aps2_getter get_channel_offset Float32

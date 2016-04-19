@@ -392,6 +392,14 @@ APS2_STATUS set_run_mode(const char* deviceSerial, APS2_RUN_MODE mode) {
 	return aps2_call(deviceSerial, &APS2::set_run_mode, mode);
 }
 
+APS2_STATUS set_waveform_frequency(const char* deviceSerial, float freq) {
+	return aps2_call(deviceSerial, &APS2::set_waveform_frequency, freq);
+}
+
+APS2_STATUS get_waveform_frequency(const char* deviceSerial, float* freq) {
+	return aps2_getter(deviceSerial, &APS2::get_waveform_frequency, freq);
+}
+
 APS2_STATUS write_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {
 	return aps2_call(deviceSerial,
 						static_cast<void(APS2::*)(const uint32_t&, const vector<uint32_t>&)>(&APS2::write_memory),

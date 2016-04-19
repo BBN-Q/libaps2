@@ -141,6 +141,14 @@ classdef APS2 < handle
             aps2_call(obj, 'set_run_mode', runMode);
         end
 
+        function set_waveform_frequency(obj, freq)
+            aps2_call(obj, 'set_waveform_frequency', freq);
+        end
+
+        function val = get_waveform_frequency(obj)
+            val = aps2_getter(obj, 'get_waveform_frequency');
+        end
+        
         % channel methods
         function val = get_channel_offset(obj, channel)
             val = aps2_getter(obj, 'get_channel_offset', channel-1);

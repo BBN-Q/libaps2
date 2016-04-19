@@ -72,6 +72,8 @@ EXPORT APS2_STATUS set_markers(const char*, int, char*, int);
 EXPORT APS2_STATUS write_sequence(const char*, uint64_t*, unsigned int);
 
 EXPORT APS2_STATUS set_run_mode(const char*, APS2_RUN_MODE);
+EXPORT APS2_STATUS set_waveform_frequency(const char*, float);
+EXPORT APS2_STATUS get_waveform_frequency(const char*, float*);
 
 EXPORT APS2_STATUS load_sequence_file(const char*, const char*);
 
