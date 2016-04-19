@@ -29,8 +29,6 @@ public:
 	~Channel();
 	int number;
 
-	int set_scale(const float &);
-	float get_scale() const;
 	int set_enabled(const bool &);
 	bool get_enabled() const;
 	size_t get_length() const;
@@ -49,7 +47,6 @@ public:
 	friend class BankBouncerThread;
 
 private:
-	float scale_;
 	bool enabled_;
 	vector<float> waveform_;
 	vector<uint8_t> markers_;

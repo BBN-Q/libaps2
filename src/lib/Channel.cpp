@@ -7,9 +7,9 @@
 
 #include "Channel.h"
 
-Channel::Channel() : number{-1},  scale_{1.0}, enabled_{true}, waveform_(0), trigDelay_{0}{}
+Channel::Channel() : number{-1}, enabled_{true}, waveform_(0), trigDelay_{0}{}
 
-Channel::Channel( int number) : number{number}, scale_{1.0}, enabled_{true}, waveform_(0), trigDelay_{0}{}
+Channel::Channel( int number) : number{number}, enabled_{true}, waveform_(0), trigDelay_{0}{}
 
 Channel::~Channel() {
 	// TODO Auto-generated destructor stub
@@ -24,19 +24,9 @@ bool Channel::get_enabled() const{
 	return enabled_;
 }
 
-int Channel::set_scale(const float & scale){
-	scale_ = scale;
-	return 0;
-}
-
-float Channel::get_scale() const{
-	return scale_;
-}
-
 size_t Channel::get_length() const {
 	return waveform_.size();
 }
-
 
 int Channel::set_waveform(const vector<float> & data) {
 	//Check whether we need to resize the waveform vector
@@ -82,7 +72,7 @@ vector<int16_t> Channel::prep_waveform() const{
 	//Apply the scale,offset and covert to integer format
 	vector<int16_t> prepVec(waveform_.size());
 	for(size_t ct=0; ct<prepVec.size(); ct++){
-		prepVec[ct] = int16_t(MAX_WF_AMP*(scale_*waveform_[ct]));
+		prepVec[ct] = int16_t(MAX_WF_AMP * waveform_[ct]);
 	}
 
 	//Clip to the max and min values allowed
@@ -121,7 +111,6 @@ int Channel::write_state_to_hdf5(H5::H5File & H5StateFile, const string & rootSt
 	// add channel state information to root group
 	H5::Group tmpGroup = H5StateFile.openGroup(rootStr);
 
-	element2h5attribute<float>("scale",	 scale_,		 &tmpGroup, H5::PredType::NATIVE_FLOAT);
 	element2h5attribute<bool>("enabled",	enabled_,	 &tmpGroup, H5::PredType::NATIVE_UINT);
 	element2h5attribute<int>("trigDelay", trigDelay_, &tmpGroup, H5::PredType::NATIVE_INT);
 
@@ -157,7 +146,6 @@ int Channel::read_state_from_hdf5(H5::H5File & H5StateFile, const string & rootS
 
 	// load state information
 	H5::Group tmpGroup = H5StateFile.openGroup(rootStr);
-	scale_		 = h5element2element<float>("scale",&tmpGroup, H5::PredType::NATIVE_FLOAT);
 	enabled_	 = h5element2element<bool>("enabled",&tmpGroup, H5::PredType::NATIVE_UINT);
 	trigDelay_ = h5element2element<int>("trigDelay",&tmpGroup, H5::PredType::NATIVE_INT);
 
