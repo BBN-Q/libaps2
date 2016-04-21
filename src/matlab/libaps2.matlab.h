@@ -59,6 +59,11 @@ EXPORT APS2_STATUS get_channel_scale(const char*, int, float*);
 EXPORT APS2_STATUS set_channel_enabled(const char*, int, int);
 EXPORT APS2_STATUS get_channel_enabled(const char*, int, int*);
 
+EXPORT APS2_STATUS set_mixer_amplitude_imbalance(const char*, float);
+EXPORT APS2_STATUS get_mixer_amplitude_imbalance(const char*, float*);
+EXPORT APS2_STATUS set_mixer_phase_skew(const char*, float);
+EXPORT APS2_STATUS get_mixer_phase_skew(const char*, float*);
+
 EXPORT APS2_STATUS set_trigger_source(const char*, APS2_TRIGGER_SOURCE);
 EXPORT APS2_STATUS get_trigger_source(const char*, APS2_TRIGGER_SOURCE*);
 EXPORT APS2_STATUS set_trigger_interval(const char*, double);

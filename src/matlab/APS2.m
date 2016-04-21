@@ -148,7 +148,7 @@ classdef APS2 < handle
         function val = get_waveform_frequency(obj)
             val = aps2_getter(obj, 'get_waveform_frequency');
         end
-        
+
         % channel methods
         function val = get_channel_offset(obj, channel)
             val = aps2_getter(obj, 'get_channel_offset', channel-1);
@@ -172,6 +172,22 @@ classdef APS2 < handle
 
         function set_channel_enabled(obj, channel, enabled)
             aps2_call(obj, 'set_channel_enabled', channel-1, enabled);
+        end
+
+        function set_mixer_amplitude_imbalance(obj, amp)
+          aps2_call(obj, 'set_mixer_amplitude_imbalance', amp);
+        end
+
+        function val = get_mixer_amplitude_imbalance(obj)
+            val = aps2_getter(obj, 'get_mixer_amplitude_imbalance');
+        end
+
+        function set_mixer_phase_skew(obj, skew)
+          aps2_call(obj, 'set_mixer_phase_skew', skew);
+        end
+
+        function val = get_mixer_phase_skew(obj)
+            val = aps2_getter(obj, 'get_mixer_phase_skew');
         end
 
         function setAll(obj,settings)
