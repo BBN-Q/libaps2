@@ -156,66 +156,76 @@ def get_firmware_version(ip_address):
 libaps2.get_uptime.argtypes           = [c_char_p, POINTER(c_double)]
 libaps2.get_uptime.restype            = c_int
 def get_uptime(ip_address):
-	time = c_double(0.0)
+	time = c_double()
 	check(libaps2.get_uptime(ip_address.encode('utf-8'), byref(time)))
 	return time.value
 
 libaps2.get_fpga_temperature.argtypes = [c_char_p, POINTER(c_double)]
 libaps2.get_fpga_temperature.restype  = c_int
 def get_fpga_temperature(ip_address):
-	temp = c_double(0.0)
+	temp = c_double()
 	check(libaps2.get_fpga_temperature(ip_address.encode('utf-8'), byref(temp)))
-	return temp
+	return temp.value
 
 libaps2.set_sampleRate.argtypes = [c_char_p, c_uint]
 libaps2.set_sampleRate.restype  = c_int
-def set_sampleRate(ip_address):
-	check(libaps2.set_sampleRate(ip_address.encode('utf-8')))
+def set_sampleRate(ip_address, rate):
+	check(libaps2.set_sampleRate(ip_address.encode('utf-8'), rate))
 
 libaps2.get_sampleRate.argtypes = [c_char_p, POINTER(c_uint)]
 libaps2.get_sampleRate.restype  = c_int
 def get_sampleRate(ip_address):
-	check(libaps2.get_sampleRate(ip_address.encode('utf-8')))
+	sample_rate = c_uint()
+	check(libaps2.get_sampleRate(ip_address.encode('utf-8'), byref(sample_rate)))
+	return sample_rate.value
 
 libaps2.set_channel_offset.argtypes  = [c_char_p, c_int, c_float]
 libaps2.set_channel_offset.restype   = c_int
-def set_channel_offset(ip_address):
-	check(libaps2.set_channel_offset(ip_address.encode('utf-8')))
+def set_channel_offset(ip_address, channel, offset):
+	check(libaps2.set_channel_offset(ip_address.encode('utf-8'), channel, offset))
 
 libaps2.get_channel_offset.argtypes  = [c_char_p, c_int, POINTER(c_float)]
 libaps2.get_channel_offset.restype   = c_int
-def get_channel_offset(ip_address):
-	check(libaps2.get_channel_offset(ip_address.encode('utf-8')))
+def get_channel_offset(ip_address, channel):
+	offset = c_float()
+	check(libaps2.get_channel_offset(ip_address.encode('utf-8'), channel, byref(offset)))
+	return offset.value
 
 libaps2.set_channel_scale.argtypes   = [c_char_p, c_int, c_float]
 libaps2.set_channel_scale.restype    = c_int
-def set_channel_scale(ip_address):
-	check(libaps2.set_channel_scale(ip_address.encode('utf-8')))
+def set_channel_scale(ip_address, channel, scale):
+	check(libaps2.set_channel_scale(ip_address.encode('utf-8'), channel, scale))
 
 libaps2.get_channel_scale.argtypes   = [c_char_p, c_int, POINTER(c_float)]
 libaps2.get_channel_scale.restype    = c_int
-def get_channel_scale(ip_address):
-	check(libaps2.get_channel_scale(ip_address.encode('utf-8')))
+def get_channel_scale(ip_address, channel):
+	scale = c_float()
+	check(libaps2.get_channel_scale(ip_address.encode('utf-8'), channel, byref(scale)))
+	return scale.value
 
 libaps2.set_channel_enabled.argtypes = [c_char_p, c_int, c_int]
 libaps2.set_channel_enabled.restype  = c_int
-def set_channel_enabled(ip_address):
-	check(libaps2.set_channel_enabled(ip_address.encode('utf-8')))
+def set_channel_enabled(ip_address, channel, enabled):
+	check(libaps2.set_channel_enabled(ip_address.encode('utf-8'), channel, enabled))
 
 libaps2.get_channel_enabled.argtypes = [c_char_p, c_int, POINTER(c_int)]
 libaps2.get_channel_enabled.restype  = c_int
-def get_channel_enabled(ip_address):
-	check(libaps2.get_channel_enabled(ip_address.encode('utf-8')))
+def get_channel_enabled(ip_address, channel):
+	enabled = c_int()
+	check(libaps2.get_channel_enabled(ip_address.encode('utf-8'), channel, byref(enabled)))
+	return bool(enabled.value)
 
 libaps2.set_trigger_source.argtypes   = [c_char_p, c_int]
 libaps2.set_trigger_source.restype    = c_int
-def set_trigger_source(ip_address):
-	check(libaps2.set_trigger_source(ip_address.encode('utf-8')))
+def set_trigger_source(ip_address, source):
+	check(libaps2.set_trigger_source(ip_address.encode('utf-8'), source))
 
 libaps2.get_trigger_source.argtypes   = [c_char_p, POINTER(c_int)]
 libaps2.get_trigger_source.restype    = c_int
 def get_trigger_source(ip_address):
-	check(libaps2.get_trigger_source(ip_address.encode('utf-8')))
+	source = c_int()
+	check(libaps2.get_trigger_source(ip_address.encode('utf-8'), byref(source)))
+	return trigger_dict[source.value]
 
 libaps2.set_trigger_interval.argtypes = [c_char_p, c_double]
 libaps2.set_trigger_interval.restype  = c_int
