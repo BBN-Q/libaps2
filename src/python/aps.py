@@ -229,13 +229,15 @@ def get_trigger_source(ip_address):
 
 libaps2.set_trigger_interval.argtypes = [c_char_p, c_double]
 libaps2.set_trigger_interval.restype  = c_int
-def set_trigger_interval(ip_address):
-	check(libaps2.set_trigger_interval(ip_address.encode('utf-8')))
+def set_trigger_interval(ip_address, interval):
+	check(libaps2.set_trigger_interval(ip_address.encode('utf-8'), interval))
 
-libaps2.get_trigger_interval.argtypes = [c_char_p, np_double_1D]
+libaps2.get_trigger_interval.argtypes = [c_char_p, POINTER(c_double)]
 libaps2.get_trigger_interval.restype  = c_int
 def get_trigger_interval(ip_address):
-	check(libaps2.get_trigger_interval(ip_address.encode('utf-8')))
+	interval = c_double()
+	check(libaps2.get_trigger_interval(ip_address.encode('utf-8'), byref(interval)))
+	return interval.value
 
 libaps2.trigger.argtypes              = [c_char_p]
 libaps2.trigger.restype               = c_int
@@ -244,33 +246,38 @@ def trigger(ip_address):
 
 libaps2.set_waveform_float.argtypes = [c_char_p, c_int, np_float_1D, c_int]
 libaps2.set_waveform_float.restype  = c_int
-def set_waveform_float(ip_address):
-	check(libaps2.set_waveform_float(ip_address.encode('utf-8')))
+def set_waveform_float(ip_address, channel, data):
+	num_points = len(data)
+	check(libaps2.set_waveform_float(ip_address.encode('utf-8'), channel, data, num_points))
 
 libaps2.set_waveform_int.argtypes   = [c_char_p, c_int, np_int16_1D, c_int]
 libaps2.set_waveform_int.restype    = c_int
-def set_waveform_int(ip_address):
-	check(libaps2.set_waveform_int(ip_address.encode('utf-8')))
+def set_waveform_int(ip_address, channel, data):
+	num_points = len(data)
+	check(libaps2.set_waveform_int(ip_address.encode('utf-8'), channel, data, num_points))
 
 libaps2.set_markers.argtypes        = [c_char_p, c_int, np_int8_1D,  c_int]
 libaps2.set_markers.restype         = c_int
-def set_markers(ip_address):
-	check(libaps2.set_markers(ip_address.encode('utf-8')))
+def set_markers(ip_address, channel, data):
+	num_points = len(data)
+	check(libaps2.set_markers(ip_address.encode('utf-8'), channel, data, num_points))
 
 libaps2.write_sequence.argtypes = [c_char_p, np_uint64_1D, c_ulong]
 libaps2.write_sequence.restype  = c_int
-def write_sequence(ip_address):
-	check(libaps2.write_sequence(ip_address.encode('utf-8')))
+def write_sequence(ip_address, data):
+	num_points = len(data)
+	check(libaps2.write_sequence(ip_address.encode('utf-8'), data, num_points))
 
 libaps2.set_run_mode.argtypes = [c_char_p, c_int]
 libaps2.set_run_mode.restype  = c_int
-def set_run_mode(ip_address):
-	check(libaps2.set_run_mode(ip_address.encode('utf-8')))
+def set_run_mode(ip_address, run_mode):
+	check(libaps2.set_run_mode(ip_address.encode('utf-8'), run_mode))
 
 libaps2.load_sequence_file.argtypes = [c_char_p, c_char_p]
 libaps2.load_sequence_file.restype  = c_int
-def load_sequence_file(ip_address):
-	check(libaps2.load_sequence_file(ip_address.encode('utf-8')))
+def load_sequence_file(ip_address, filename):
+	filename = filename.replace("\\", "\\\\")
+	check(libaps2.load_sequence_file(ip_address.encode('utf-8'), filename.encode('utf-8')))
 
 libaps2.clear_channel_data.argtypes = [c_char_p]
 libaps2.clear_channel_data.restype  = c_int
