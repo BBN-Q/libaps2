@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.ctypeslib as npct
-from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, c_char_p, byref, POINTER
+from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, c_char_p, create_string_buffer, byref, POINTER
 
 libaps2 = npct.load_library("libaps2", ".")
 
@@ -151,7 +151,12 @@ def init_APS(ip_address):
 libaps2.get_firmware_version.argtypes = [c_char_p, POINTER(c_ulong), POINTER(c_ulong), POINTER(c_ulong), c_char_p]
 libaps2.get_firmware_version.restype  = c_int
 def get_firmware_version(ip_address):
-	check(libaps2.get_firmware_version(ip_address.encode('utf-8')))
+	version = c_ulong()
+	sha = c_ulong()
+	timestamp = c_ulong()
+	string = create_string_buffer(64)
+	check(libaps2.get_firmware_version(ip_address.encode('utf-8'), byref(version), byref(sha), byref(timestamp), string))
+	return version.value, sha.value, timestamp.value, string.value.decode('ascii')
 
 libaps2.get_uptime.argtypes           = [c_char_p, POINTER(c_double)]
 libaps2.get_uptime.restype            = c_int
@@ -225,7 +230,7 @@ libaps2.get_trigger_source.restype    = c_int
 def get_trigger_source(ip_address):
 	source = c_int()
 	check(libaps2.get_trigger_source(ip_address.encode('utf-8'), byref(source)))
-	return trigger_dict[source.value]
+	return source.value
 
 libaps2.set_trigger_interval.argtypes = [c_char_p, c_double]
 libaps2.set_trigger_interval.restype  = c_int
@@ -297,35 +302,41 @@ def stop(ip_address):
 libaps2.get_runState.argtypes = [c_char_p, POINTER(c_int)]
 libaps2.get_runState.restype  = c_int
 def get_runState(ip_address):
-	check(libaps2.get_runState(ip_address.encode('utf-8')))
+	state = c_int()
+	check(libaps2.get_runState(ip_address.encode('utf-8'), state))
+	return state.value
 
 libaps2.set_log.argtypes           = [c_char_p]
 libaps2.set_log.restype            = c_int
-def set_log():
-	check(libaps2.set_log(ip_address.encode('utf-8')))
+def set_log(filename):
+	check(libaps2.set_log(filename.encode('utf-8')))
 
 libaps2.set_logging_level.argtypes = [c_int]
 libaps2.set_logging_level.restype  = c_int
-def set_logging_level():
-	check(libaps2.set_logging_level(ip_address.encode('utf-8')))
+def set_logging_level(level):
+	check(libaps2.set_logging_level(level))
 
-libaps2.get_ip_addr.argtypes = [c_char_p, c_char_p]
+libaps2.get_ip_addr.argtypes = [c_char_p, POINTER(c_char)]
 libaps2.get_ip_addr.restype  = c_int
-def get_ip_addr():
-	check(libaps2.get_ip_addr(ip_address.encode('utf-8')))
+def get_ip_addr(ip_address):
+	addr = create_string_buffer(64)
+	check(libaps2.get_ip_addr(ip_address.encode('utf-8'), addr))
+	return addr.value.decode('ascii')
 
 libaps2.set_ip_addr.argtypes = [c_char_p, c_char_p]
 libaps2.set_ip_addr.restype  = c_int
-def set_ip_addr():
-	check(libaps2.set_ip_addr(ip_address.encode('utf-8')))
+def set_ip_addr(ip_address, new_ip_address):
+	check(libaps2.set_ip_addr(ip_address.encode('utf-8'), new_ip_address.encode('utf-8')))
 
 libaps2.get_dhcp_enable.argtypes = [c_char_p, POINTER(c_int)]
 libaps2.get_dhcp_enable.restype  = c_int
-def get_dhcp_enable():
-	check(libaps2.get_dhcp_enable(ip_address.encode('utf-8')))
+def get_dhcp_enable(ip_address):
+	enabled = c_int()
+	check(libaps2.get_dhcp_enable(ip_address.encode('utf-8'), byref(enabled)))
+	return bool(enabled.value)
 
 libaps2.set_dhcp_enable.argtypes = [c_char_p, c_int]
 libaps2.set_dhcp_enable.restype  = c_int
-def set_dhcp_enable():
-	check(libaps2.set_dhcp_enable(ip_address.encode('utf-8')))
+def set_dhcp_enable(ip_address, enabled):
+	check(libaps2.set_dhcp_enable(ip_address.encode('utf-8'), enabled))
 
