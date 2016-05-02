@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.ctypeslib as npct
-from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, c_char_p, create_string_buffer, byref, POINTER
+from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, c_char_p, addressof, create_string_buffer, byref, POINTER
 
 libaps2 = npct.load_library("libaps2", ".")
 
@@ -126,7 +126,10 @@ def get_numDevices():
 libaps2.get_device_IPs.argtypes = [POINTER(c_char_p)]
 libaps2.get_device_IPs.restype  = c_int
 def get_device_IPs():
-	check(libaps2.get_device_IPs())
+	num_devices = get_numDevices()
+	results = (c_char_p * num_devices)(addressof(create_string_buffer(16)))
+	check(libaps2.get_device_IPs(results))
+	return [r.decode('ascii') for r in results]
 
 libaps2.connect_APS.argtypes    = [c_char_p]
 libaps2.connect_APS.restype     = c_int
