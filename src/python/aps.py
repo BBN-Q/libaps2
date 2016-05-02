@@ -2,7 +2,7 @@ import numpy as np
 import numpy.ctypeslib as npct
 from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, c_char_p, addressof, create_string_buffer, byref, POINTER
 
-libaps2 = npct.load_library("libaps2", ".")
+libaps2 = npct.load_library("libaps2", "../build")
 
 np_double_1D = npct.ndpointer(dtype=np.double,  ndim=1, flags='CONTIGUOUS')
 np_float_1D  = npct.ndpointer(dtype=np.float,   ndim=1, flags='CONTIGUOUS')
@@ -12,12 +12,6 @@ np_uint64_1D = npct.ndpointer(dtype=np.uint64,  ndim=1, flags='CONTIGUOUS')
 np_uint32_1D = npct.ndpointer(dtype=np.uint32,  ndim=1, flags='CONTIGUOUS')
 np_uint16_1D = npct.ndpointer(dtype=np.uint16,  ndim=1, flags='CONTIGUOUS')
 np_uint8_1D  = npct.ndpointer(dtype=np.uint8,   ndim=1, flags='CONTIGUOUS')
-
-class Flag(object):
-    flags = [(0x1, 'fun'), (0x2, 'toy')]
-    @classmethod
-    def from_param(cls, data):
-        return c_uint(encode_flags(self.flags, data))
 
 # APS2_TRIGGER_SOURCE
 EXTERNAL = 0
@@ -111,235 +105,239 @@ def check(status_code):
 	else:
 		raise Exception("APS Error: {}".format(status_dict[status_code]))
 
-libaps2.get_error_msg.argtypes = [c_int]
-libaps2.get_error_msg.restype  = c_int
-def get_error_msg():
-	check(libaps2.get_error_msg())
+class APS2_Getter():
+	def __init__(self, arg_type, return_type=None):
+		super(APS2_Getter, self).__init__()
+		self.arg_type = arg_type
+		self.return_type = return_type
+		
+class APS2_Setter():
+	def __init__(self, arg_type):
+		super(APS2_Setter, self).__init__()
+		self.arg_type = arg_type
+		
+class APS2_Chan_Getter(APS2_Getter):
+	def __init__(self, arg_type, **kwargs):
+		super(APS2_Chan_Getter, self).__init__(arg_type, **kwargs)
+		
+class APS2_Chan_Setter(APS2_Setter):
+	def __init__(self, arg_type):
+		super(APS2_Chan_Setter, self).__init__(arg_type)
 
-libaps2.get_numDevices.argtypes = [POINTER(c_uint)]
-libaps2.get_numDevices.restype  = c_int
-def get_numDevices():
-	n = c_uint()
-	check(libaps2.get_numDevices(byref(n)))
-	return n.value
+class APS2_Call(object):
+	def __init__(self):
+		super(APS2_Call, self).__init__()
 
-libaps2.get_device_IPs.argtypes = [POINTER(c_char_p)]
-libaps2.get_device_IPs.restype  = c_int
-def get_device_IPs():
-	num_devices = get_numDevices()
-	results = (c_char_p * num_devices)(addressof(create_string_buffer(16)))
-	check(libaps2.get_device_IPs(results))
-	return [r.decode('ascii') for r in results]
+def add_call(instr, name, cmd):
+	getattr(libaps2, name).restype  = c_int
+	getattr(libaps2, name).argtypes = [c_char_p]
+	def f(self):
+		status_code = getattr(libaps2, name)(self.ip_address.encode('utf-8'))
+		if status_code is 0:
+			return
+		else:
+			raise Exception("APS Error: {}".format(status_dict[status_code]))
+	setattr(instr, name, f)
 
-libaps2.connect_APS.argtypes    = [c_char_p]
-libaps2.connect_APS.restype     = c_int
-def connect_APS(ip_address):
-	check(libaps2.connect_APS(ip_address.encode('utf-8')))
+def add_setter(instr, name, cmd):
+	getattr(libaps2, name).restype  = c_int
+	if isinstance(cmd, APS2_Chan_Setter):
+		# There's an extra channel parameter here
+		getattr(libaps2, name).argtypes = [c_char_p, c_uint, cmd.arg_type]
+	else:
+		getattr(libaps2, name).argtypes = [c_char_p, cmd.arg_type]
 
-libaps2.disconnect_APS.argtypes = [c_char_p]
-libaps2.disconnect_APS.restype  = c_int
-def disconnect_APS(ip_address):
-	check(libaps2.disconnect_APS(ip_address.encode('utf-8')))
+	def f(self, *args):
+		args = list(args)
+		if isinstance(cmd, APS2_Chan_Setter):
+			if len(args) != 2:
+				raise Exception("Wrong number of arguments given to API call.")
+			args = [self.ip_address.encode('utf-8'), args[0], args[1]]
+		else:
+			if len(args) != 1:
+				raise Exception("Wrong number of arguments given to API call.")
+			args = [self.ip_address.encode('utf-8'), args[0]]
+		
+		status_code = getattr(libaps2, name)(*args)
+		if status_code is 0:
+			return
+		else:
+			raise Exception("APS Error: {}".format(status_dict[status_code]))
+	setattr(instr, name, f)
 
-libaps2.reset.argtypes    = [c_char_p, c_int]
-libaps2.reset.restype     = c_int
-def reset(ip_address):
-	check(libaps2.reset(ip_address.encode('utf-8')))
+def add_getter(instr, name, cmd):
+	getattr(libaps2, name).restype  = c_int
+	if isinstance(cmd, APS2_Chan_Getter):
+		# There's an extra channel parameter here
+		getattr(libaps2, name).argtypes = [c_char_p, c_uint, POINTER(cmd.arg_type)]
+	else:
+		getattr(libaps2, name).argtypes = [c_char_p, POINTER(cmd.arg_type)]
 
-libaps2.init_APS.argtypes = [c_char_p, c_int]
-libaps2.init_APS.restype  = c_int
-def init_APS(ip_address):
-	check(libaps2.init_APS(c_char_pip_address.encode('utf-8')))
+	def f(self, *args):
+		if args is None:
+			args = []
+		if isinstance(cmd, APS2_Chan_Getter):
+			if len(args) != 1:
+				raise Exception("Wrong number of arguments given to API call.")
+			args = [self.ip_address.encode('utf-8'), args[0]]
+		else:
+			if len(args) != 0:
+				raise Exception("Wrong number of arguments given to API call.")
+			args = [self.ip_address.encode('utf-8')]
+				
+		# Instantiate the values
+		var = cmd.arg_type()
+		args.append(byref(var))
+		status_code = getattr(libaps2, name)(*args)
+		if status_code is 0:
+			if cmd.return_type is None:
+				return var.value
+			else:
+				return cmd.return_type(var.value)
+		else:
+			raise Exception("APS Error: {}".format(status_dict[status_code]))
+	setattr(instr, name, f)
 
-libaps2.get_firmware_version.argtypes = [c_char_p, POINTER(c_ulong), POINTER(c_ulong), POINTER(c_ulong), c_char_p]
-libaps2.get_firmware_version.restype  = c_int
-def get_firmware_version(ip_address):
-	version = c_ulong()
-	sha = c_ulong()
-	timestamp = c_ulong()
-	string = create_string_buffer(64)
-	check(libaps2.get_firmware_version(ip_address.encode('utf-8'), byref(version), byref(sha), byref(timestamp), string))
-	return version.value, sha.value, timestamp.value, string.value.decode('ascii')
+class Parser(type):
+	"""Meta class to create instrument classes with controls turned into descriptors.
+	"""
+	def __init__(self, name, bases, dct):
+		type.__init__(self, name, bases, dct)
+		for k,v in dct.items():
+			if isinstance(v, APS2_Call):
+				add_call(self, k, v)
+			elif isinstance(v, APS2_Getter):
+				add_getter(self, k, v)
+			elif isinstance(v, APS2_Setter):
+				add_setter(self, k, v)
 
-libaps2.get_uptime.argtypes           = [c_char_p, POINTER(c_double)]
-libaps2.get_uptime.restype            = c_int
-def get_uptime(ip_address):
-	time = c_double()
-	check(libaps2.get_uptime(ip_address.encode('utf-8'), byref(time)))
-	return time.value
+class APS2(metaclass=Parser):
+	# Simple calls, take only IP address
+	stop               = APS2_Call()
+	run                = APS2_Call()
+	trigger            = APS2_Call()
+	connect_APS        = APS2_Call()
+	disconnect_APS     = APS2_Call()
+	clear_channel_data = APS2_Call()
 
-libaps2.get_fpga_temperature.argtypes = [c_char_p, POINTER(c_double)]
-libaps2.get_fpga_temperature.restype  = c_int
-def get_fpga_temperature(ip_address):
-	temp = c_double()
-	check(libaps2.get_fpga_temperature(ip_address.encode('utf-8'), byref(temp)))
-	return temp.value
+	# Getters and Setters
+	get_uptime           = APS2_Getter(c_double)
+	get_fpga_temperature = APS2_Getter(c_double)
+	get_error_msg        = APS2_Getter(c_int)
+	get_numDevices       = APS2_Getter(c_uint)
+	get_runState         = APS2_Getter(c_int)
+	set_run_mode         = APS2_Setter(c_int)
 
-libaps2.set_sampleRate.argtypes = [c_char_p, c_uint]
-libaps2.set_sampleRate.restype  = c_int
-def set_sampleRate(ip_address, rate):
-	check(libaps2.set_sampleRate(ip_address.encode('utf-8'), rate))
+	set_dhcp_enable      = APS2_Setter(c_int)
+	get_dhcp_enable      = APS2_Getter(c_int, return_type=bool)
 
-libaps2.get_sampleRate.argtypes = [c_char_p, POINTER(c_uint)]
-libaps2.get_sampleRate.restype  = c_int
-def get_sampleRate(ip_address):
-	sample_rate = c_uint()
-	check(libaps2.get_sampleRate(ip_address.encode('utf-8'), byref(sample_rate)))
-	return sample_rate.value
+	set_sampleRate       = APS2_Setter(c_uint)
+	get_sampleRate       = APS2_Getter(c_uint)
 
-libaps2.set_channel_offset.argtypes  = [c_char_p, c_int, c_float]
-libaps2.set_channel_offset.restype   = c_int
-def set_channel_offset(ip_address, channel, offset):
-	check(libaps2.set_channel_offset(ip_address.encode('utf-8'), channel, offset))
+	reset                = APS2_Setter(c_int)
+	init_APS             = APS2_Setter(c_int)
 
-libaps2.get_channel_offset.argtypes  = [c_char_p, c_int, POINTER(c_float)]
-libaps2.get_channel_offset.restype   = c_int
-def get_channel_offset(ip_address, channel):
-	offset = c_float()
-	check(libaps2.get_channel_offset(ip_address.encode('utf-8'), channel, byref(offset)))
-	return offset.value
+	set_trigger_source   = APS2_Setter(c_int)
+	get_trigger_source   = APS2_Getter(c_int)
 
-libaps2.set_channel_scale.argtypes   = [c_char_p, c_int, c_float]
-libaps2.set_channel_scale.restype    = c_int
-def set_channel_scale(ip_address, channel, scale):
-	check(libaps2.set_channel_scale(ip_address.encode('utf-8'), channel, scale))
+	set_trigger_interval = APS2_Setter(c_double)
+	get_trigger_interval = APS2_Getter(c_double)
 
-libaps2.get_channel_scale.argtypes   = [c_char_p, c_int, POINTER(c_float)]
-libaps2.get_channel_scale.restype    = c_int
-def get_channel_scale(ip_address, channel):
-	scale = c_float()
-	check(libaps2.get_channel_scale(ip_address.encode('utf-8'), channel, byref(scale)))
-	return scale.value
+	set_trigger_source   = APS2_Setter(c_int)
+	get_trigger_source   = APS2_Getter(c_int)
 
-libaps2.set_channel_enabled.argtypes = [c_char_p, c_int, c_int]
-libaps2.set_channel_enabled.restype  = c_int
-def set_channel_enabled(ip_address, channel, enabled):
-	check(libaps2.set_channel_enabled(ip_address.encode('utf-8'), channel, enabled))
+	# These are per channel commands, take IP and channel number plus these args
+	set_channel_offset   = APS2_Chan_Setter(c_float)
+	get_channel_offset   = APS2_Chan_Getter(c_float)
 
-libaps2.get_channel_enabled.argtypes = [c_char_p, c_int, POINTER(c_int)]
-libaps2.get_channel_enabled.restype  = c_int
-def get_channel_enabled(ip_address, channel):
-	enabled = c_int()
-	check(libaps2.get_channel_enabled(ip_address.encode('utf-8'), channel, byref(enabled)))
-	return bool(enabled.value)
+	set_channel_scale    = APS2_Chan_Setter(c_float)
+	get_channel_scale    = APS2_Chan_Getter(c_float)
 
-libaps2.set_trigger_source.argtypes   = [c_char_p, c_int]
-libaps2.set_trigger_source.restype    = c_int
-def set_trigger_source(ip_address, source):
-	check(libaps2.set_trigger_source(ip_address.encode('utf-8'), source))
+	set_channel_enabled  = APS2_Chan_Setter(c_int)
+	get_channel_enabled  = APS2_Chan_Getter(c_int, return_type=bool)
 
-libaps2.get_trigger_source.argtypes   = [c_char_p, POINTER(c_int)]
-libaps2.get_trigger_source.restype    = c_int
-def get_trigger_source(ip_address):
-	source = c_int()
-	check(libaps2.get_trigger_source(ip_address.encode('utf-8'), byref(source)))
-	return source.value
 
-libaps2.set_trigger_interval.argtypes = [c_char_p, c_double]
-libaps2.set_trigger_interval.restype  = c_int
-def set_trigger_interval(ip_address, interval):
-	check(libaps2.set_trigger_interval(ip_address.encode('utf-8'), interval))
+	def __init__(self, ip_address):
+		super(APS2, self).__init__()
+		self.ip_address = ip_address
+		self.connect_APS()
 
-libaps2.get_trigger_interval.argtypes = [c_char_p, POINTER(c_double)]
-libaps2.get_trigger_interval.restype  = c_int
-def get_trigger_interval(ip_address):
-	interval = c_double()
-	check(libaps2.get_trigger_interval(ip_address.encode('utf-8'), byref(interval)))
-	return interval.value
+		libaps2.get_device_IPs.argtypes       = [POINTER(c_char_p)]
+		libaps2.get_device_IPs.restype        = c_int
+		libaps2.get_firmware_version.argtypes = [c_char_p, POINTER(c_ulong), POINTER(c_ulong), POINTER(c_ulong), c_char_p]
+		libaps2.get_firmware_version.restype  = c_int
+		libaps2.set_waveform_float.argtypes   = [c_char_p, c_int, np_float_1D, c_int]
+		libaps2.set_waveform_float.restype    = c_int
+		libaps2.set_waveform_int.argtypes     = [c_char_p, c_int, np_int16_1D, c_int]
+		libaps2.set_waveform_int.restype      = c_int
+		libaps2.set_markers.argtypes          = [c_char_p, c_int, np_int8_1D,  c_int]
+		libaps2.set_markers.restype           = c_int
+		libaps2.write_sequence.argtypes       = [c_char_p, np_uint64_1D, c_ulong]
+		libaps2.write_sequence.restype        = c_int
+		libaps2.load_sequence_file.argtypes   = [c_char_p, c_char_p]
+		libaps2.load_sequence_file.restype    = c_int
+		libaps2.set_log.argtypes              = [c_char_p]
+		libaps2.set_log.restype               = c_int
+		libaps2.set_logging_level.argtypes    = [c_int]
+		libaps2.set_logging_level.restype     = c_int
+		libaps2.get_ip_addr.argtypes          = [c_char_p, POINTER(c_char)]
+		libaps2.get_ip_addr.restype           = c_int
+		libaps2.set_ip_addr.argtypes          = [c_char_p, c_char_p]
+		libaps2.set_ip_addr.restype           = c_int
 
-libaps2.trigger.argtypes              = [c_char_p]
-libaps2.trigger.restype               = c_int
-def trigger(ip_address):
-	check(libaps2.trigger(ip_address.encode('utf-8')))
+	def __del__(self):
+		self.disconnect_APS()
 
-libaps2.set_waveform_float.argtypes = [c_char_p, c_int, np_float_1D, c_int]
-libaps2.set_waveform_float.restype  = c_int
-def set_waveform_float(ip_address, channel, data):
-	num_points = len(data)
-	check(libaps2.set_waveform_float(ip_address.encode('utf-8'), channel, data, num_points))
+	def get_device_IPs(self):
+		num_devices = self.get_numDevices()
+		if num_devices > 0:
+			results = (c_char_p * num_devices)(addressof(create_string_buffer(16)))
+			check(libaps2.get_device_IPs(results))
+			return [r.decode('ascii') for r in results]
+		else:
+			return None
 
-libaps2.set_waveform_int.argtypes   = [c_char_p, c_int, np_int16_1D, c_int]
-libaps2.set_waveform_int.restype    = c_int
-def set_waveform_int(ip_address, channel, data):
-	num_points = len(data)
-	check(libaps2.set_waveform_int(ip_address.encode('utf-8'), channel, data, num_points))
+	def get_firmware_version(self):
+		version = c_ulong()
+		sha = c_ulong()
+		timestamp = c_ulong()
+		string = create_string_buffer(64)
+		check(libaps2.get_firmware_version(self.ip_address.encode('utf-8'), byref(version), byref(sha), byref(timestamp), string))
+		return version.value, sha.value, timestamp.value, string.value.decode('ascii')
 
-libaps2.set_markers.argtypes        = [c_char_p, c_int, np_int8_1D,  c_int]
-libaps2.set_markers.restype         = c_int
-def set_markers(ip_address, channel, data):
-	num_points = len(data)
-	check(libaps2.set_markers(ip_address.encode('utf-8'), channel, data, num_points))
+	def set_waveform_float(self, channel, data):
+		num_points = len(data)
+		check(libaps2.set_waveform_float(self.ip_address.encode('utf-8'), channel, data, num_points))
 
-libaps2.write_sequence.argtypes = [c_char_p, np_uint64_1D, c_ulong]
-libaps2.write_sequence.restype  = c_int
-def write_sequence(ip_address, data):
-	num_points = len(data)
-	check(libaps2.write_sequence(ip_address.encode('utf-8'), data, num_points))
+	def set_waveform_int(self, channel, data):
+		num_points = len(data)
+		check(libaps2.set_waveform_int(self.ip_address.encode('utf-8'), channel, data, num_points))
 
-libaps2.set_run_mode.argtypes = [c_char_p, c_int]
-libaps2.set_run_mode.restype  = c_int
-def set_run_mode(ip_address, run_mode):
-	check(libaps2.set_run_mode(ip_address.encode('utf-8'), run_mode))
+	def set_markers(self, channel, data):
+		num_points = len(data)
+		check(libaps2.set_markers(self.ip_address.encode('utf-8'), channel, data, num_points))
 
-libaps2.load_sequence_file.argtypes = [c_char_p, c_char_p]
-libaps2.load_sequence_file.restype  = c_int
-def load_sequence_file(ip_address, filename):
-	filename = filename.replace("\\", "\\\\")
-	check(libaps2.load_sequence_file(ip_address.encode('utf-8'), filename.encode('utf-8')))
+	def write_sequence(self, data):
+		num_points = len(data)
+		check(libaps2.write_sequence(self.ip_address.encode('utf-8'), data, num_points))
 
-libaps2.clear_channel_data.argtypes = [c_char_p]
-libaps2.clear_channel_data.restype  = c_int
-def clear_channel_data(ip_address):
-	check(libaps2.clear_channel_data(ip_address.encode('utf-8')))
+	def load_sequence_file(self, filename):
+		filename = filename.replace("\\", "\\\\")
+		check(libaps2.load_sequence_file(self.ip_address.encode('utf-8'), filename.encode('utf-8')))
 
-libaps2.run.argtypes          = [c_char_p]
-libaps2.run.restype           = c_int
-def run(ip_address):
-	check(libaps2.run(ip_address.encode('utf-8')))
+	def set_log(self, filename):
+		check(libaps2.set_log(filename.encode('utf-8')))
 
-libaps2.stop.argtypes         = [c_char_p]
-libaps2.stop.restype          = c_int
-def stop(ip_address):
-	check(libaps2.stop(ip_address.encode('utf-8')))
+	def set_logging_level(self, level):
+		check(libaps2.set_logging_level(level))
 
-libaps2.get_runState.argtypes = [c_char_p, POINTER(c_int)]
-libaps2.get_runState.restype  = c_int
-def get_runState(ip_address):
-	state = c_int()
-	check(libaps2.get_runState(ip_address.encode('utf-8'), state))
-	return state.value
+	def get_ip_addr(self):
+		addr = create_string_buffer(64)
+		check(libaps2.get_ip_addr(self.ip_address.encode('utf-8'), addr))
+		return addr.value.decode('ascii')
 
-libaps2.set_log.argtypes           = [c_char_p]
-libaps2.set_log.restype            = c_int
-def set_log(filename):
-	check(libaps2.set_log(filename.encode('utf-8')))
+	def set_ip_addr(self, new_ip_address):
+		check(libaps2.set_ip_addr(self.ip_address.encode('utf-8'), new_ip_address.encode('utf-8')))
 
-libaps2.set_logging_level.argtypes = [c_int]
-libaps2.set_logging_level.restype  = c_int
-def set_logging_level(level):
-	check(libaps2.set_logging_level(level))
 
-libaps2.get_ip_addr.argtypes = [c_char_p, POINTER(c_char)]
-libaps2.get_ip_addr.restype  = c_int
-def get_ip_addr(ip_address):
-	addr = create_string_buffer(64)
-	check(libaps2.get_ip_addr(ip_address.encode('utf-8'), addr))
-	return addr.value.decode('ascii')
-
-libaps2.set_ip_addr.argtypes = [c_char_p, c_char_p]
-libaps2.set_ip_addr.restype  = c_int
-def set_ip_addr(ip_address, new_ip_address):
-	check(libaps2.set_ip_addr(ip_address.encode('utf-8'), new_ip_address.encode('utf-8')))
-
-libaps2.get_dhcp_enable.argtypes = [c_char_p, POINTER(c_int)]
-libaps2.get_dhcp_enable.restype  = c_int
-def get_dhcp_enable(ip_address):
-	enabled = c_int()
-	check(libaps2.get_dhcp_enable(ip_address.encode('utf-8'), byref(enabled)))
-	return bool(enabled.value)
-
-libaps2.set_dhcp_enable.argtypes = [c_char_p, c_int]
-libaps2.set_dhcp_enable.restype  = c_int
-def set_dhcp_enable(ip_address, enabled):
-	check(libaps2.set_dhcp_enable(ip_address.encode('utf-8'), enabled))
 
