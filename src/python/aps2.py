@@ -1,8 +1,13 @@
 import numpy as np
 import numpy.ctypeslib as npct
 from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, c_char_p, addressof, create_string_buffer, byref, POINTER
+import sys
 
-libaps2 = npct.load_library("libaps2", "../build")
+if sys.platform == 'win32':
+	# All of the DLLs have to be in the path
+	libaps2 = npct.load_library("libaps2.dll", ".")
+else:
+	libaps2 = npct.load_library("libaps2", "../build")
 
 np_double_1D = npct.ndpointer(dtype=np.double,  ndim=1, flags='CONTIGUOUS')
 np_float_1D  = npct.ndpointer(dtype=np.float,   ndim=1, flags='CONTIGUOUS')
@@ -26,7 +31,7 @@ trigger_dict = {
 	3: "SYSTEM"
 }
 
-# APS2_RUN_MODE 
+# APS2_RUN_MODE
 RUN_SEQUENCE  = 0
 TRIG_WAVEFORM = 1
 CW_WAVEFORM   = 2
@@ -110,16 +115,16 @@ class APS2_Getter():
 		super(APS2_Getter, self).__init__()
 		self.arg_type = arg_type
 		self.return_type = return_type
-		
+
 class APS2_Setter():
 	def __init__(self, arg_type):
 		super(APS2_Setter, self).__init__()
 		self.arg_type = arg_type
-		
+
 class APS2_Chan_Getter(APS2_Getter):
 	def __init__(self, arg_type, **kwargs):
 		super(APS2_Chan_Getter, self).__init__(arg_type, **kwargs)
-		
+
 class APS2_Chan_Setter(APS2_Setter):
 	def __init__(self, arg_type):
 		super(APS2_Chan_Setter, self).__init__(arg_type)
@@ -157,7 +162,7 @@ def add_setter(instr, name, cmd):
 			if len(args) != 1:
 				raise Exception("Wrong number of arguments given to API call.")
 			args = [self.ip_address.encode('utf-8'), args[0]]
-		
+
 		status_code = getattr(libaps2, name)(*args)
 		if status_code is 0:
 			return
@@ -184,7 +189,7 @@ def add_getter(instr, name, cmd):
 			if len(args) != 0:
 				raise Exception("Wrong number of arguments given to API call.")
 			args = [self.ip_address.encode('utf-8')]
-				
+
 		# Instantiate the values
 		var = cmd.arg_type()
 		args.append(byref(var))
@@ -338,6 +343,3 @@ class APS2(metaclass=Parser):
 
 	def set_ip_addr(self, new_ip_address):
 		check(libaps2.set_ip_addr(self.ip_address.encode('utf-8'), new_ip_address.encode('utf-8')))
-
-
-
