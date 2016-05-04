@@ -634,19 +634,23 @@ void APS2::set_run_mode(const APS2_RUN_MODE & mode) {
 }
 
 void APS2::set_waveform_frequency(float freq){
-	//frequency gets converted to portion of circle per 300MHz clock cycle in range [-0.5, 0.5)
-	if (abs(freq) > 150e6) {
+	//frequency gets converted to portion of circle per 300MHz clock cycle in range [-2, 2)
+	if (abs(freq) > 600e6) {
 		throw APS2_WAVEFORM_FREQ_OVERFLOW;
 	}
-	int32_t freq_increment = static_cast<int32_t>(freq * (1/300e6) * (1 << 28));
+	uint32_t freq_increment = freq > 0 ? (freq/300e6) * (1 << 28) : (freq/300e6 + 4) * (1 << 28);
 	FILE_LOG(logDEBUG2) << ipAddr_ << " writing waveform frequency increment: " << freq_increment;
 	write_memory(WF_SSB_FREQ_ADDR, freq_increment);
 }
 
 float APS2::get_waveform_frequency(){
-	//frequency gets converted to portion of circle per 300MHz clock cycle in range [-0.5, 0.5)
-	int32_t freq_increment = static_cast<int32_t>(read_memory(WF_SSB_FREQ_ADDR, 1)[0]);
-	return static_cast<float>(freq_increment) / (1 << 28) * 300e6;
+	//frequency gets converted to portion of circle per 300MHz clock cycle in range [-2, 2)
+	uint32_t freq_increment = read_memory(WF_SSB_FREQ_ADDR, 1)[0];
+	float freq = static_cast<float>(freq_increment) / (1 << 28) * 300e6;
+	if ( freq > 600e6 ) {
+		freq += -1200e6;
+	}
+	return freq;
 }
 
 // FPGA memory read/write
