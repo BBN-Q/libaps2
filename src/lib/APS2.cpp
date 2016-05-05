@@ -635,7 +635,7 @@ void APS2::set_run_mode(const APS2_RUN_MODE & mode) {
 
 void APS2::set_waveform_frequency(float freq){
 	//frequency gets converted to portion of circle per 300MHz clock cycle in range [-2, 2)
-	if (abs(freq) > 600e6) {
+	if ((freq >= 600e6) || (freq < -600e6)) {
 		throw APS2_WAVEFORM_FREQ_OVERFLOW;
 	}
 	uint32_t freq_increment = freq > 0 ? (freq/300e6) * (1 << 28) : (freq/300e6 + 4) * (1 << 28);

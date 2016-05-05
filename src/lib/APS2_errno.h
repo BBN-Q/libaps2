@@ -59,7 +59,7 @@ static std::map<APS2_STATUS, std::string> messages = {
 	{APS2_BITFILE_VALIDATION_FAILURE, "bitfile validation failed"},
 	{APS2_BAD_PLL_VALUE, "Unexpected PLL chip value"},
 	{APS2_NO_WFS, "Asked for waveform mode with no waveforms loaded"},
-	{APS2_WAVEFORM_FREQ_OVERFLOW, "Waveform frequency must be in range [-150MHz, 150MHz)"}
+	{APS2_WAVEFORM_FREQ_OVERFLOW, "Waveform frequency must be in range [-600MHz, 600MHz)"}
 };
 
 
