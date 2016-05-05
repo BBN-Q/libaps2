@@ -139,10 +139,7 @@ def add_call(instr, name, cmd):
 	getattr(libaps2, name).argtypes = [c_char_p]
 	def f(self):
 		status_code = getattr(libaps2, name)(self.ip_address.encode('utf-8'))
-		if status_code is 0:
-			return
-		else:
-			raise Exception("APS Error: {}".format(status_dict[status_code]))
+		check(status_code)
 	setattr(instr, name, f)
 
 def add_setter(instr, name, cmd):
@@ -165,10 +162,7 @@ def add_setter(instr, name, cmd):
 			args = [self.ip_address.encode('utf-8'), args[0]]
 
 		status_code = getattr(libaps2, name)(*args)
-		if status_code is 0:
-			return
-		else:
-			raise Exception("APS Error: {}".format(status_dict[status_code]))
+		check(status_code)
 	setattr(instr, name, f)
 
 def add_getter(instr, name, cmd):
