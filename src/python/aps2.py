@@ -28,7 +28,7 @@ trigger_dict = {
 	3: "SYSTEM"
 }
 
-# APS2_RUN_MODE 
+# APS2_RUN_MODE
 RUN_SEQUENCE  = 0
 TRIG_WAVEFORM = 1
 CW_WAVEFORM   = 2
@@ -112,16 +112,16 @@ class APS2_Getter():
 		super(APS2_Getter, self).__init__()
 		self.arg_type = arg_type
 		self.return_type = return_type
-		
+
 class APS2_Setter():
 	def __init__(self, arg_type):
 		super(APS2_Setter, self).__init__()
 		self.arg_type = arg_type
-		
+
 class APS2_Chan_Getter(APS2_Getter):
 	def __init__(self, arg_type, **kwargs):
 		super(APS2_Chan_Getter, self).__init__(arg_type, **kwargs)
-		
+
 class APS2_Chan_Setter(APS2_Setter):
 	def __init__(self, arg_type):
 		super(APS2_Chan_Setter, self).__init__(arg_type)
@@ -159,7 +159,7 @@ def add_setter(instr, name, cmd):
 			if len(args) != 1:
 				raise Exception("Wrong number of arguments given to API call.")
 			args = [self.ip_address.encode('utf-8'), args[0]]
-		
+
 		status_code = getattr(libaps2, name)(*args)
 		if status_code is 0:
 			return
@@ -186,7 +186,7 @@ def add_getter(instr, name, cmd):
 			if len(args) != 0:
 				raise Exception("Wrong number of arguments given to API call.")
 			args = [self.ip_address.encode('utf-8')]
-				
+
 		# Instantiate the values
 		var = cmd.arg_type()
 		args.append(byref(var))
@@ -215,11 +215,11 @@ class Parser(type):
 
 class APS2(metaclass=Parser):
 	# Simple calls, take only IP address
+	connect_APS        = APS2_Call()
+	disconnect_APS     = APS2_Call()
 	stop               = APS2_Call()
 	run                = APS2_Call()
 	trigger            = APS2_Call()
-	connect_APS        = APS2_Call()
-	disconnect_APS     = APS2_Call()
 	clear_channel_data = APS2_Call()
 
 	# Getters and Setters
@@ -258,11 +258,9 @@ class APS2(metaclass=Parser):
 	set_channel_enabled  = APS2_Chan_Setter(c_int)
 	get_channel_enabled  = APS2_Chan_Getter(c_int, return_type=bool)
 
-
-	def __init__(self, ip_address):
+	def __init__(self):
 		super(APS2, self).__init__()
-		self.ip_address = ip_address
-		self.connect_APS()
+		self.ip_address = ""
 
 		libaps2.get_device_IPs.argtypes       = [POINTER(c_char_p)]
 		libaps2.get_device_IPs.restype        = c_int
@@ -288,7 +286,26 @@ class APS2(metaclass=Parser):
 		libaps2.set_ip_addr.restype           = c_int
 
 	def __del__(self):
+		try:
+			self.disconnect()
+		except Exception as e:
+			pass
+
+	def connect(self, ip_address):
+		if self.ip_address:
+			#Disconnect before connecting to avoid dangling connections
+			warnings.warn("Disconnecting from {} before connection to {}".format(self.ip_address, ip_address))
+			self.disconnect()
+		try:
+			self.ip_address = ip_address
+			self.connect_APS()
+		except Exception as e:
+			self.ip_address = ""
+			raise e
+
+	def disconnect(self):
 		self.disconnect_APS()
+		self.ip_address = ""
 
 	def get_device_IPs(self):
 		num_devices = self.get_numDevices()
@@ -340,6 +357,3 @@ class APS2(metaclass=Parser):
 
 	def set_ip_addr(self, new_ip_address):
 		check(libaps2.set_ip_addr(self.ip_address.encode('utf-8'), new_ip_address.encode('utf-8')))
-
-
-
