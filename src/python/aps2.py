@@ -101,11 +101,15 @@ status_dict = {
 	 -23:  "APS2_BAD_PLL_VALUE",
 }
 
+libaps2.get_error_msg.restype = c_char_p
+def get_error_msg(status_code):
+	return libaps2.get_error_msg(status_code).decode("utf-8")
+
 def check(status_code):
 	if status_code is 0:
 		return
 	else:
-		raise Exception("APS Error: {}".format(status_dict[status_code]))
+		raise Exception("APS2 Error: {} - {}".format(status_dict[status_code], get_error_msg(status_code)))
 
 class APS2_Getter():
 	def __init__(self, arg_type, return_type=None):
@@ -225,7 +229,6 @@ class APS2(metaclass=Parser):
 	# Getters and Setters
 	get_uptime           = APS2_Getter(c_double)
 	get_fpga_temperature = APS2_Getter(c_double)
-	get_error_msg        = APS2_Getter(c_int)
 	get_numDevices       = APS2_Getter(c_uint)
 	get_runState         = APS2_Getter(c_int)
 	set_run_mode         = APS2_Setter(c_int)
