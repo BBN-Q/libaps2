@@ -547,10 +547,23 @@ void APS2::write_memory(const uint32_t & addr, const uint32_t & data){
 }
 
 void APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
-	/* APS2::write
-	 * addr = start byte of address space
-	 * data = vector<uint32_t> data
-	 */
+	/* APS2::write_memory
+	* addr = start byte of address space
+	* data = vector<uint32_t> data
+	*/
+
+	//Memory writes to SDRAM need to be 16 byte aligned and padded to a multiple of 16 bytes (4 words)
+	if (addr < MEMORY_ADDR + 0x40000000)
+	{
+		if ( (addr & 0xf) != 0) {
+			FILE_LOG(logERROR) << ipAddr_ << " attempted to write waveform/instruction SDRAM at an address not aligned to 16 bytes";
+			throw APS2_UNALIGNED_MEMORY_ACCESS;
+		}
+		if ( (data.size() % 4) != 0) {
+			FILE_LOG(logERROR) << ipAddr_ << " attempted to write waveform/instruction SDRAM with data not a multiple of 16 bytes";
+			throw APS2_UNALIGNED_MEMORY_ACCESS;
+		}
+	}
 
 	//Convert to datagrams and send
 	APS2Command cmd;
@@ -1617,10 +1630,10 @@ void APS2::clear_bit(const uint32_t & addr, std::initializer_list<int> bits) {
 	write_memory(addr, curReg);
 }
 
-void APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
+void APS2::write_waveform(const int & ch, const vector<int16_t> & wf) {
 	/*Write waveform data to FPGA memory
 	 * ch = channel (0-1)
-	 * wfData = bits 0-13: signed 14-bit waveform data, bits 14-15: marker data
+	 * wf = bits 0-13: signed 14-bit waveform data, bits 14-15: marker data
 	 */
 
 	uint32_t startAddr = (ch == 0) ? MEMORY_ADDR+WFA_OFFSET : MEMORY_ADDR+WFB_OFFSET;
@@ -1628,12 +1641,20 @@ void APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
 	// disable cache
 	write_memory(CACHE_CONTROL_ADDR, 0);
 
-	FILE_LOG(logDEBUG2) << ipAddr_ << " loading waveform of length " << wfData.size() << " at address " << hexn<8> << startAddr;
-	vector<uint32_t> packedData;
-	for (size_t ct=0; ct < wfData.size(); ct += 2) {
-		packedData.push_back(((uint32_t)wfData[ct+1] << 16) | (uint16_t)wfData[ct]);
+	FILE_LOG(logDEBUG2) << ipAddr_ << " loading waveform of length " << wf.size() << " at address " << hexn<8> << startAddr;
+	vector<uint32_t> packed_data;
+	for (size_t ct=0; ct < wf.size(); ct += 2) {
+		packed_data.push_back(((uint32_t)wf[ct+1] << 16) | (uint16_t)wf[ct]);
 	}
-	write_memory(startAddr, packedData);
+
+	//SDRAM writes must be multiples of 16 bytes
+	int pad_words = (4 - (packed_data.size() % 4)) % 4;
+	if (pad_words) {
+		FILE_LOG(logDEBUG1) << ipAddr_ << " padding waveform write with " << std::dec << pad_words << " words";
+		packed_data.resize(packed_data.size() + pad_words, 0xffffffff);
+	}
+
+	write_memory(startAddr, packed_data);
 
 	// enable cache
 	write_memory(CACHE_CONTROL_ADDR, 1);
@@ -1647,6 +1668,13 @@ void APS2::write_sequence(const vector<uint64_t> & data) {
 	for (size_t ct = 0; ct < data.size(); ct++) {
 		packed_instructions.push_back(static_cast<uint32_t>(data[ct] & 0xffffffff));
 		packed_instructions.push_back(static_cast<uint32_t>(data[ct] >> 32));
+	}
+
+	//SDRAM writes must be multiples of 16 bytes
+	int pad_words = (4 - (packed_instructions.size() % 4)) % 4;
+	if (pad_words) {
+		FILE_LOG(logDEBUG1) << ipAddr_ << " padding instruction write with " << std::dec << pad_words << " words";
+		packed_instructions.resize(packed_instructions.size() + pad_words, 0xffffffff);
 	}
 
 	// disable cache
