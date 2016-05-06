@@ -717,13 +717,17 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & ad
 void APS2::write_flash(uint32_t addr, vector<uint32_t> & data) {
 	FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::write_flash";
 
-	// erase before write
-	erase_flash(addr, sizeof(uint32_t) * data.size());
-
-	// resize data to a multiple of 64 words (256 bytes)
+	//Flash writes must be 256 byte aligned and written in 256 byte chunks
+	if ( (addr & 0xff) != 0) {
+		FILE_LOG(logERROR) << ipAddr_ << " attempted to write configuration ERPOM at an address not aligned to 256 bytes";
+		throw APS2_UNALIGNED_MEMORY_ACCESS;
+	}
 	int pad_words = (64 - (data.size() % 64)) % 64;
 	FILE_LOG(logDEBUG1) << ipAddr_ << " flash write: padding payload with " << pad_words << " words";
 	data.resize(data.size() + pad_words, 0xffffffff);
+
+	// erase before write
+	erase_flash(addr, sizeof(uint32_t) * data.size());
 
 	APS2Command cmd;
 	cmd.ack = 1;
