@@ -438,7 +438,7 @@ void APS2::set_trigger_interval(const double & interval) {
 	switch (host_type) {
 	case APS:
 		// SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
-		clockCycles = interval*0.25*samplingRate_*1e6;
+		clockCycles = interval*0.25*get_sampleRate()*1e6;
 		FILE_LOG(logDEBUG) << ipAddr_ << " setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
 
 		write_memory(TRIGGER_INTERVAL_ADDR, clockCycles);
@@ -459,8 +459,9 @@ double APS2::get_trigger_interval() {
 	case APS:
 		// SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
 		clockCycles = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
+		FILE_LOG(logINFO) << "clockCycles = " << clockCycles;
 		// Convert from clock cycles to time
-		return static_cast<double>(clockCycles)/(0.25*samplingRate_*1e6);
+		return static_cast<double>(clockCycles)/(0.25*get_sampleRate()*1e6);
 		break;
 	case TDM:
 		clockCycles = read_memory(TDM_TRIGGER_INTERVAL_ADDR, 1)[0];
