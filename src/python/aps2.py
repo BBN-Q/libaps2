@@ -111,6 +111,11 @@ def check(status_code):
 	else:
 		raise Exception("APS2 Error: {} - {}".format(status_dict[status_code], get_error_msg(status_code)))
 
+def get_numDevices():
+	num_devices = c_uint()
+	check(libaps2.get_numDevices(byref(num_devices)))
+	return num_devices.value
+
 class APS2_Getter():
 	def __init__(self, arg_type, return_type=None):
 		super(APS2_Getter, self).__init__()
@@ -223,7 +228,6 @@ class APS2(metaclass=Parser):
 	# Getters and Setters
 	get_uptime           = APS2_Getter(c_double)
 	get_fpga_temperature = APS2_Getter(c_double)
-	get_numDevices       = APS2_Getter(c_uint)
 	get_runState         = APS2_Getter(c_int)
 	set_run_mode         = APS2_Setter(c_int)
 
