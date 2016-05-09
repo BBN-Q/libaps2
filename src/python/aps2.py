@@ -116,6 +116,19 @@ def get_numDevices():
 	check(libaps2.get_numDevices(byref(num_devices)))
 	return num_devices.value
 
+def get_device_IPs():
+	num_devices = get_numDevices()
+	if num_devices > 0:
+		results = (c_char_p * num_devices)(addressof(create_string_buffer(16)))
+		check(libaps2.get_device_IPs(results))
+		return [r.decode('ascii') for r in results]
+	else:
+		return None
+
+def enumerate():
+	device_IPs = get_device_IPs()
+	return (len(device_IPs), device_IPs)
+
 class APS2_Getter():
 	def __init__(self, arg_type, return_type=None):
 		super(APS2_Getter, self).__init__()
@@ -307,15 +320,6 @@ class APS2(metaclass=Parser):
 	def disconnect(self):
 		self.disconnect_APS()
 		self.ip_address = ""
-
-	def get_device_IPs(self):
-		num_devices = self.get_numDevices()
-		if num_devices > 0:
-			results = (c_char_p * num_devices)(addressof(create_string_buffer(16)))
-			check(libaps2.get_device_IPs(results))
-			return [r.decode('ascii') for r in results]
-		else:
-			return None
 
 	def get_firmware_version(self):
 		version = c_ulong()
