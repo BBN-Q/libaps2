@@ -208,7 +208,7 @@ double APS2::get_uptime(){
 	return uptime.count();
 }
 
-double APS2::get_fpga_temperature(){
+float APS2::get_fpga_temperature(){
 	/*
 	* Return the FGPA die temperature in C.
 	*/
@@ -223,7 +223,7 @@ double APS2::get_fpga_temperature(){
 	}
 
 	//Temperature is return in bottom 12bits of user status and needs to be converted from the 12bit ADC value
-	double temp = static_cast<double>((temperature_reg & 0xfff))*503.975/4096 - 273.15;
+	float temp = static_cast<float>((temperature_reg & 0xfff))*503.975/4096 - 273.15;
 
 	//Don't return a stupid number of digits
 	//It seems the scale goes from 0-504K with 12bits = 0.12 degrees precision at best
@@ -433,7 +433,7 @@ APS2_TRIGGER_SOURCE APS2::get_trigger_source() {
 	return APS2_TRIGGER_SOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
 }
 
-void APS2::set_trigger_interval(const double & interval) {
+void APS2::set_trigger_interval(const float & interval) {
 	int clockCycles;
 	switch (host_type) {
 	case APS:
@@ -453,7 +453,7 @@ void APS2::set_trigger_interval(const double & interval) {
 	}
 }
 
-double APS2::get_trigger_interval() {
+float APS2::get_trigger_interval() {
 	uint32_t clockCycles;
 	switch (host_type) {
 	case APS:
@@ -461,13 +461,13 @@ double APS2::get_trigger_interval() {
 		clockCycles = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
 		FILE_LOG(logINFO) << "clockCycles = " << clockCycles;
 		// Convert from clock cycles to time
-		return static_cast<double>(clockCycles)/(0.25*get_sampleRate()*1e6);
+		return static_cast<float>(clockCycles)/(0.25*get_sampleRate()*1e6);
 		break;
 	case TDM:
 		clockCycles = read_memory(TDM_TRIGGER_INTERVAL_ADDR, 1)[0];
 		// Convert from clock cycles to time
 		// TDM operates on a fixed 100 MHz clock
-		return static_cast<double>(clockCycles)/(100e6);
+		return static_cast<float>(clockCycles)/(100e6);
 		break;
 	}
 	//Shoud never get here;
