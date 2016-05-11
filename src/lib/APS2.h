@@ -45,15 +45,15 @@ public:
 	uint32_t get_firmware_git_sha1();
 	uint32_t get_firmware_build_timestamp();
 	double get_uptime();
-	double get_fpga_temperature();
+	float get_fpga_temperature();
 
 	void set_sampleRate(const unsigned int &);
 	unsigned int get_sampleRate();
 
 	void set_trigger_source(const APS2_TRIGGER_SOURCE &);
 	APS2_TRIGGER_SOURCE get_trigger_source();
-	void set_trigger_interval(const double &);
-	double get_trigger_interval();
+	void set_trigger_interval(const float &);
+	float get_trigger_interval();
 	void trigger();
 
 	void set_channel_enabled(int, bool);

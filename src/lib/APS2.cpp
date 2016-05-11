@@ -208,7 +208,7 @@ double APS2::get_uptime(){
 	return uptime.count();
 }
 
-double APS2::get_fpga_temperature(){
+float APS2::get_fpga_temperature(){
 	/*
 	* Return the FGPA die temperature in C.
 	*/
@@ -223,7 +223,7 @@ double APS2::get_fpga_temperature(){
 	}
 
 	//Temperature is return in bottom 12bits of user status and needs to be converted from the 12bit ADC value
-	double temp = static_cast<double>((temperature_reg & 0xfff))*503.975/4096 - 273.15;
+	float temp = static_cast<float>((temperature_reg & 0xfff))*503.975/4096 - 273.15;
 
 	//Don't return a stupid number of digits
 	//It seems the scale goes from 0-504K with 12bits = 0.12 degrees precision at best
@@ -495,12 +495,12 @@ APS2_TRIGGER_SOURCE APS2::get_trigger_source() {
 	return APS2_TRIGGER_SOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
 }
 
-void APS2::set_trigger_interval(const double & interval) {
+void APS2::set_trigger_interval(const float & interval) {
 	int clockCycles;
 	switch (host_type) {
 	case APS:
 		// SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
-		clockCycles = interval*0.25*samplingRate_*1e6;
+		clockCycles = interval*0.25*get_sampleRate()*1e6;
 		FILE_LOG(logDEBUG) << ipAddr_ << " setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
 
 		write_memory(TRIGGER_INTERVAL_ADDR, clockCycles);
@@ -515,20 +515,21 @@ void APS2::set_trigger_interval(const double & interval) {
 	}
 }
 
-double APS2::get_trigger_interval() {
+float APS2::get_trigger_interval() {
 	uint32_t clockCycles;
 	switch (host_type) {
 	case APS:
 		// SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
 		clockCycles = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
+		FILE_LOG(logINFO) << "clockCycles = " << clockCycles;
 		// Convert from clock cycles to time
-		return static_cast<double>(clockCycles)/(0.25*samplingRate_*1e6);
+		return static_cast<float>(clockCycles)/(0.25*get_sampleRate()*1e6);
 		break;
 	case TDM:
 		clockCycles = read_memory(TDM_TRIGGER_INTERVAL_ADDR, 1)[0];
 		// Convert from clock cycles to time
 		// TDM operates on a fixed 100 MHz clock
-		return static_cast<double>(clockCycles)/(100e6);
+		return static_cast<float>(clockCycles)/(100e6);
 		break;
 	}
 	//Shoud never get here;
@@ -660,10 +661,23 @@ void APS2::write_memory(const uint32_t & addr, const uint32_t & data){
 }
 
 void APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
-	/* APS2::write
-	 * addr = start byte of address space
-	 * data = vector<uint32_t> data
-	 */
+	/* APS2::write_memory
+	* addr = start byte of address space
+	* data = vector<uint32_t> data
+	*/
+
+	//Memory writes to SDRAM need to be 16 byte aligned and padded to a multiple of 16 bytes (4 words)
+	if (addr < MEMORY_ADDR + 0x40000000)
+	{
+		if ( (addr & 0xf) != 0) {
+			FILE_LOG(logERROR) << ipAddr_ << " attempted to write waveform/instruction SDRAM at an address not aligned to 16 bytes";
+			throw APS2_UNALIGNED_MEMORY_ACCESS;
+		}
+		if ( (data.size() % 4) != 0) {
+			FILE_LOG(logERROR) << ipAddr_ << " attempted to write waveform/instruction SDRAM with data not a multiple of 16 bytes";
+			throw APS2_UNALIGNED_MEMORY_ACCESS;
+		}
+	}
 
 	//Convert to datagrams and send
 	APS2Command cmd;
@@ -817,13 +831,17 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & ad
 void APS2::write_flash(uint32_t addr, vector<uint32_t> & data) {
 	FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::write_flash";
 
-	// erase before write
-	erase_flash(addr, sizeof(uint32_t) * data.size());
-
-	// resize data to a multiple of 64 words (256 bytes)
+	//Flash writes must be 256 byte aligned and written in 256 byte chunks
+	if ( (addr & 0xff) != 0) {
+		FILE_LOG(logERROR) << ipAddr_ << " attempted to write configuration ERPOM at an address not aligned to 256 bytes";
+		throw APS2_UNALIGNED_MEMORY_ACCESS;
+	}
 	int pad_words = (64 - (data.size() % 64)) % 64;
 	FILE_LOG(logDEBUG1) << ipAddr_ << " flash write: padding payload with " << pad_words << " words";
 	data.resize(data.size() + pad_words, 0xffffffff);
+
+	// erase before write
+	erase_flash(addr, sizeof(uint32_t) * data.size());
 
 	APS2Command cmd;
 	cmd.ack = 1;
@@ -1706,27 +1724,34 @@ void APS2::clear_bit(const uint32_t & addr, std::initializer_list<int> bits) {
 	write_memory(addr, curReg);
 }
 
-void APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
+void APS2::write_waveform(const int & ch, const vector<int16_t> & wf) {
 	/*Write waveform data to FPGA memory
 	 * ch = channel (0-1)
-	 * wfData = bits 0-13: signed 14-bit waveform data, bits 14-15: marker data
+	 * wf = bits 0-13: signed 14-bit waveform data, bits 14-15: marker data
 	 */
 
 	// disable cache
 	write_memory(CACHE_CONTROL_ADDR, 0);
 
-	//write the data
 	uint32_t startAddr = (ch == 0) ? MEMORY_ADDR+WFA_OFFSET : MEMORY_ADDR+WFB_OFFSET;
-	FILE_LOG(logDEBUG2) << ipAddr_ << " loading waveform of length " << wfData.size() << " at address " << hexn<8> << startAddr;
-	vector<uint32_t> packedData;
-	for (size_t ct=0; ct < wfData.size(); ct += 2) {
-		packedData.push_back(((uint32_t)wfData[ct+1] << 16) | (uint16_t)wfData[ct]);
+	FILE_LOG(logDEBUG2) << ipAddr_ << " loading waveform of length " << wf.size() << " at address " << hexn<8> << startAddr;
+	vector<uint32_t> packed_data;
+	for (size_t ct=0; ct < wf.size(); ct += 2) {
+		packed_data.push_back(((uint32_t)wf[ct+1] << 16) | (uint16_t)wf[ct]);
 	}
-	write_memory(startAddr, packedData);
+
+	//SDRAM writes must be multiples of 16 bytes
+	int pad_words = (4 - (packed_data.size() % 4)) % 4;
+	if (pad_words) {
+		FILE_LOG(logDEBUG1) << ipAddr_ << " padding waveform write with " << std::dec << pad_words << " words";
+		packed_data.resize(packed_data.size() + pad_words, 0xffffffff);
+	}
+
+	write_memory(startAddr, packed_data);
 
 	//write the length register
 	uint32_t length_addr = (ch == 0) ? CH_A_WF_LENGTH_ADDR : CH_B_WF_LENGTH_ADDR;
-	write_memory(length_addr, wfData.size());
+	write_memory(length_addr, wf.size());
 
 	// enable cache
 	write_memory(CACHE_CONTROL_ADDR, 1);
@@ -1740,6 +1765,13 @@ void APS2::write_sequence(const vector<uint64_t> & data) {
 	for (size_t ct = 0; ct < data.size(); ct++) {
 		packed_instructions.push_back(static_cast<uint32_t>(data[ct] & 0xffffffff));
 		packed_instructions.push_back(static_cast<uint32_t>(data[ct] >> 32));
+	}
+
+	//SDRAM writes must be multiples of 16 bytes
+	int pad_words = (4 - (packed_instructions.size() % 4)) % 4;
+	if (pad_words) {
+		FILE_LOG(logDEBUG1) << ipAddr_ << " padding instruction write with " << std::dec << pad_words << " words";
+		packed_instructions.resize(packed_instructions.size() + pad_words, 0xffffffff);
 	}
 
 	// disable cache

@@ -209,8 +209,8 @@ int main (int argc, char* argv[])
 			program_bitfile(deviceSerial.c_str(), target_addr);
 			//APS will drop connection so disconnect wait and reconnect
 			disconnect_APS(deviceSerial.c_str());
-			for (size_t ct = 0; ct < 5; ct++) {
-				cout << 5-ct << " " << std::flush;
+			for (size_t ct = 3; ct > 0; ct--) {
+				cout << ct << " " << std::flush;
 				std::this_thread::sleep_for(std::chrono::seconds(1));
 			}
 			cout << endl;

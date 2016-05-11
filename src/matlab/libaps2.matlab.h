@@ -47,7 +47,7 @@ EXPORT APS2_STATUS init_APS(const char*, int);
 
 EXPORT APS2_STATUS get_firmware_version(const char*, unsigned int*, unsigned int*, unsigned int*, char*);
 EXPORT APS2_STATUS get_uptime(const char*, double*);
-EXPORT APS2_STATUS get_fpga_temperature(const char*, double*);
+EXPORT APS2_STATUS get_fpga_temperature(const char*, float*);
 
 EXPORT APS2_STATUS set_sampleRate(const char*, unsigned int);
 EXPORT APS2_STATUS get_sampleRate(const char*, unsigned int*);
@@ -66,8 +66,8 @@ EXPORT APS2_STATUS get_mixer_phase_skew(const char*, float*);
 
 EXPORT APS2_STATUS set_trigger_source(const char*, APS2_TRIGGER_SOURCE);
 EXPORT APS2_STATUS get_trigger_source(const char*, APS2_TRIGGER_SOURCE*);
-EXPORT APS2_STATUS set_trigger_interval(const char*, double);
-EXPORT APS2_STATUS get_trigger_interval(const char*, double*);
+EXPORT APS2_STATUS set_trigger_interval(const char*, float);
+EXPORT APS2_STATUS get_trigger_interval(const char*, float*);
 EXPORT APS2_STATUS trigger(const char*);
 
 EXPORT APS2_STATUS set_waveform_float(const char*, int, float*, int);

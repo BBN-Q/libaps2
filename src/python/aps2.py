@@ -111,6 +111,24 @@ def check(status_code):
 	else:
 		raise Exception("APS2 Error: {} - {}".format(status_dict[status_code], get_error_msg(status_code)))
 
+def get_numDevices():
+	num_devices = c_uint()
+	check(libaps2.get_numDevices(byref(num_devices)))
+	return num_devices.value
+
+def get_device_IPs():
+	num_devices = get_numDevices()
+	if num_devices > 0:
+		results = (c_char_p * num_devices)(addressof(create_string_buffer(16)))
+		check(libaps2.get_device_IPs(results))
+		return [r.decode('ascii') for r in results]
+	else:
+		return None
+
+def enumerate():
+	device_IPs = get_device_IPs()
+	return (len(device_IPs), device_IPs)
+
 class APS2_Getter():
 	def __init__(self, arg_type, return_type=None):
 		super(APS2_Getter, self).__init__()
@@ -222,8 +240,7 @@ class APS2(metaclass=Parser):
 
 	# Getters and Setters
 	get_uptime           = APS2_Getter(c_double)
-	get_fpga_temperature = APS2_Getter(c_double)
-	get_numDevices       = APS2_Getter(c_uint)
+	get_fpga_temperature = APS2_Getter(c_float)
 	get_runState         = APS2_Getter(c_int)
 	set_run_mode         = APS2_Setter(c_int)
 
@@ -239,8 +256,8 @@ class APS2(metaclass=Parser):
 	set_trigger_source   = APS2_Setter(c_int)
 	get_trigger_source   = APS2_Getter(c_int)
 
-	set_trigger_interval = APS2_Setter(c_double)
-	get_trigger_interval = APS2_Getter(c_double)
+	set_trigger_interval = APS2_Setter(c_float)
+	get_trigger_interval = APS2_Getter(c_float)
 
 	set_trigger_source   = APS2_Setter(c_int)
 	get_trigger_source   = APS2_Getter(c_int)
@@ -303,15 +320,6 @@ class APS2(metaclass=Parser):
 	def disconnect(self):
 		self.disconnect_APS()
 		self.ip_address = ""
-
-	def get_device_IPs(self):
-		num_devices = self.get_numDevices()
-		if num_devices > 0:
-			results = (c_char_p * num_devices)(addressof(create_string_buffer(16)))
-			check(libaps2.get_device_IPs(results))
-			return [r.decode('ascii') for r in results]
-		else:
-			return None
 
 	def get_firmware_version(self):
 		version = c_ulong()

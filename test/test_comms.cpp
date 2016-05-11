@@ -114,7 +114,7 @@ TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 	}
 
 	SECTION("fpga temperature") {
-		double temp;
+		float temp;
 		APS2_STATUS status;
 		status = get_fpga_temperature(ip_addr.c_str(), &temp);
 		REQUIRE( status == APS2_OK );

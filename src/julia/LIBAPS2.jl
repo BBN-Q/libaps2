@@ -150,7 +150,7 @@ end
 
 @aps2_getter get_firmware_version UInt32
 @aps2_getter get_uptime Float64
-@aps2_getter get_fpga_temperature Float64
+@aps2_getter get_fpga_temperature Float32
 
 @aps2_call run
 @aps2_call stop
@@ -175,8 +175,8 @@ end
 
 @aps2_setter set_trigger_source Cint
 @aps2_getter get_trigger_source Cint
-@aps2_setter set_trigger_interval Float64
-@aps2_getter get_trigger_interval Float64
+@aps2_setter set_trigger_interval Float32
+@aps2_getter get_trigger_interval Float32
 @aps2_call trigger
 
 function load_waveform{T<:Integer}(aps::APS2, chan, wf::Vector{T})
