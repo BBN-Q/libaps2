@@ -240,7 +240,7 @@ class APS2(metaclass=Parser):
 
 	# Getters and Setters
 	get_uptime           = APS2_Getter(c_double)
-	get_fpga_temperature = APS2_Getter(c_double)
+	get_fpga_temperature = APS2_Getter(c_float)
 	get_runState         = APS2_Getter(c_int)
 	set_run_mode         = APS2_Setter(c_int)
 
@@ -256,8 +256,8 @@ class APS2(metaclass=Parser):
 	set_trigger_source   = APS2_Setter(c_int)
 	get_trigger_source   = APS2_Getter(c_int)
 
-	set_trigger_interval = APS2_Setter(c_double)
-	get_trigger_interval = APS2_Getter(c_double)
+	set_trigger_interval = APS2_Setter(c_float)
+	get_trigger_interval = APS2_Getter(c_float)
 
 	set_trigger_source   = APS2_Setter(c_int)
 	get_trigger_source   = APS2_Getter(c_int)

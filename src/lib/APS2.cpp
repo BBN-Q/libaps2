@@ -461,11 +461,7 @@ float APS2::get_trigger_interval() {
 		clockCycles = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
 		FILE_LOG(logINFO) << "clockCycles = " << clockCycles;
 		// Convert from clock cycles to time
-<<<<<<< 5e7bc570bcde67fe57e33929d37b54c093cf198a
-		return static_cast<double>(clockCycles)/(0.25*get_sampleRate()*1e6);
-=======
-		return static_cast<float>(clockCycles)/(0.25*samplingRate_*1e6);
->>>>>>> Changed doubles to floats.
+		return static_cast<float>(clockCycles)/(0.25*get_sampleRate()*1e6);
 		break;
 	case TDM:
 		clockCycles = read_memory(TDM_TRIGGER_INTERVAL_ADDR, 1)[0];
