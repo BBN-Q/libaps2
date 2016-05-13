@@ -4,7 +4,7 @@ import numpy as np
 import numpy.ctypeslib as npct
 from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, c_char_p, addressof, create_string_buffer, byref, POINTER
 
-build_path = (os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "build")))
+build_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "build"))
 #On Windows add build path to system path to pick up DLL mingw dependencies
 if "Windows" in platform.platform():
 	os.environ["PATH"] += build_path
@@ -280,6 +280,15 @@ class APS2(metaclass=Parser):
 
 	set_channel_enabled  = APS2_Chan_Setter(c_int)
 	get_channel_enabled  = APS2_Chan_Getter(c_int, return_type=bool)
+
+	set_waveform_frequency = APS2_Setter(c_float)
+	get_waveform_frequency = APS2_Getter(c_float)
+
+	set_mixer_amplitude_imbalance = APS2_Setter(c_float)
+	get_mixer_amplitude_imbalance = APS2_Getter(c_float)
+
+	set_mixer_phase_skew = APS2_Setter(c_float)
+	get_mixer_phase_skew = APS2_Getter(c_float)
 
 	def __init__(self):
 		super(APS2, self).__init__()
