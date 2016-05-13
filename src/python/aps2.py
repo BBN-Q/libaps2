@@ -133,6 +133,12 @@ def enumerate():
 	device_IPs = get_device_IPs()
 	return (len(device_IPs), device_IPs)
 
+def set_log(filename):
+	check(libaps2.set_log(filename.encode('utf-8')))
+
+def set_logging_level(level):
+	check(libaps2.set_logging_level(level))
+
 class APS2_Getter():
 	def __init__(self, arg_type, return_type=None):
 		super(APS2_Getter, self).__init__()
@@ -354,12 +360,6 @@ class APS2(metaclass=Parser):
 	def load_sequence_file(self, filename):
 		filename = filename.replace("\\", "\\\\")
 		check(libaps2.load_sequence_file(self.ip_address.encode('utf-8'), filename.encode('utf-8')))
-
-	def set_log(self, filename):
-		check(libaps2.set_log(filename.encode('utf-8')))
-
-	def set_logging_level(self, level):
-		check(libaps2.set_logging_level(level))
 
 	def get_ip_addr(self):
 		addr = create_string_buffer(64)
