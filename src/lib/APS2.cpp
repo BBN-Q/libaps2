@@ -1410,7 +1410,7 @@ void APS2::disable_DAC_FIFO(const int & dac) {
 int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<uint32_t> & results){
 	/*
 	Measures the DAC BIST registers for a given test vector at three stages: leaving the FPGA, registering
-	the data on the DAC at the LVDS stage, synronizing to the output stage on the DAC. It returns the BIST
+	the data on the DAC at the LVDS stage, syncronizing to the output stage on the DAC. It returns the BIST
 	results as a vector:
 	results = {IdealPhase1, IdealPhase2, FPGAPhase1, FPGAPhase2, LVDSPhase1, LVDSPhase2, SYNCPhase1, SYNCPhase2}
 	*/
@@ -1572,9 +1572,8 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	trigger();
 
 	results.clear();
-	//Phase I and II seem to be swapped...
-	results.push_back(phase2BIST);
 	results.push_back(phase1BIST);
+	results.push_back(phase2BIST);
 	auto readResults = read_BIST_sig();
 	results.insert(results.end(), readResults.begin(), readResults.end());
 
