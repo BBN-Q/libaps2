@@ -152,7 +152,7 @@ TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 		bool passed;
 		//sequence
 		cout << "seq. cache: ";
-		passed = test_mem_write_read(0xc2000000, 0xc2007fff, 1 << 12, 0x3);
+		passed = test_mem_write_read(0xc2000000, 0xc2003fff, 1 << 11, 0x3);
 		REQUIRE(passed);
 		// wfA
 		cout << "wf. a cache: ";
