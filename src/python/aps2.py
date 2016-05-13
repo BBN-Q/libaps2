@@ -1,9 +1,13 @@
 import os
+import platform
 import numpy as np
 import numpy.ctypeslib as npct
 from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, c_char_p, addressof, create_string_buffer, byref, POINTER
 
 build_path = (os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "build")))
+#On Windows add build path to system path to pick up DLL mingw dependencies
+if "Windows" in platform.platform():
+	os.environ["PATH"] += build_path
 libaps2 = npct.load_library("libaps2", build_path)
 
 np_double_1D = npct.ndpointer(dtype=np.double,  ndim=1, flags='CONTIGUOUS')
@@ -251,7 +255,6 @@ class APS2(metaclass=Parser):
 	get_sampleRate       = APS2_Getter(c_uint)
 
 	reset                = APS2_Setter(c_int)
-	init_APS             = APS2_Setter(c_int)
 
 	set_trigger_source   = APS2_Setter(c_int)
 	get_trigger_source   = APS2_Getter(c_int)
@@ -328,6 +331,9 @@ class APS2(metaclass=Parser):
 		string = create_string_buffer(64)
 		check(libaps2.get_firmware_version(self.ip_address.encode('utf-8'), byref(version), byref(sha), byref(timestamp), string))
 		return version.value, sha.value, timestamp.value, string.value.decode('ascii')
+
+	def init(self, force=0):
+		check(libaps2.init_APS(self.ip_address.encode('utf-8'), force))
 
 	def set_waveform_float(self, channel, data):
 		num_points = len(data)

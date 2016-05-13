@@ -94,9 +94,6 @@ public:
 	void stop();
 	APS2_RUN_STATE get_runState();
 
-	//Whether the APS connection is open
-	bool isOpen;
-
 	APS2_RUN_STATE runState;
 	APS2_HOST_TYPE host_type;
 	bool legacy_firmware;
@@ -151,6 +148,7 @@ public:
 private:
 
 	string ipAddr_;
+	bool connected_;
 	vector<Channel> channels_;
 	shared_ptr<APS2Ethernet> ethernetRM_;
 	unsigned samplingRate_;

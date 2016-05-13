@@ -5,9 +5,9 @@ using std::endl;
 #include "APS2.h"
 #include "APS2Datagram.h"
 
-APS2::APS2() :	isOpen{false}, legacy_firmware{false}, channels_(2), samplingRate_{0} {};
+APS2::APS2() :	legacy_firmware{false}, ipAddr_{""}, connected_{false}, channels_(2), samplingRate_{0} {};
 
-APS2::APS2(string deviceSerial) :	isOpen{false}, legacy_firmware{false}, ipAddr_{deviceSerial}, samplingRate_{0} {
+APS2::APS2(string deviceSerial) :	legacy_firmware{false}, ipAddr_{deviceSerial}, connected_{false}, samplingRate_{0} {
 	channels_.reserve(2);
 	for(size_t ct=0; ct<2; ct++) channels_.push_back(Channel(ct));
 };
@@ -18,9 +18,10 @@ void APS2::connect(shared_ptr<APS2Ethernet> && ethernetRM) {
 	FILE_LOG(logDEBUG) << ipAddr_ << " APS2::connect";
 	//Hold on to APS2Ethernet class to keep socket alive
 	ethernetRM_ = ethernetRM;
-	if (!isOpen) {
+	if (!connected_) {
 		try {
 			ethernetRM_->connect(ipAddr_);
+			connected_ = true;
 		}
 		catch(...) {
 			//release reference to APS2Ethernet
@@ -47,9 +48,9 @@ void APS2::connect(shared_ptr<APS2Ethernet> && ethernetRM) {
 
 void APS2::disconnect() {
 	FILE_LOG(logDEBUG) << ipAddr_ << " APS2::disconnect";
-	if (isOpen) {
+	if (connected_) {
 		ethernetRM_->disconnect(ipAddr_);
-
+		connected_ = false;
 		FILE_LOG(logINFO) << ipAddr_ << " closed connection to device";
 
 		//Release reference to ethernet RM
@@ -1523,7 +1524,7 @@ void APS2::disable_DAC_FIFO(const int & dac) {
 int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<uint32_t> & results){
 	/*
 	Measures the DAC BIST registers for a given test vector at three stages: leaving the FPGA, registering
-	the data on the DAC at the LVDS stage, synronizing to the output stage on the DAC. It returns the BIST
+	the data on the DAC at the LVDS stage, syncronizing to the output stage on the DAC. It returns the BIST
 	results as a vector:
 	results = {IdealPhase1, IdealPhase2, FPGAPhase1, FPGAPhase2, LVDSPhase1, LVDSPhase2, SYNCPhase1, SYNCPhase2}
 	*/
@@ -1685,9 +1686,8 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	trigger();
 
 	results.clear();
-	//Phase I and II seem to be swapped...
-	results.push_back(phase2BIST);
 	results.push_back(phase1BIST);
+	results.push_back(phase2BIST);
 	auto readResults = read_BIST_sig();
 	results.insert(results.end(), readResults.begin(), readResults.end());
 

@@ -219,6 +219,7 @@ int main (int argc, char* argv[])
 
 			if ( status != APS2_OK ) {
 				std::cerr << "APS2 failed to come back up after programming!" << endl;
+				disconnect_APS(deviceSerial.c_str());
 				return -1;
 			}
 
