@@ -251,7 +251,6 @@ class APS2(metaclass=Parser):
 	get_sampleRate       = APS2_Getter(c_uint)
 
 	reset                = APS2_Setter(c_int)
-	init_APS             = APS2_Setter(c_int)
 
 	set_trigger_source   = APS2_Setter(c_int)
 	get_trigger_source   = APS2_Getter(c_int)
@@ -328,6 +327,9 @@ class APS2(metaclass=Parser):
 		string = create_string_buffer(64)
 		check(libaps2.get_firmware_version(self.ip_address.encode('utf-8'), byref(version), byref(sha), byref(timestamp), string))
 		return version.value, sha.value, timestamp.value, string.value.decode('ascii')
+
+	def init(self, force=0):
+		check(libaps2.init_APS(self.ip_address.encode('utf-8'), force))
 
 	def set_waveform_float(self, channel, data):
 		num_points = len(data)
