@@ -1,9 +1,13 @@
 import os
+import platform
 import numpy as np
 import numpy.ctypeslib as npct
 from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, c_char_p, addressof, create_string_buffer, byref, POINTER
 
 build_path = (os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "build")))
+#On Windows add build path to system path to pick up DLL mingw dependencies
+if "Windows" in platform.platform():
+	os.environ["PATH"] += build_path
 libaps2 = npct.load_library("libaps2", build_path)
 
 np_double_1D = npct.ndpointer(dtype=np.double,  ndim=1, flags='CONTIGUOUS')
