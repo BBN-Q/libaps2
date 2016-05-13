@@ -11,7 +11,7 @@ if "Windows" in platform.platform():
 libaps2 = npct.load_library("libaps2", build_path)
 
 np_double_1D = npct.ndpointer(dtype=np.double,  ndim=1, flags='CONTIGUOUS')
-np_float_1D  = npct.ndpointer(dtype=np.float,   ndim=1, flags='CONTIGUOUS')
+np_float_1D  = npct.ndpointer(dtype=np.float32, ndim=1, flags='CONTIGUOUS')
 np_int16_1D  = npct.ndpointer(dtype=np.int16,   ndim=1, flags='CONTIGUOUS')
 np_int8_1D   = npct.ndpointer(dtype=np.int8,    ndim=1, flags='CONTIGUOUS')
 np_uint64_1D = npct.ndpointer(dtype=np.uint64,  ndim=1, flags='CONTIGUOUS')
