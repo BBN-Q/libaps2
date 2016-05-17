@@ -180,8 +180,8 @@ private:
 	// int trigger();
 	// int disable();
 
-	void set_bit(const uint32_t &, std::initializer_list<int>);
-	void clear_bit(const uint32_t &, std::initializer_list<int>);
+	void set_register_bit(const uint32_t &, std::initializer_list<size_t>);
+	void clear_register_bit(const uint32_t &, std::initializer_list<size_t>);
 
 	void write_waveform(const int &, const vector<int16_t> &);
 

@@ -271,25 +271,25 @@ const int TRIGSRC_BIT = 1; // trigger source (0 = external, 1 = internal, 2 = so
 const int SOFT_TRIG_BIT = 3;
 
 // PLL bits
-const int PLL_CHA_RST_BIT = 8;
-const int PLL_CHB_RST_BIT = 9;
-const int IO_CHA_RST_BIT = 10;
-const int IO_CHB_RST_BIT = 11;
-const int DAC_BIST_CHA_RST_BIT = 12;
-const int DAC_BIST_CHB_RST_BIT = 13;
+const unsigned PLL_CHA_RST_BIT = 8;
+const unsigned PLL_CHB_RST_BIT = 9;
+const unsigned IO_CHA_RST_BIT = 10;
+const unsigned IO_CHB_RST_BIT = 11;
+const unsigned DAC_BIST_CHA_RST_BIT = 12;
+const unsigned DAC_BIST_CHB_RST_BIT = 13;
 
 // HOST_STATUS bits
 const int APS2_HOST_TYPE_BIT = 24;
 
 // USER_STATUS bits
-const int MMCM_SYS_LOCK_BIT = 31;
-const int MMCM_CFG_LOCK_BIT = 30;
-const int MIG_C0_LOCK_BIT   = 24;
-const int MIG_C0_CAL_BIT    = 25;
-const int MIG_C1_LOCK_BIT   = 26;
-const int MIG_C1_CAL_BIT    = 27;
-const int AXI_RESET_BIT     = 21;
-const int AXI_RESETN_BIT    = 20;
+const unsigned MMCM_SYS_LOCK_BIT = 31;
+const unsigned MMCM_CFG_LOCK_BIT = 30;
+const unsigned MIG_C0_LOCK_BIT   = 24;
+const unsigned MIG_C0_CAL_BIT    = 25;
+const unsigned MIG_C1_LOCK_BIT   = 26;
+const unsigned MIG_C1_CAL_BIT    = 27;
+const unsigned AXI_RESET_BIT     = 21;
+const unsigned AXI_RESETN_BIT    = 20;
 
 // TDM reset control bits
 const int TDM_TRIGGER_RESET_BIT = 0;

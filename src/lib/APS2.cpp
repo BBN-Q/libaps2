@@ -1,5 +1,6 @@
 #include <fstream>
 #include <stdexcept> //std::runtime_error
+#include <bitset>
 using std::endl;
 
 #include "APS2.h"
@@ -552,11 +553,11 @@ void APS2::run() {
 	switch (host_type) {
 	case APS:
 		FILE_LOG(logDEBUG1) << ipAddr_ << " releasing pulse sequencer state machine...";
-		set_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+		set_register_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
 		break;
 	case TDM:
 		FILE_LOG(logDEBUG1) << ipAddr_ << " enabling TDM trigger";
-		clear_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
+		clear_register_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
 		break;
 	}
 }
@@ -566,10 +567,10 @@ void APS2::stop() {
 	switch (host_type) {
 	case APS:
 		//Put the state machine back in reset
-		clear_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+		clear_register_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
 		break;
 	case TDM:
-		set_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
+		set_register_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
 		break;
 	}
 }
@@ -1069,7 +1070,7 @@ int APS2::setup_PLL() {
 
 	// Disable DDRs
 	// int ddrMask = CSRMSK_CHA_DDR | CSRMSK_CHB_DDR;
-//	FPGA::clear_bit(socket_, FPGA_ADDR_CSR, ddrMask);
+//	FPGA::clear_register_bit(socket_, FPGA_ADDR_CSR, ddrMask);
 	// disable dac FIFOs
 	// for (int dac = 0; dac < NUM_CHANNELS; dac++)
 		// disable_DAC_FIFO(dac);
@@ -1082,7 +1083,7 @@ int APS2::setup_PLL() {
 //		return -1;
 
 	// Enable DDRs
-//	FPGA::set_bit(socket_, FPGA_ADDR_CSR, ddrMask);
+//	FPGA::set_register_bit(socket_, FPGA_ADDR_CSR, ddrMask);
 
 	//Record that sampling rate has been set to 1200
 	samplingRate_ = 1200;
@@ -1125,7 +1126,7 @@ int APS2::set_PLL_freq(const int & freq) {
 	// Disable DDRs
 	// int ddr_mask = CSRMSK_CHA_DDR | CSRMSK_CHB_DDR;
 	//TODO: fix!
-//	FPGA::clear_bit(socket_, FPGA_ADDR_CSR, ddr_mask);
+//	FPGA::clear_register_bit(socket_, FPGA_ADDR_CSR, ddr_mask);
 
 	// Disable oscillator by clearing APS2_STATUS_CTRL register
 	//TODO: fix!
@@ -1150,7 +1151,7 @@ int APS2::set_PLL_freq(const int & freq) {
 
 	// Enable DDRs
 	//TODO: fix!
-//	FPGA::set_bit(socket_, FPGA_ADDR_CSR, ddr_mask);
+//	FPGA::set_register_bit(socket_, FPGA_ADDR_CSR, ddr_mask);
 
 	return 0;
 }
@@ -1170,7 +1171,7 @@ int APS2::test_PLL_sync() {
 	uint32_t ch_phase, ch_phase_deg;
 
 	const vector<uint32_t> CH_PHASE_ADDR = {PHASE_COUNT_A_ADDR, PHASE_COUNT_B_ADDR};
-	const vector<int> CH_PLL_RESET_BIT = {PLL_CHA_RST_BIT, PLL_CHB_RST_BIT};
+	const vector<unsigned> CH_PLL_RESET_BIT = {PLL_CHA_RST_BIT, PLL_CHB_RST_BIT};
 
 	FILE_LOG(logINFO) << ipAddr_ << " running channel sync procedure";
 
@@ -1179,7 +1180,7 @@ int APS2::test_PLL_sync() {
 		disable_DAC_FIFO(dac);
 	}
 	// Disable DDRs
-	set_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
+	set_register_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
 
 	static const int lowPhaseCutoff = 45, highPhaseCutoff = 135;
 	// loop over channels
@@ -1196,7 +1197,7 @@ int APS2::test_PLL_sync() {
 				break;
 			} else {
 				// disable the channel PLL
-				set_bit(RESETS_ADDR, {CH_PLL_RESET_BIT[ch]});
+				set_register_bit(RESETS_ADDR, {CH_PLL_RESET_BIT[ch]});
 
 				if (ch_phase_deg >= lowPhaseCutoff && ch_phase_deg <= highPhaseCutoff) {
 					// disable then enable the DAC PLL
@@ -1205,7 +1206,7 @@ int APS2::test_PLL_sync() {
 				}
 
 				// enable the channel pll
-				clear_bit(RESETS_ADDR, {CH_PLL_RESET_BIT[ch]});
+				clear_register_bit(RESETS_ADDR, {CH_PLL_RESET_BIT[ch]});
 			}
 			if (ct == MAX_PHASE_TEST_CNT-1) {
 				FILE_LOG(logERROR) << ipAddr_ << " DAC " << ((ch==0) ? "A" : "B") << " failed to sync";
@@ -1215,7 +1216,7 @@ int APS2::test_PLL_sync() {
 	}
 
 	// Enable DDRs
-	clear_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
+	clear_register_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
 	// Enable DAC FIFOs
 	for (int dac = 0; dac < NUM_CHANNELS; dac++) {
 		enable_DAC_FIFO(dac);
@@ -1531,7 +1532,7 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
 	const vector<uint32_t> FPGA_Reg_Phase1 = {DAC_BIST_CHA_PH1_ADDR, DAC_BIST_CHB_PH1_ADDR};
 	const vector<uint32_t> FPGA_Reg_Phase2 = {DAC_BIST_CHA_PH2_ADDR, DAC_BIST_CHB_PH2_ADDR};
-	const vector<int> FPGA_Reg_ResetBits = {DAC_BIST_CHA_RST_BIT, DAC_BIST_CHB_RST_BIT};
+	const vector<unsigned> FPGA_Reg_ResetBits = {DAC_BIST_CHA_RST_BIT, DAC_BIST_CHB_RST_BIT};
 	uint8_t regVal;
 
 	FILE_LOG(logINFO) << ipAddr_ << " running DAC BIST for DAC " << dac;
@@ -1657,13 +1658,13 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	// Step 11: Set CLEAR (Reg. 17, Bit 0), SYNC_EN (Reg. 17, Bit 1), and LVDS_EN (Reg. 17, Bit 2) high
 	write_reg(17, 0x07);
 	// Also reset the FPGA BIST registers at this point
-	set_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
+	set_register_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
 
 	// Step 12: wait...
 
 	// Step 13: clear the CLEAR bit
 	write_reg(17, 0x06);
-	clear_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
+	clear_register_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
 
 	// Step 14: read the BIST registers to confirm all zeros
 	// Note error in part (b's) should read registers 21-18
@@ -1679,9 +1680,9 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 
 	// Step 18: loop back to 11
 	write_reg(17, 0x07);
-	set_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
+	set_register_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
 	write_reg(17, 0x06);
-	clear_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
+	clear_register_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
 	read_BIST_sig();
 	trigger();
 
@@ -1708,20 +1709,20 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	return passed;
 }
 
-void APS2::set_bit(const uint32_t & addr, std::initializer_list<int> bits) {
-	uint32_t curReg = read_memory(addr, 1).front();
-	for (int bit : bits) {
-		curReg |= (1 << bit);
+void APS2::set_register_bit(const uint32_t & addr, std::initializer_list<size_t> bits) {
+	std::bitset<32> reg_val(read_memory(addr, 1).front());
+	for (auto bit : bits) {
+		reg_val.set(bit);
 	}
-	write_memory(addr, curReg);
+	write_memory(addr, reg_val.to_ulong());
 }
 
-void APS2::clear_bit(const uint32_t & addr, std::initializer_list<int> bits) {
-	uint32_t curReg = read_memory(addr, 1).front();
-	for (int bit : bits) {
-		curReg &= ~(1 << bit);
+void APS2::clear_register_bit(const uint32_t & addr, std::initializer_list<size_t> bits) {
+	std::bitset<32> reg_val(read_memory(addr, 1).front());
+	for (auto bit : bits) {
+		reg_val.reset(bit);
 	}
-	write_memory(addr, curReg);
+	write_memory(addr, reg_val.to_ulong());
 }
 
 void APS2::write_waveform(const int & ch, const vector<int16_t> & wf) {
