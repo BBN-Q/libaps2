@@ -552,6 +552,9 @@ void APS2::run() {
 	FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::run";
 	switch (host_type) {
 	case APS:
+		FILE_LOG(logDEBUG1) << ipAddr_ << " releasing the cache controller...";
+		set_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		FILE_LOG(logDEBUG1) << ipAddr_ << " releasing pulse sequencer state machine...";
 		set_register_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
 		break;
@@ -568,6 +571,8 @@ void APS2::stop() {
 	case APS:
 		//Put the state machine back in reset
 		clear_register_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+		//hold the cache in reset
+		clear_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
 		break;
 	case TDM:
 		set_register_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
@@ -1731,8 +1736,8 @@ void APS2::write_waveform(const int & ch, const vector<int16_t> & wf) {
 	 * wf = bits 0-13: signed 14-bit waveform data, bits 14-15: marker data
 	 */
 
-	// disable cache
-	write_memory(CACHE_CONTROL_ADDR, 0);
+	// disable/reset cache
+	clear_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
 
 	uint32_t startAddr = (ch == 0) ? MEMORY_ADDR+WFA_OFFSET : MEMORY_ADDR+WFB_OFFSET;
 	FILE_LOG(logDEBUG2) << ipAddr_ << " loading waveform of length " << wf.size() << " at address " << hexn<8> << startAddr;
@@ -1755,7 +1760,7 @@ void APS2::write_waveform(const int & ch, const vector<int16_t> & wf) {
 	write_memory(length_addr, wf.size());
 
 	// enable cache
-	write_memory(CACHE_CONTROL_ADDR, 1);
+	set_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
 }
 
 void APS2::write_sequence(const vector<uint64_t> & data) {
@@ -1775,13 +1780,13 @@ void APS2::write_sequence(const vector<uint64_t> & data) {
 		packed_instructions.resize(packed_instructions.size() + pad_words, 0xffffffff);
 	}
 
-	// disable cache
-	write_memory(CACHE_CONTROL_ADDR, 0);
+	// disable/reset cache
+	clear_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
 
 	write_memory(MEMORY_ADDR+SEQ_OFFSET, packed_instructions);
 
 	// enable cache
-	write_memory(CACHE_CONTROL_ADDR, 1);
+	set_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
 }
 
 int APS2::write_memory_map(const uint32_t & wfA, const uint32_t & wfB, const uint32_t & seq) { /* see header for defaults */
