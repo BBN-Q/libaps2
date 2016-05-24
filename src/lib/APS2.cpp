@@ -498,40 +498,43 @@ APS2_TRIGGER_SOURCE APS2::get_trigger_source() {
 }
 
 void APS2::set_trigger_interval(const float & interval) {
-	int clockCycles;
+	FILE_LOG(logDEBUG) << ipAddr_ << " APS2::set_trigger_interval";
+	uint32_t clocks;
 	switch (host_type) {
 	case APS:
 		// SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
-		clockCycles = interval*0.25*get_sampleRate()*1e6;
-		FILE_LOG(logDEBUG) << ipAddr_ << " setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
+		clocks = round(interval*0.25*get_sampleRate()*1e6);
+		FILE_LOG(logDEBUG1) << ipAddr_ << " setting trigger interval to " << interval << "s (" << clocks << " cycles)";
 
-		write_memory(TRIGGER_INTERVAL_ADDR, clockCycles);
+		write_memory(TRIGGER_INTERVAL_ADDR, clocks);
 		break;
 	case TDM:
 		// TDM operates on a fixed 100 MHz clock
-		clockCycles = (interval * 100e6);
-		FILE_LOG(logDEBUG) << ipAddr_ << " setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
+		clocks = (interval * 100e6);
+		FILE_LOG(logDEBUG1) << ipAddr_ << " setting trigger interval to " << interval << "s (" << clocks << " cycles)";
 
-		write_memory(TDM_TRIGGER_INTERVAL_ADDR, clockCycles);
+		write_memory(TDM_TRIGGER_INTERVAL_ADDR, clocks);
 		break;
 	}
 }
 
 float APS2::get_trigger_interval() {
-	uint32_t clockCycles;
+	FILE_LOG(logDEBUG) << ipAddr_ << " APS2::get_trigger_interval";
+	uint32_t clocks;
 	switch (host_type) {
 	case APS:
 		// SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
-		clockCycles = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
-		FILE_LOG(logINFO) << "clockCycles = " << clockCycles;
+		clocks = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
+		FILE_LOG(logDEBUG1) << ipAddr_ <<  " trigger intervals clocks = " << clocks;
 		// Convert from clock cycles to time
-		return static_cast<float>(clockCycles)/(0.25*get_sampleRate()*1e6);
+		return static_cast<float>(clocks)/(0.25*get_sampleRate()*1e6);
 		break;
 	case TDM:
-		clockCycles = read_memory(TDM_TRIGGER_INTERVAL_ADDR, 1)[0];
+		clocks = read_memory(TDM_TRIGGER_INTERVAL_ADDR, 1)[0];
+		FILE_LOG(logDEBUG1) << ipAddr_ <<  " trigger intervals clocks = " << clocks;
 		// Convert from clock cycles to time
 		// TDM operates on a fixed 100 MHz clock
-		return static_cast<float>(clockCycles)/(100e6);
+		return static_cast<float>(clocks)/(100e6);
 		break;
 	}
 	//Shoud never get here;
