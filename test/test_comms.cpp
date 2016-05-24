@@ -14,6 +14,7 @@ using std::endl;
 #include "constants.h"
 #include "concol.h"
 #include "RandomHelpers.h"
+#include "APS2Connector.h"
 
 extern string ip_addr; //ip address from run_tests
 
@@ -86,9 +87,7 @@ TEST_CASE("enumeration", "[enumerate]"){
 TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 
 	set_logging_level(logDEBUG3);
-	connect_APS(ip_addr.c_str());
-
-	// init_APS(ip_addr.c_str(), 1);
+	APS2Connector connection(ip_addr);
 
 	SECTION("CSR register read"){
 		//Read the memory offsets
@@ -164,14 +163,12 @@ TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 		REQUIRE(passed);
 	}
 
-	disconnect_APS(ip_addr.c_str());
-
 }
 
 TEST_CASE("sequencer SDRAM write/read", "[sequencer SDRAM]") {
 
 	set_logging_level(logDEBUG3);
-	connect_APS(ip_addr.c_str());
+	APS2Connector connection(ip_addr);
 
 	SECTION("basic write/read") {
 		//Older firmware is too slow for long write tests
@@ -189,13 +186,12 @@ TEST_CASE("sequencer SDRAM write/read", "[sequencer SDRAM]") {
 		REQUIRE(passed);
 	}
 
-	disconnect_APS(ip_addr.c_str());
 }
 
 
 TEST_CASE("configuration SDRAM writing and reading", "[configuration SDRAM]") {
 
-	connect_APS(ip_addr.c_str());
+	APS2Connector connection(ip_addr);
 
 	//Older firmware is too slow for long write tests
 	uint32_t firmware_version;
@@ -230,13 +226,12 @@ TEST_CASE("configuration SDRAM writing and reading", "[configuration SDRAM]") {
 	}
 	REQUIRE(passed);
 
-	disconnect_APS(ip_addr.c_str());
 }
 
 TEST_CASE("eprom read/write", "[eprom]") {
 
 	set_logging_level(logDEBUG3);
-	connect_APS(ip_addr.c_str());
+	APS2Connector connection(ip_addr);
 
 	SECTION("basic write/read") {
 		//test writing/reading 128kB
@@ -268,14 +263,12 @@ TEST_CASE("eprom read/write", "[eprom]") {
 		REQUIRE( check_vec == test_vec );
 	}
 
-	disconnect_APS(ip_addr.c_str());
-
 }
 
 TEST_CASE("SPI", "[SPI]") {
 
 	set_logging_level(logDEBUG3);
-	connect_APS(ip_addr.c_str());
+	APS2Connector connection(ip_addr);
 
 	SECTION("get_sampleRate") {
 		unsigned sample_rate;
@@ -285,7 +278,5 @@ TEST_CASE("SPI", "[SPI]") {
 		//expect 1200 for now
 		REQUIRE( sample_rate == 1200 );
 	}
-
-	disconnect_APS(ip_addr.c_str());
 
 }

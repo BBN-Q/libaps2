@@ -9,13 +9,14 @@ using std::string;
 #include "constants.h"
 
 #include "RandomHelpers.h"
+#include "APS2Connector.h"
 
 extern string ip_addr; //ip address from run_tests
 
 TEST_CASE("cache initial state", "[cache]") {
 
 	set_logging_level(logDEBUG3);
-	connect_APS(ip_addr.c_str());
+	APS2Connector connection(ip_addr);
 
 	SECTION("initial state"){
 		//disable the cache
@@ -80,6 +81,4 @@ TEST_CASE("cache initial state", "[cache]") {
 		REQUIRE( check_vec == test_seq );
 
 	}
-
-	disconnect_APS(ip_addr.c_str());
 }
