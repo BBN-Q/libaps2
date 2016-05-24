@@ -86,40 +86,8 @@ TEST_CASE("enumeration", "[enumerate]"){
 
 TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 
-	set_logging_level(logDEBUG3);
+	set_logging_level(logDEBUG1);
 	APS2Connector connection(ip_addr);
-
-	SECTION("CSR register read"){
-		//Read the memory offsets
-		uint32_t data = 0xdeadbeef;
-		read_memory(ip_addr.c_str(), WFA_OFFSET_ADDR, &data, 1);
-		REQUIRE( data == WFA_OFFSET);
-		read_memory(ip_addr.c_str(), WFB_OFFSET_ADDR, &data, 1);
-		REQUIRE( data == WFB_OFFSET);
-		read_memory(ip_addr.c_str(), SEQ_OFFSET_ADDR, &data, 1);
-		REQUIRE( data == SEQ_OFFSET);
-	}
-
-	SECTION("CSR register write"){
-		//Read/write the trigger interval
-		uint32_t cur_val{0}, test_val{0}, check_val{0};
-		read_memory(ip_addr.c_str(), TRIGGER_INTERVAL_ADDR, &cur_val, 1);
-		test_val = cur_val ^ 0xdeadbeef;
-		write_memory(ip_addr.c_str(), TRIGGER_INTERVAL_ADDR, &test_val, 1);
-		read_memory(ip_addr.c_str(), TRIGGER_INTERVAL_ADDR, &check_val, 1);
-		REQUIRE( check_val == test_val);
-		//Set it back
-		write_memory(ip_addr.c_str(), TRIGGER_INTERVAL_ADDR, &cur_val, 1);
-	}
-
-	SECTION("fpga temperature") {
-		float temp;
-		APS2_STATUS status;
-		status = get_fpga_temperature(ip_addr.c_str(), &temp);
-		REQUIRE( status == APS2_OK );
-		REQUIRE ( temp > 0 );
-		REQUIRE ( temp < 70 );
-	}
 
 	SECTION("variable write sizes") {
 		//Variable write sizes from 4 to 256 words
@@ -167,7 +135,7 @@ TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 
 TEST_CASE("sequencer SDRAM write/read", "[sequencer SDRAM]") {
 
-	set_logging_level(logDEBUG3);
+	set_logging_level(logDEBUG1);
 	APS2Connector connection(ip_addr);
 
 	SECTION("basic write/read") {
@@ -230,7 +198,7 @@ TEST_CASE("configuration SDRAM writing and reading", "[configuration SDRAM]") {
 
 TEST_CASE("eprom read/write", "[eprom]") {
 
-	set_logging_level(logDEBUG3);
+	set_logging_level(logDEBUG1);
 	APS2Connector connection(ip_addr);
 
 	SECTION("basic write/read") {
@@ -267,7 +235,7 @@ TEST_CASE("eprom read/write", "[eprom]") {
 
 TEST_CASE("SPI", "[SPI]") {
 
-	set_logging_level(logDEBUG3);
+	set_logging_level(logDEBUG1);
 	APS2Connector connection(ip_addr);
 
 	SECTION("get_sampleRate") {
