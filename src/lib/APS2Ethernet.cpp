@@ -361,36 +361,39 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
 	FILE_LOG(logDEBUG2) << "APS2Ethernet::send";
 	if (devInfo_[ipAddr].supports_tcp) {
 		FILE_LOG(logDEBUG2) << "Sending " << datagrams.size() << " datagram" << (datagrams.size() > 1 ? "s" : "") << " over TCP";
-		// If we have TCP just send it out
-		for (const auto & dg : datagrams){
+
+		size_t ct = 0;
+		for (const auto & dg : datagrams) {
+			// Swap to network byte order for firmware
 			auto data = dg.data();
 			for (auto & val : data) {
 				val = htonl(val);
 			}
-			FILE_LOG(logDEBUG3) << "Sending datagram with command word " << hexn<8> << dg.cmd.packed <<
+			ct++;
+			FILE_LOG(logDEBUG3) << ipAddr << " sending datagram " << ct << " of " << datagrams.size() << " with command word " << hexn<8> << dg.cmd.packed <<
 			" to address " << hexn<8> << dg.addr << " with payload size " << std::dec << dg.payload.size() << " for total size " << data.size();
-
 			std::future<size_t> write_result = asio::async_write(*tcp_sockets_[ipAddr], asio::buffer(data), asio::use_future);
+
+			//Make sure the write was successful
 			if ( write_result.wait_for(COMMS_TIMEOUT) == std::future_status::timeout) {
 				FILE_LOG(logERROR) << ipAddr << " write timed out";
 				throw APS2_COMMS_ERROR;
 			}
 			try {
 				size_t bytes_written = write_result.get();
-				FILE_LOG(logDEBUG3) << "Wrote " << bytes_written << " bytes";
+				FILE_LOG(logDEBUG3) << ipAddr << " wrote " << bytes_written << " bytes for datagram " << ct << " of " << datagrams.size();
 			} catch(std::system_error e) {
 				FILE_LOG(logERROR) << ipAddr << " write errored with message: " << e.what();
 				throw APS2_COMMS_ERROR;
 			}
-		}
-		//Block until the acks come back
-		for (const auto & dg : datagrams){
-		  if ( dg.cmd.ack ) {
-				auto timeout = COMMS_TIMEOUT;
-				auto ack = read(ipAddr, timeout);
+			//if necessary, check the ack
+			if ( dg.cmd.ack ) {
+				auto ack = read(ipAddr, COMMS_TIMEOUT);
 				dg.check_ack(ack, false);
-		  }
+			}
+
 		}
+
 	} else {
 		FILE_LOG(logDEBUG2) << "Sending " << datagrams.size() << " datagram" << (datagrams.size() > 1 ? "s" : "") << " over UDP";
 		//Without TCP convert to APS2EthernetPacket packets and send
