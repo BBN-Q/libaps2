@@ -560,6 +560,9 @@ void APS2::run() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		FILE_LOG(logDEBUG1) << ipAddr_ << " releasing pulse sequencer state machine...";
 		set_register_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		FILE_LOG(logDEBUG1) << ipAddr_ << " enabling trigger...";
+		set_register_bit(SEQ_CONTROL_ADDR, {TRIGGER_ENABLE_BIT});
 		break;
 	case TDM:
 		FILE_LOG(logDEBUG1) << ipAddr_ << " enabling TDM trigger";
@@ -572,8 +575,8 @@ void APS2::stop() {
 	FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::stop";
 	switch (host_type) {
 	case APS:
-		//Put the state machine back in reset
-		clear_register_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+		//Put the sequencer and trigger back in reset
+		clear_register_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT, TRIGGER_ENABLE_BIT});
 		//hold the cache in reset
 		clear_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
 		break;

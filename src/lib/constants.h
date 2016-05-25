@@ -269,6 +269,7 @@ const uint32_t SEQ_OFFSET  = 0x20000000u;
 const unsigned SM_ENABLE_BIT = 0; // state machine enable
 const unsigned TRIGSRC_BIT = 1; // trigger source (0 = external, 1 = internal, 2 = software)
 const unsigned SOFT_TRIG_BIT = 3;
+const unsigned TRIGGER_ENABLE_BIT = 4;
 
 // cache control bits
 const unsigned CACHE_ENABLE_BIT = 0;
