@@ -52,8 +52,8 @@ public:
 
 	void set_trigger_source(const APS2_TRIGGER_SOURCE &);
 	APS2_TRIGGER_SOURCE get_trigger_source();
-	void set_trigger_interval(const float &);
-	float get_trigger_interval();
+	void set_trigger_interval(const double &);
+	double get_trigger_interval();
 	void trigger();
 
 	void set_channel_enabled(int, bool);

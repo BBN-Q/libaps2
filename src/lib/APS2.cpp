@@ -497,7 +497,7 @@ APS2_TRIGGER_SOURCE APS2::get_trigger_source() {
 	return APS2_TRIGGER_SOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
 }
 
-void APS2::set_trigger_interval(const float & interval) {
+void APS2::set_trigger_interval(const double & interval) {
 	FILE_LOG(logDEBUG) << ipAddr_ << " APS2::set_trigger_interval";
 	uint32_t clocks;
 	switch (host_type) {
@@ -518,7 +518,7 @@ void APS2::set_trigger_interval(const float & interval) {
 	}
 }
 
-float APS2::get_trigger_interval() {
+double APS2::get_trigger_interval() {
 	FILE_LOG(logDEBUG) << ipAddr_ << " APS2::get_trigger_interval";
 	uint32_t clocks;
 	switch (host_type) {
@@ -527,14 +527,14 @@ float APS2::get_trigger_interval() {
 		clocks = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
 		FILE_LOG(logDEBUG1) << ipAddr_ <<  " trigger intervals clocks = " << clocks;
 		// Convert from clock cycles to time
-		return static_cast<float>(clocks)/(0.25*get_sampleRate()*1e6);
+		return static_cast<double>(clocks)/(0.25*get_sampleRate()*1e6);
 		break;
 	case TDM:
 		clocks = read_memory(TDM_TRIGGER_INTERVAL_ADDR, 1)[0];
 		FILE_LOG(logDEBUG1) << ipAddr_ <<  " trigger intervals clocks = " << clocks;
 		// Convert from clock cycles to time
 		// TDM operates on a fixed 100 MHz clock
-		return static_cast<float>(clocks)/(100e6);
+		return static_cast<double>(clocks)/(100e6);
 		break;
 	}
 	//Shoud never get here;

@@ -356,11 +356,11 @@ APS2_STATUS get_trigger_source(const char* deviceSerial, APS2_TRIGGER_SOURCE* sr
 	return aps2_getter(deviceSerial, &APS2::get_trigger_source, src);
 }
 
-APS2_STATUS set_trigger_interval(const char* deviceSerial, float interval) {
+APS2_STATUS set_trigger_interval(const char* deviceSerial, double interval) {
 	return aps2_call(deviceSerial, &APS2::set_trigger_interval, interval);
 }
 
-APS2_STATUS get_trigger_interval(const char* deviceSerial, float* interval) {
+APS2_STATUS get_trigger_interval(const char* deviceSerial, double* interval) {
 	return aps2_getter(deviceSerial, &APS2::get_trigger_interval, interval);
 }
 

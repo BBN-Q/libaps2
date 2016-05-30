@@ -65,17 +65,17 @@ TEST_CASE("CSR", "CSR") {
 
 	SECTION("setters/getters") {
 		//trigger interval
-		float trigger_interval{0}, test_val, check_val;
+		double trigger_interval{0}, test_val_d, check_val_d;
 		//get current value
 		status = get_trigger_interval(ip_addr.c_str(), &trigger_interval);
 		REQUIRE( status == APS2_OK );
-		std::uniform_real_distribution<float> trigger_dist(0, 1.0);
-		test_val = trigger_dist(engine);
-		status = set_trigger_interval(ip_addr.c_str(), test_val);
+		std::uniform_real_distribution<double> trigger_dist(0, 1.0);
+		test_val_d = trigger_dist(engine);
+		status = set_trigger_interval(ip_addr.c_str(), test_val_d);
 		REQUIRE( status == APS2_OK );
-		status = get_trigger_interval(ip_addr.c_str(), &check_val);
+		status = get_trigger_interval(ip_addr.c_str(), &check_val_d);
 		REQUIRE( status == APS2_OK );
-		REQUIRE( check_val == Approx( test_val ).epsilon( 3.33e-9) );
+		REQUIRE( check_val_d == Approx( test_val_d ).epsilon( 3.33e-9) );
 		//set it back
 		status = set_trigger_interval(ip_addr.c_str(), trigger_interval);
 		REQUIRE( status == APS2_OK );
@@ -85,17 +85,17 @@ TEST_CASE("CSR", "CSR") {
 		// APS2_RUN_MODE run_mode;
 
 		//waveform frequency
-		float waveform_freq;
+		float waveform_freq, test_val_f, check_val_f;
 		//get current value
 		status = get_waveform_frequency(ip_addr.c_str(), &waveform_freq);
 		REQUIRE( status == APS2_OK );
 		std::uniform_real_distribution<float> freq_dist(-600e6, 600e6);
-		test_val = freq_dist(engine);
-		status = set_waveform_frequency(ip_addr.c_str(), test_val);
+		test_val_f = freq_dist(engine);
+		status = set_waveform_frequency(ip_addr.c_str(), test_val_f);
 		REQUIRE( status == APS2_OK );
-		status = get_waveform_frequency(ip_addr.c_str(), &check_val);
+		status = get_waveform_frequency(ip_addr.c_str(), &check_val_f);
 		REQUIRE( status == APS2_OK );
-		REQUIRE( check_val == Approx( test_val ).epsilon( 1.0 ) );
+		REQUIRE( check_val_f == Approx( test_val_f ).epsilon( 1.0 ) );
 		//set it back
 		status = set_waveform_frequency(ip_addr.c_str(), waveform_freq);
 		REQUIRE( status == APS2_OK );
@@ -107,12 +107,12 @@ TEST_CASE("CSR", "CSR") {
 		status = get_channel_offset(ip_addr.c_str(), chan, &offset);
 		REQUIRE( status == APS2_OK );
 		std::uniform_real_distribution<float> offset_dist(-1,1);
-		test_val = offset_dist(engine);
-		status = set_channel_offset(ip_addr.c_str(), chan, test_val);
+		test_val_f = offset_dist(engine);
+		status = set_channel_offset(ip_addr.c_str(), chan, test_val_f);
 		REQUIRE( status == APS2_OK );
-		status = get_channel_offset(ip_addr.c_str(), chan, &check_val);
+		status = get_channel_offset(ip_addr.c_str(), chan, &check_val_f);
 		REQUIRE( status == APS2_OK );
-		REQUIRE( check_val == Approx( test_val ).epsilon( 0.001 ) );
+		REQUIRE( check_val_f == Approx( test_val_f ).epsilon( 0.001 ) );
 		//set it back
 		status = set_channel_offset(ip_addr.c_str(), chan, offset);
 		REQUIRE( status == APS2_OK );
@@ -124,12 +124,12 @@ TEST_CASE("CSR", "CSR") {
 		status = get_channel_scale(ip_addr.c_str(), chan, &scale);
 		REQUIRE( status == APS2_OK );
 		std::uniform_real_distribution<float> scale_dist(-2,2);
-		test_val = scale_dist(engine);
-		status = set_channel_scale(ip_addr.c_str(), chan, test_val);
+		test_val_f = scale_dist(engine);
+		status = set_channel_scale(ip_addr.c_str(), chan, test_val_f);
 		REQUIRE( status == APS2_OK );
-		status = get_channel_scale(ip_addr.c_str(), chan, &check_val);
+		status = get_channel_scale(ip_addr.c_str(), chan, &check_val_f);
 		REQUIRE( status == APS2_OK );
-		REQUIRE( check_val == Approx( test_val ).epsilon( 0.001 ) );
+		REQUIRE( check_val_f == Approx( test_val_f ).epsilon( 0.001 ) );
 		//set it back
 		status = set_channel_scale(ip_addr.c_str(), chan, scale);
 		REQUIRE( status == APS2_OK );
@@ -140,12 +140,12 @@ TEST_CASE("CSR", "CSR") {
 		status = get_mixer_amplitude_imbalance(ip_addr.c_str(), &imbalance);
 		REQUIRE( status == APS2_OK );
 		std::uniform_real_distribution<float> imbalance_dist(-1,1);
-		test_val = imbalance_dist(engine);
-		status = set_mixer_amplitude_imbalance(ip_addr.c_str(), test_val);
+		test_val_f = imbalance_dist(engine);
+		status = set_mixer_amplitude_imbalance(ip_addr.c_str(), test_val_f);
 		REQUIRE( status == APS2_OK );
-		status = get_mixer_amplitude_imbalance(ip_addr.c_str(), &check_val);
+		status = get_mixer_amplitude_imbalance(ip_addr.c_str(), &check_val_f);
 		REQUIRE( status == APS2_OK );
-		REQUIRE( check_val == Approx( test_val ) );
+		REQUIRE( check_val_f == Approx( test_val_f ) );
 		//set it back
 		status = set_mixer_amplitude_imbalance(ip_addr.c_str(), imbalance);
 		REQUIRE( status == APS2_OK );
@@ -156,12 +156,12 @@ TEST_CASE("CSR", "CSR") {
 		status = get_mixer_phase_skew(ip_addr.c_str(), &phase_skew);
 		REQUIRE( status == APS2_OK );
 		std::uniform_real_distribution<float> phase_skew_dist(-1,1);
-		test_val = phase_skew_dist(engine);
-		status = set_mixer_phase_skew(ip_addr.c_str(), test_val);
+		test_val_f = phase_skew_dist(engine);
+		status = set_mixer_phase_skew(ip_addr.c_str(), test_val_f);
 		REQUIRE( status == APS2_OK );
-		status = get_mixer_phase_skew(ip_addr.c_str(), &check_val);
+		status = get_mixer_phase_skew(ip_addr.c_str(), &check_val_f);
 		REQUIRE( status == APS2_OK );
-		REQUIRE( check_val == Approx( test_val ) );
+		REQUIRE( check_val_f == Approx( test_val_f ) );
 		//set it back
 		status = set_mixer_phase_skew(ip_addr.c_str(), phase_skew);
 		REQUIRE( status == APS2_OK );
