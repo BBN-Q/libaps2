@@ -54,7 +54,7 @@ demo_sequence("Playing Ramsey sequence with TPPI (modulation instructions)", "ra
 
 demo_sequence('Playing TPPI Ramsey sequence with SSB (modulation instructions)', 'ramsey_tppi_ssb');
 
-demo_sequence("Playing Rabi amplitude sweep (waveform prefetching)", "rabi_amp")
+demo_sequence("Playing Rabi width sweep (waveform prefetching)", "rabi_width")
 
 demo_sequence("Playing CPMG (repeats and subroutines)", "cpmg")
 
