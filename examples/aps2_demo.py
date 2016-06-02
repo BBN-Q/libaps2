@@ -2,6 +2,14 @@ import sys
 import os
 import numpy as np
 
+#assume this is run from /examples and add ../src/python to path
+import sys
+import os
+examples_path = os.path.abspath(os.path.dirname(__file__))
+aps2_module_path = os.path.join(os.path.dirname(examples_path), "src/python")
+if aps2_module_path not in sys.path:
+    sys.path.append(aps2_module_path)
+
 import aps2
 
 aps = aps2.APS2()
@@ -32,7 +40,6 @@ aps.run()
 input("Press Enter to continue...")
 aps.stop()
 
-examples_path = os.path.abspath(os.path.dirname(__file__))
 aps.set_run_mode(aps2.RUN_SEQUENCE)
 def demo_sequence(display_text, sequence_file):
     print(display_text)
