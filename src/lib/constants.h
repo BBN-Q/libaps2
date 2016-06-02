@@ -20,7 +20,7 @@ const int MAX_APS_CHANNELS = 2;
 
 const int APS_WAVEFORM_UNIT_LENGTH = 4;
 
-const int MAX_WF_LENGTH = 131072;
+const size_t MAX_WF_LENGTH = 1 << 26; //only use 256MB for now - 256MB / 2 channels / 2 bytes per sample
 const int MAX_WF_AMP = (1 << 13) - 1; //14 bit signed DAC
 const int WF_MODULUS = 4;
 const size_t MAX_LL_LENGTH = (1 << 24);

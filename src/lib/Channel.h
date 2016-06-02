@@ -33,8 +33,8 @@ public:
 	bool get_enabled() const;
 	size_t get_length() const;
 
-	int set_waveform(const vector<float> &);
-	int set_waveform(const vector<int16_t> &);
+	void set_waveform(const vector<float> &);
+	void set_waveform(const vector<int16_t> &);
 	int set_markers(const vector<uint8_t> &);
 	vector<int16_t> prep_waveform() const;
 

@@ -28,10 +28,10 @@ size_t Channel::get_length() const {
 	return waveform_.size();
 }
 
-int Channel::set_waveform(const vector<float> & data) {
+void Channel::set_waveform(const vector<float> & data) {
 	//Check whether we need to resize the waveform vector
 	if (data.size() > size_t(MAX_WF_LENGTH)){
-		FILE_LOG(logINFO) << "Warning: waveform too large to fit into cache. Waveform length: " << data.size();
+		FILE_LOG(logINFO) << "Warning: waveform too large to fit into memory. Waveform length: " << data.size();
 	}
 
 	//Copy over the waveform data
@@ -39,23 +39,21 @@ int Channel::set_waveform(const vector<float> & data) {
 	waveform_.resize(size_t(WF_MODULUS*ceil(float(data.size())/WF_MODULUS)), 0);
 	markers_.resize(waveform_.size());
 	std::copy(data.begin(), data.end(), waveform_.begin());
-
-	return 0;
 }
 
-int Channel::set_waveform(const vector<int16_t> & data) {
+void Channel::set_waveform(const vector<int16_t> & data) {
 	if (data.size() > size_t(MAX_WF_LENGTH)){
-		FILE_LOG(logINFO) << "Warning: waveform too large to fit into cache. Waveform length: " << data.size();
+		FILE_LOG(logINFO) << "Warning: waveform too large to fit into memory. Waveform length: " << data.size();
 	}
 
 	//Waveform length must be a integer multiple of WF_MODULUS so resize to that
 	waveform_.resize(size_t(WF_MODULUS*ceil(float(data.size())/WF_MODULUS)), 0);
 	markers_.resize(waveform_.size());
+	
 	//Copy over the waveform data and convert to scaled floats
 	for(size_t ct=0; ct<data.size(); ct++){
 		waveform_[ct] = float(data[ct])/MAX_WF_AMP;
 	}
-	return 0;
 }
 
 int Channel::set_markers(const vector<uint8_t> & data) {
