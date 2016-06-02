@@ -265,8 +265,8 @@ class APS2(metaclass=Parser):
 	set_trigger_source   = APS2_Setter(c_int)
 	get_trigger_source   = APS2_Getter(c_int)
 
-	set_trigger_interval = APS2_Setter(c_float)
-	get_trigger_interval = APS2_Getter(c_float)
+	set_trigger_interval = APS2_Setter(c_double)
+	get_trigger_interval = APS2_Getter(c_double)
 
 	set_trigger_source   = APS2_Setter(c_int)
 	get_trigger_source   = APS2_Getter(c_int)
