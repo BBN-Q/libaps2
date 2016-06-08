@@ -265,17 +265,17 @@ void APS2Ethernet::reset_maps() {
 	msgQueues_.clear();
 }
 
-void APS2Ethernet::connect(string serial) {
-	FILE_LOG(logDEBUG) << "APS2Ethernet::connect";
+void APS2Ethernet::connect(string ip_addr_str) {
+	FILE_LOG(logDEBUG) << ip_addr_str << " APS2Ethernet::connect";
 
 	//Check whether we have device info and if not send a ping
-	if (devInfo_.find(serial) == devInfo_.end()) {
-		FILE_LOG(logDEBUG) << "No device info for " << serial << " ; sending enumerate request";
+	if (devInfo_.find(ip_addr_str) == devInfo_.end()) {
+		FILE_LOG(logDEBUG) << "No device info for " << ip_addr_str << " ; sending enumerate request";
 
 		//Make sure it is a valid IP
 		typedef asio::ip::address_v4 addrv4;
 		asio::error_code ec;
-		addrv4 ip_addr = addrv4::from_string(serial, ec);
+		addrv4 ip_addr = addrv4::from_string(ip_addr_str, ec);
 		if (ec) {
 			FILE_LOG(logERROR) << "Invalid IP address: " << ec.message();
 			throw APS2_INVALID_IP_ADDR;
@@ -294,48 +294,50 @@ void APS2Ethernet::connect(string serial) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 		//Check again
-		if (devInfo_.find(serial) == devInfo_.end()) {
-			FILE_LOG(logERROR) << "APS2 failed to respond at " << serial;
+		if (devInfo_.find(ip_addr_str) == devInfo_.end()) {
+			FILE_LOG(logERROR) << "APS2 failed to respond at " << ip_addr_str;
 			throw APS2_NO_DEVICE_FOUND;
 		}
   }
 
-  if (devInfo_[serial].supports_tcp) {
+  if (devInfo_[ip_addr_str].supports_tcp) {
 		// C++14
-		// tcp_sockets_.insert(serial, std::make_unique<tcp::socket>(ios_));
+		// tcp_sockets_.insert(ip_addr_str, std::make_unique<tcp::socket>(ios_));
 		// lowly C++11
 		std::unique_ptr<tcp::socket> sock(new tcp::socket(ios_));
-		FILE_LOG(logDEBUG1) << "Trying to connect to TCP port";
-		std::future<void> connect_result = sock->async_connect(tcp::endpoint(asio::ip::address_v4::from_string(serial), TCP_PORT), asio::use_future);
+		FILE_LOG(logDEBUG1) << ip_addr_str << " trying to connect to TCP port";
+		std::future<void> connect_result = sock->async_connect(tcp::endpoint(asio::ip::address_v4::from_string(ip_addr_str), TCP_PORT), asio::use_future);
 		if ( connect_result.wait_for(COMMS_TIMEOUT) == std::future_status::timeout) {
-			FILE_LOG(logERROR) << "Timed out trying to connect to " << serial;
+			FILE_LOG(logERROR) << "Timed out trying to connect to " << ip_addr_str;
 			throw APS2_FAILED_TO_CONNECT;
 		}
 		try {
 			connect_result.get();
 		} catch(std::system_error e) {
-			FILE_LOG(logERROR) << "Failed to connect to " << serial << " with error: " << e.what();
+			FILE_LOG(logERROR) << "Failed to connect to " << ip_addr_str << " with error: " << e.what();
 			throw APS2_FAILED_TO_CONNECT;
 		}
 
-		tcp_sockets_.insert(std::make_pair(serial, std::move(sock)));
+		tcp_sockets_.insert(std::make_pair(ip_addr_str, std::move(sock)));
 	} else {
 		msgQueue_lock_.lock();
-		msgQueues_[serial] = queue<APS2EthernetPacket>();
+		msgQueues_[ip_addr_str] = queue<APS2EthernetPacket>();
 		msgQueue_lock_.unlock();
 	}
 }
 
-void APS2Ethernet::disconnect(string serial) {
-  if (devInfo_[serial].supports_tcp) {
-	if (tcp_sockets_.find(serial) != tcp_sockets_.end()) {
-		tcp_sockets_[serial]->cancel();
-		tcp_sockets_[serial]->close();
-		tcp_sockets_.erase(serial);
+void APS2Ethernet::disconnect(string ip_addr_str) {
+	FILE_LOG(logDEBUG) << ip_addr_str << " APS2Ethernet::disconnect";
+  if (devInfo_[ip_addr_str].supports_tcp) {
+	if (tcp_sockets_.find(ip_addr_str) != tcp_sockets_.end()) {
+		FILE_LOG(logDEBUG1) << ip_addr_str << " cancelling and closing socket";
+		tcp_sockets_[ip_addr_str]->cancel();
+		tcp_sockets_[ip_addr_str]->close();
+		tcp_sockets_.erase(ip_addr_str);
 	}
   } else {
 	msgQueue_lock_.lock();
-	msgQueues_.erase(serial);
+	msgQueues_.erase(ip_addr_str);
 	msgQueue_lock_.unlock();
   }
 }
@@ -359,36 +361,39 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> & datagrams) {
 	FILE_LOG(logDEBUG2) << "APS2Ethernet::send";
 	if (devInfo_[ipAddr].supports_tcp) {
 		FILE_LOG(logDEBUG2) << "Sending " << datagrams.size() << " datagram" << (datagrams.size() > 1 ? "s" : "") << " over TCP";
-		// If we have TCP just send it out
-		for (const auto & dg : datagrams){
+
+		size_t ct = 0;
+		for (const auto & dg : datagrams) {
+			// Swap to network byte order for firmware
 			auto data = dg.data();
 			for (auto & val : data) {
 				val = htonl(val);
 			}
-			FILE_LOG(logDEBUG3) << "Sending datagram with command word " << hexn<8> << dg.cmd.packed <<
+			ct++;
+			FILE_LOG(logDEBUG3) << ipAddr << " sending datagram " << ct << " of " << datagrams.size() << " with command word " << hexn<8> << dg.cmd.packed <<
 			" to address " << hexn<8> << dg.addr << " with payload size " << std::dec << dg.payload.size() << " for total size " << data.size();
-
 			std::future<size_t> write_result = asio::async_write(*tcp_sockets_[ipAddr], asio::buffer(data), asio::use_future);
+
+			//Make sure the write was successful
 			if ( write_result.wait_for(COMMS_TIMEOUT) == std::future_status::timeout) {
 				FILE_LOG(logERROR) << ipAddr << " write timed out";
 				throw APS2_COMMS_ERROR;
 			}
 			try {
 				size_t bytes_written = write_result.get();
-				FILE_LOG(logDEBUG3) << "Wrote " << bytes_written << " bytes";
+				FILE_LOG(logDEBUG3) << ipAddr << " wrote " << bytes_written << " bytes for datagram " << ct << " of " << datagrams.size();
 			} catch(std::system_error e) {
 				FILE_LOG(logERROR) << ipAddr << " write errored with message: " << e.what();
 				throw APS2_COMMS_ERROR;
 			}
-		}
-		//Block until the acks come back
-		for (const auto & dg : datagrams){
-		  if ( dg.cmd.ack ) {
-				auto timeout = COMMS_TIMEOUT;
-				auto ack = read(ipAddr, timeout);
+			//if necessary, check the ack
+			if ( dg.cmd.ack ) {
+				auto ack = read(ipAddr, COMMS_TIMEOUT);
 				dg.check_ack(ack, false);
-		  }
+			}
+
 		}
+
 	} else {
 		FILE_LOG(logDEBUG2) << "Sending " << datagrams.size() << " datagram" << (datagrams.size() > 1 ? "s" : "") << " over UDP";
 		//Without TCP convert to APS2EthernetPacket packets and send

@@ -25,7 +25,9 @@ enum APS2_STATUS {
 	APS2_UNALIGNED_MEMORY_ACCESS = -20,
 	APS2_ERPOM_ERASE_FAILURE = -21,
 	APS2_BITFILE_VALIDATION_FAILURE = -22,
-	APS2_BAD_PLL_VALUE = -23
+	APS2_BAD_PLL_VALUE = -23,
+	APS2_NO_WFS = -24,
+	APS2_WAVEFORM_FREQ_OVERFLOW = -25
 };
 
 
@@ -52,10 +54,12 @@ static std::map<APS2_STATUS, std::string> messages = {
 	{APS2_SOCKET_FAILURE, "Failed to open ethernet socket. Verify that no dangling libaps2 processes are running."},
 	{APS2_INVALID_IP_ADDR, "Requested conneciton to invalid IPv4 address."},
 	{APS2_COMMS_ERROR, "Ethernet communications failed."},
-	{APS2_UNALIGNED_MEMORY_ACCESS, "SDRAM memory must be accessed at 8 (configuration) or 16 (sequence/waveform) byte boundaries."},
+	{APS2_UNALIGNED_MEMORY_ACCESS, "SDRAM memory must be accessed at 8 (configuration SDRAM) or 16 (sequence/waveform SDRAM) or 64k (flash erase) or 256 (flash write) byte boundaries."},
 	{APS2_ERPOM_ERASE_FAILURE, "ERPOM erase command failed"},
 	{APS2_BITFILE_VALIDATION_FAILURE, "bitfile validation failed"},
-	{APS2_BAD_PLL_VALUE, "Unexpected PLL chip value"}
+	{APS2_BAD_PLL_VALUE, "Unexpected PLL chip value"},
+	{APS2_NO_WFS, "Asked for waveform mode with no waveforms loaded"},
+	{APS2_WAVEFORM_FREQ_OVERFLOW, "Waveform frequency must be in range [-600MHz, 600MHz)"}
 };
 
 

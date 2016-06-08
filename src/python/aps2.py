@@ -1,16 +1,18 @@
+import os
+import platform
 import numpy as np
 import numpy.ctypeslib as npct
 from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, c_char_p, addressof, create_string_buffer, byref, POINTER
 import sys
 
-if sys.platform == 'win32':
-	# All of the DLLs have to be in the path
-	libaps2 = npct.load_library("libaps2.dll", ".")
-else:
-	libaps2 = npct.load_library("libaps2", "../build")
+build_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "build"))
+#On Windows add build path to system path to pick up DLL mingw dependencies
+if "Windows" in platform.platform():
+	os.environ["PATH"] += build_path
+libaps2 = npct.load_library("libaps2", build_path)
 
 np_double_1D = npct.ndpointer(dtype=np.double,  ndim=1, flags='CONTIGUOUS')
-np_float_1D  = npct.ndpointer(dtype=np.float,   ndim=1, flags='CONTIGUOUS')
+np_float_1D  = npct.ndpointer(dtype=np.float32, ndim=1, flags='CONTIGUOUS')
 np_int16_1D  = npct.ndpointer(dtype=np.int16,   ndim=1, flags='CONTIGUOUS')
 np_int8_1D   = npct.ndpointer(dtype=np.int8,    ndim=1, flags='CONTIGUOUS')
 np_uint64_1D = npct.ndpointer(dtype=np.uint64,  ndim=1, flags='CONTIGUOUS')
@@ -104,11 +106,39 @@ status_dict = {
 	 -23:  "APS2_BAD_PLL_VALUE",
 }
 
+libaps2.get_error_msg.restype = c_char_p
+def get_error_msg(status_code):
+	return libaps2.get_error_msg(status_code).decode("utf-8")
+
 def check(status_code):
 	if status_code is 0:
 		return
 	else:
-		raise Exception("APS Error: {}".format(status_dict[status_code]))
+		raise Exception("APS2 Error: {} - {}".format(status_dict[status_code], get_error_msg(status_code)))
+
+def get_numDevices():
+	num_devices = c_uint()
+	check(libaps2.get_numDevices(byref(num_devices)))
+	return num_devices.value
+
+def get_device_IPs():
+	num_devices = get_numDevices()
+	if num_devices > 0:
+		results = (c_char_p * num_devices)(addressof(create_string_buffer(16)))
+		check(libaps2.get_device_IPs(results))
+		return [r.decode('ascii') for r in results]
+	else:
+		return None
+
+def enumerate():
+	device_IPs = get_device_IPs()
+	return (len(device_IPs), device_IPs)
+
+def set_log(filename):
+	check(libaps2.set_log(filename.encode('utf-8')))
+
+def set_logging_level(level):
+	check(libaps2.set_logging_level(level))
 
 class APS2_Getter():
 	def __init__(self, arg_type, return_type=None):
@@ -138,10 +168,7 @@ def add_call(instr, name, cmd):
 	getattr(libaps2, name).argtypes = [c_char_p]
 	def f(self):
 		status_code = getattr(libaps2, name)(self.ip_address.encode('utf-8'))
-		if status_code is 0:
-			return
-		else:
-			raise Exception("APS Error: {}".format(status_dict[status_code]))
+		check(status_code)
 	setattr(instr, name, f)
 
 def add_setter(instr, name, cmd):
@@ -164,10 +191,7 @@ def add_setter(instr, name, cmd):
 			args = [self.ip_address.encode('utf-8'), args[0]]
 
 		status_code = getattr(libaps2, name)(*args)
-		if status_code is 0:
-			return
-		else:
-			raise Exception("APS Error: {}".format(status_dict[status_code]))
+		check(status_code)
 	setattr(instr, name, f)
 
 def add_getter(instr, name, cmd):
@@ -218,18 +242,16 @@ class Parser(type):
 
 class APS2(metaclass=Parser):
 	# Simple calls, take only IP address
+	connect_APS        = APS2_Call()
+	disconnect_APS     = APS2_Call()
 	stop               = APS2_Call()
 	run                = APS2_Call()
 	trigger            = APS2_Call()
-	connect_APS        = APS2_Call()
-	disconnect_APS     = APS2_Call()
 	clear_channel_data = APS2_Call()
 
 	# Getters and Setters
 	get_uptime           = APS2_Getter(c_double)
-	get_fpga_temperature = APS2_Getter(c_double)
-	get_error_msg        = APS2_Getter(c_int)
-	get_numDevices       = APS2_Getter(c_uint)
+	get_fpga_temperature = APS2_Getter(c_float)
 	get_runState         = APS2_Getter(c_int)
 	set_run_mode         = APS2_Setter(c_int)
 
@@ -240,7 +262,6 @@ class APS2(metaclass=Parser):
 	get_sampleRate       = APS2_Getter(c_uint)
 
 	reset                = APS2_Setter(c_int)
-	init_APS             = APS2_Setter(c_int)
 
 	set_trigger_source   = APS2_Setter(c_int)
 	get_trigger_source   = APS2_Getter(c_int)
@@ -261,11 +282,18 @@ class APS2(metaclass=Parser):
 	set_channel_enabled  = APS2_Chan_Setter(c_int)
 	get_channel_enabled  = APS2_Chan_Getter(c_int, return_type=bool)
 
+	set_waveform_frequency = APS2_Setter(c_float)
+	get_waveform_frequency = APS2_Getter(c_float)
 
-	def __init__(self, ip_address):
+	set_mixer_amplitude_imbalance = APS2_Setter(c_float)
+	get_mixer_amplitude_imbalance = APS2_Getter(c_float)
+
+	set_mixer_phase_skew = APS2_Setter(c_float)
+	get_mixer_phase_skew = APS2_Getter(c_float)
+
+	def __init__(self):
 		super(APS2, self).__init__()
-		self.ip_address = ip_address
-		self.connect_APS()
+		self.ip_address = ""
 
 		libaps2.get_device_IPs.argtypes       = [POINTER(c_char_p)]
 		libaps2.get_device_IPs.restype        = c_int
@@ -291,16 +319,26 @@ class APS2(metaclass=Parser):
 		libaps2.set_ip_addr.restype           = c_int
 
 	def __del__(self):
-		self.disconnect_APS()
+		try:
+			self.disconnect()
+		except Exception as e:
+			pass
 
-	def get_device_IPs(self):
-		num_devices = self.get_numDevices()
-		if num_devices > 0:
-			results = (c_char_p * num_devices)(addressof(create_string_buffer(16)))
-			check(libaps2.get_device_IPs(results))
-			return [r.decode('ascii') for r in results]
-		else:
-			return None
+	def connect(self, ip_address):
+		if self.ip_address:
+			#Disconnect before connecting to avoid dangling connections
+			warnings.warn("Disconnecting from {} before connection to {}".format(self.ip_address, ip_address))
+			self.disconnect()
+		try:
+			self.ip_address = ip_address
+			self.connect_APS()
+		except Exception as e:
+			self.ip_address = ""
+			raise e
+
+	def disconnect(self):
+		self.disconnect_APS()
+		self.ip_address = ""
 
 	def get_firmware_version(self):
 		version = c_ulong()
@@ -309,6 +347,9 @@ class APS2(metaclass=Parser):
 		string = create_string_buffer(64)
 		check(libaps2.get_firmware_version(self.ip_address.encode('utf-8'), byref(version), byref(sha), byref(timestamp), string))
 		return version.value, sha.value, timestamp.value, string.value.decode('ascii')
+
+	def init(self, force=0):
+		check(libaps2.init_APS(self.ip_address.encode('utf-8'), force))
 
 	def set_waveform_float(self, channel, data):
 		num_points = len(data)
@@ -329,12 +370,6 @@ class APS2(metaclass=Parser):
 	def load_sequence_file(self, filename):
 		filename = filename.replace("\\", "\\\\")
 		check(libaps2.load_sequence_file(self.ip_address.encode('utf-8'), filename.encode('utf-8')))
-
-	def set_log(self, filename):
-		check(libaps2.set_log(filename.encode('utf-8')))
-
-	def set_logging_level(self, level):
-		check(libaps2.set_logging_level(level))
 
 	def get_ip_addr(self):
 		addr = create_string_buffer(64)

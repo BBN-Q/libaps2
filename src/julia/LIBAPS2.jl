@@ -13,6 +13,8 @@ export APS2,
 	stop,
 	trigger,
 	set_run_mode,
+	set_waveform_frequency,
+	get_waveform_frequency,
 	set_trigger_source,
 	get_trigger_source,
 	set_trigger_interval,
@@ -23,6 +25,10 @@ export APS2,
 	get_channel_scale,
 	set_channel_enabled,
 	get_channel_enabled,
+	set_mixer_amplitude_imbalance,
+	get_mixer_amplitude_imbalance,
+	set_mixer_phase_skew,
+	get_mixer_phase_skew,
 	load_waveform,
 	load_sequence,
 	read_memory,
@@ -144,12 +150,14 @@ end
 
 @aps2_getter get_firmware_version UInt32
 @aps2_getter get_uptime Float64
-@aps2_getter get_fpga_temperature Float64
+@aps2_getter get_fpga_temperature Float32
 
 @aps2_call run
 @aps2_call stop
 
 @aps2_setter set_run_mode Cint
+@aps2_setter set_waveform_frequency Float32
+@aps2_getter get_waveform_frequency Float32
 
 @aps2_setter set_channel_offset Float32
 @aps2_getter get_channel_offset Float32
@@ -159,6 +167,11 @@ end
 
 @aps2_setter set_channel_enabled Cint
 @aps2_getter get_channel_enabled Cint
+
+@aps2_setter set_mixer_amplitude_imbalance Float32
+@aps2_getter get_mixer_amplitude_imbalance Float32
+@aps2_setter set_mixer_phase_skew Float32
+@aps2_getter get_mixer_phase_skew Float32
 
 @aps2_setter set_trigger_source Cint
 @aps2_getter get_trigger_source Cint

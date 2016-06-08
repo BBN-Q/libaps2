@@ -100,6 +100,8 @@ ADD_EXECUTABLE(run_tests
 	../test/RandomHelpers.cpp
 	../test/test_comms.cpp
 	../test/test_cache.cpp
+	../test/APS2Connector.cpp
+	../test/test_CSR.cpp
 )
 TARGET_LINK_LIBRARIES(run_tests aps2 pthread)
 

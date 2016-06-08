@@ -1,8 +1,8 @@
 #include <iostream>
+#include <fstream>
 #include <iterator>
 #include <signal.h>
 #include <vector>
-#include <thread>
 
 #include "libaps2.h"
 #include "concol.h"

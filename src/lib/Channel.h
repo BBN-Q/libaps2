@@ -29,16 +29,12 @@ public:
 	~Channel();
 	int number;
 
-	int set_offset(const float &);
-	float get_offset() const;
-	int set_scale(const float &);
-	float get_scale() const;
 	int set_enabled(const bool &);
 	bool get_enabled() const;
 	size_t get_length() const;
 
-	int set_waveform(const vector<float> &);
-	int set_waveform(const vector<int16_t> &);
+	void set_waveform(const vector<float> &);
+	void set_waveform(const vector<int16_t> &);
 	int set_markers(const vector<uint8_t> &);
 	vector<int16_t> prep_waveform() const;
 
@@ -51,8 +47,6 @@ public:
 	friend class BankBouncerThread;
 
 private:
-	float offset_;
-	float scale_;
 	bool enabled_;
 	vector<float> waveform_;
 	vector<uint8_t> markers_;

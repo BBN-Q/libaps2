@@ -262,7 +262,7 @@ APS2_STATUS get_uptime(const char* deviceSerial, double* upTime) {
 	return aps2_getter(deviceSerial, &APS2::get_uptime, upTime);
 }
 
-APS2_STATUS get_fpga_temperature(const char* deviceSerial, double* temp) {
+APS2_STATUS get_fpga_temperature(const char* deviceSerial, float* temp) {
 	return aps2_getter(deviceSerial, &APS2::get_fpga_temperature, temp);
 }
 
@@ -388,8 +388,32 @@ APS2_STATUS get_channel_enabled(const char* deviceSerial, int channelNum, int* e
 	return aps2_getter(deviceSerial, &APS2::get_channel_offset, enabled, channelNum);
 }
 
+APS2_STATUS set_mixer_amplitude_imbalance(const char* deviceSerial, float amp) {
+	return aps2_call(deviceSerial, &APS2::set_mixer_amplitude_imbalance, amp);
+}
+
+APS2_STATUS get_mixer_amplitude_imbalance(const char* deviceSerial, float* amp) {
+	return aps2_getter(deviceSerial, &APS2::get_mixer_amplitude_imbalance, amp);
+}
+
+APS2_STATUS set_mixer_phase_skew(const char* deviceSerial, float skew) {
+	return aps2_call(deviceSerial, &APS2::set_mixer_phase_skew, skew);
+}
+
+APS2_STATUS get_mixer_phase_skew(const char* deviceSerial, float* skew) {
+	return aps2_getter(deviceSerial, &APS2::get_mixer_phase_skew, skew);
+}
+
 APS2_STATUS set_run_mode(const char* deviceSerial, APS2_RUN_MODE mode) {
 	return aps2_call(deviceSerial, &APS2::set_run_mode, mode);
+}
+
+APS2_STATUS set_waveform_frequency(const char* deviceSerial, float freq) {
+	return aps2_call(deviceSerial, &APS2::set_waveform_frequency, freq);
+}
+
+APS2_STATUS get_waveform_frequency(const char* deviceSerial, float* freq) {
+	return aps2_getter(deviceSerial, &APS2::get_waveform_frequency, freq);
 }
 
 APS2_STATUS write_memory(const char* deviceSerial, uint32_t addr, uint32_t* data, uint32_t numWords) {

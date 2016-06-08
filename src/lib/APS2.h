@@ -9,6 +9,7 @@
 
 #include <memory>
 using std::shared_ptr;
+#include <assert.h>
 
 #include "APS2Ethernet.h"
 #include "Channel.h"
@@ -44,7 +45,7 @@ public:
 	uint32_t get_firmware_git_sha1();
 	uint32_t get_firmware_build_timestamp();
 	double get_uptime();
-	double get_fpga_temperature();
+	float get_fpga_temperature();
 
 	void set_sampleRate(const unsigned int &);
 	unsigned int get_sampleRate();
@@ -55,13 +56,22 @@ public:
 	double get_trigger_interval();
 	void trigger();
 
-	void set_channel_enabled(const int &, const bool &);
-	bool get_channel_enabled(const int &) const;
-	void set_channel_offset(const int &, const float &);
-	float get_channel_offset(const int &) const;
-	void set_channel_scale(const int &, const float &);
-	float get_channel_scale(const int &) const;
-	int set_offset_register(const int &, const float &);
+	void set_channel_enabled(int, bool);
+	bool get_channel_enabled(int) const;
+	void set_channel_offset(int, float);
+	float get_channel_offset(int) const;
+
+	//the next six functions assume we can store a float in a 4 byte register on the device
+	static_assert(sizeof(float) == 4, "libaps2 assumes it can store a float in 4 bytes");
+
+	void set_channel_scale(int, float);
+	float get_channel_scale(int) const;
+
+	void set_mixer_amplitude_imbalance(float);
+	float get_mixer_amplitude_imbalance();
+	void set_mixer_phase_skew(float);
+	float get_mixer_phase_skew();
+	void update_correction_matrix();
 
 	template <typename T>
 	void set_waveform(const int & dac, const vector<T> & data){
@@ -72,6 +82,8 @@ public:
 	void set_markers(const int &, const vector<uint8_t> &);
 
 	void set_run_mode(const APS2_RUN_MODE &);
+	void set_waveform_frequency(float);
+	float get_waveform_frequency();
 
 	void write_sequence(const vector<uint64_t> &);
 	void clear_channel_data();
@@ -81,9 +93,6 @@ public:
 	void run();
 	void stop();
 	APS2_RUN_STATE get_runState();
-
-	//Whether the APS connection is open
-	bool isOpen;
 
 	APS2_RUN_STATE runState;
 	APS2_HOST_TYPE host_type;
@@ -97,7 +106,7 @@ public:
 	//Memory read/write
 	void write_memory(const uint32_t & addr, const vector<uint32_t> & data);
 	void write_memory(const uint32_t & addr, const uint32_t & data);
-	vector<uint32_t> read_memory(uint32_t, uint32_t);
+	vector<uint32_t> read_memory(uint32_t, uint32_t) const;
 
 	//SPI read/write
 	void write_SPI(vector<uint32_t> &);
@@ -139,6 +148,7 @@ public:
 private:
 
 	string ipAddr_;
+	bool connected_;
 	vector<Channel> channels_;
 	shared_ptr<APS2Ethernet> ethernetRM_;
 	unsigned samplingRate_;
@@ -170,8 +180,8 @@ private:
 	// int trigger();
 	// int disable();
 
-	void set_bit(const uint32_t &, std::initializer_list<int>);
-	void clear_bit(const uint32_t &, std::initializer_list<int>);
+	void set_register_bit(const uint32_t &, std::initializer_list<size_t>);
+	void clear_register_bit(const uint32_t &, std::initializer_list<size_t>);
 
 	void write_waveform(const int &, const vector<int16_t> &);
 

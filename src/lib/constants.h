@@ -20,8 +20,8 @@ const int MAX_APS_CHANNELS = 2;
 
 const int APS_WAVEFORM_UNIT_LENGTH = 4;
 
-const int MAX_WF_LENGTH = 131072;
-const int MAX_WF_AMP = 8191;
+const size_t MAX_WF_LENGTH = 1 << 26; //only use 256MB for now - 256MB / 2 channels / 2 bytes per sample
+const int MAX_WF_AMP = (1 << 13) - 1; //14 bit signed DAC
 const int WF_MODULUS = 4;
 const size_t MAX_LL_LENGTH = (1 << 24);
 
@@ -227,7 +227,7 @@ const uint32_t WFB_OFFSET_ADDR               = CSR_AXI_OFFSET + 6*4;
 const uint32_t SEQ_OFFSET_ADDR               = CSR_AXI_OFFSET + 7*4;
 const uint32_t RESETS_ADDR                   = CSR_AXI_OFFSET + 8*4;
 const uint32_t SEQ_CONTROL_ADDR              = CSR_AXI_OFFSET + 9*4;
-const uint32_t ZERO_OUT_ADDR                 = CSR_AXI_OFFSET + 10*4;
+const uint32_t CHANNEL_OFFSET_ADDR           = CSR_AXI_OFFSET + 10*4;
 const uint32_t TRIGGER_WORD_ADDR             = CSR_AXI_OFFSET + 11*4;
 const uint32_t TRIGGER_INTERVAL_ADDR         = CSR_AXI_OFFSET + 12*4;
 const uint32_t DAC_BIST_CHA_PH1_ADDR         = CSR_AXI_OFFSET + 13*4;
@@ -243,6 +243,15 @@ const uint32_t FIRMWARE_VERSION_ADDR         = CSR_AXI_OFFSET + 22*4;
 const uint32_t TEMPERATURE_ADDR              = CSR_AXI_OFFSET + 23*4;
 const uint32_t FIRMWARE_GIT_SHA1_ADDR        = CSR_AXI_OFFSET + 24*4;
 const uint32_t FIRMWARE_BUILD_TIMESTAMP_ADDR = CSR_AXI_OFFSET + 25*4;
+const uint32_t CORRECTION_MATRIX_ROW0_ADDR   = CSR_AXI_OFFSET + 26*4;
+const uint32_t CORRECTION_MATRIX_ROW1_ADDR   = CSR_AXI_OFFSET + 27*4;
+const uint32_t CH_A_SCALE_ADDR               = CSR_AXI_OFFSET + 28*4;
+const uint32_t CH_B_SCALE_ADDR               = CSR_AXI_OFFSET + 29*4;
+const uint32_t MIXER_AMP_IMBALANCE_ADDR      = CSR_AXI_OFFSET + 30*4;
+const uint32_t MIXER_PHASE_SKEW_ADDR         = CSR_AXI_OFFSET + 31*4;
+const uint32_t CH_A_WF_LENGTH_ADDR           = CSR_AXI_OFFSET + 32*4;
+const uint32_t CH_B_WF_LENGTH_ADDR           = CSR_AXI_OFFSET + 33*4;
+const uint32_t WF_SSB_FREQ_ADDR              = CSR_AXI_OFFSET + 34*4;
 
 // TDM registers
 const uint32_t TDM_RESETS_ADDR  = CSR_AXI_OFFSET + 0*4;
@@ -257,30 +266,34 @@ const uint32_t WFB_OFFSET  = 0x10000000u;
 const uint32_t SEQ_OFFSET  = 0x20000000u;
 
 // sequencer control bits
-const int SM_ENABLE_BIT = 0; // state machine enable
-const int TRIGSRC_BIT = 1; // trigger source (0 = external, 1 = internal, 2 = software)
-const int SOFT_TRIG_BIT = 3;
+const unsigned SM_ENABLE_BIT = 0; // state machine enable
+const unsigned TRIGSRC_BIT = 1; // trigger source (0 = external, 1 = internal, 2 = software)
+const unsigned SOFT_TRIG_BIT = 3;
+const unsigned TRIGGER_ENABLE_BIT = 4;
+
+// cache control bits
+const unsigned CACHE_ENABLE_BIT = 0;
 
 // PLL bits
-const int PLL_CHA_RST_BIT = 8;
-const int PLL_CHB_RST_BIT = 9;
-const int IO_CHA_RST_BIT = 10;
-const int IO_CHB_RST_BIT = 11;
-const int DAC_BIST_CHA_RST_BIT = 12;
-const int DAC_BIST_CHB_RST_BIT = 13;
+const unsigned PLL_CHA_RST_BIT = 8;
+const unsigned PLL_CHB_RST_BIT = 9;
+const unsigned IO_CHA_RST_BIT = 10;
+const unsigned IO_CHB_RST_BIT = 11;
+const unsigned DAC_BIST_CHA_RST_BIT = 12;
+const unsigned DAC_BIST_CHB_RST_BIT = 13;
 
 // HOST_STATUS bits
 const int APS2_HOST_TYPE_BIT = 24;
 
 // USER_STATUS bits
-const int MMCM_SYS_LOCK_BIT = 31;
-const int MMCM_CFG_LOCK_BIT = 30;
-const int MIG_C0_LOCK_BIT   = 24;
-const int MIG_C0_CAL_BIT    = 25;
-const int MIG_C1_LOCK_BIT   = 26;
-const int MIG_C1_CAL_BIT    = 27;
-const int AXI_RESET_BIT     = 21;
-const int AXI_RESETN_BIT    = 20;
+const unsigned MMCM_SYS_LOCK_BIT = 31;
+const unsigned MMCM_CFG_LOCK_BIT = 30;
+const unsigned MIG_C0_LOCK_BIT   = 24;
+const unsigned MIG_C0_CAL_BIT    = 25;
+const unsigned MIG_C1_LOCK_BIT   = 26;
+const unsigned MIG_C1_CAL_BIT    = 27;
+const unsigned AXI_RESET_BIT     = 21;
+const unsigned AXI_RESETN_BIT    = 20;
 
 // TDM reset control bits
 const int TDM_TRIGGER_RESET_BIT = 0;
@@ -358,10 +371,19 @@ const vector<SPI_AddrData_t> PLL_CLEAR_CAL_FLAG = {
 const vector<uint8_t> VCXO_INIT = {0x8, 0x60, 0x0, 0x4, 0x64, 0x91, 0x0, 0x61};
 
 // "waveform mode" sequence
-const vector<uint64_t> WF_SEQ = {
+const vector<uint64_t> WF_SEQ_TRIG = {
+	0xa100610000000000L, // set NCO 0 frequency
+	0xa100210000000000L, // reset phase
 	0x2100400000000000L, // WAIT for trig
-	0x0100000000000000L, // WFM
-	0x6000000000000000L	// GOTO 0
+	//insert waveform instructions here
+	0x6000000000000001L	//  GOTO 1 to reset phase and wait for trigger again
+};
+
+const vector<uint64_t> WF_SEQ_CW = {
+	0xa100610000000000L, // set NCO 0 frequency
+	0x9100800000000000L, // WAIT for sync to implement NCO frequency update
+	//insert waveform instructions here
+	0x6000000000000002L	//  GOTO 2 for continuous WF output
 };
 
 #endif /* CONSTANTS_H_ */

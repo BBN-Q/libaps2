@@ -1,13 +1,14 @@
 #include <fstream>
 #include <stdexcept> //std::runtime_error
+#include <bitset>
 using std::endl;
 
 #include "APS2.h"
 #include "APS2Datagram.h"
 
-APS2::APS2() :	isOpen{false}, legacy_firmware{false}, channels_(2), samplingRate_{0} {};
+APS2::APS2() :	legacy_firmware{false}, ipAddr_{""}, connected_{false}, channels_(2), samplingRate_{0} {};
 
-APS2::APS2(string deviceSerial) :	isOpen{false}, legacy_firmware{false}, ipAddr_{deviceSerial}, samplingRate_{0} {
+APS2::APS2(string deviceSerial) :	legacy_firmware{false}, ipAddr_{deviceSerial}, connected_{false}, samplingRate_{0} {
 	channels_.reserve(2);
 	for(size_t ct=0; ct<2; ct++) channels_.push_back(Channel(ct));
 };
@@ -18,9 +19,10 @@ void APS2::connect(shared_ptr<APS2Ethernet> && ethernetRM) {
 	FILE_LOG(logDEBUG) << ipAddr_ << " APS2::connect";
 	//Hold on to APS2Ethernet class to keep socket alive
 	ethernetRM_ = ethernetRM;
-	if (!isOpen) {
+	if (!connected_) {
 		try {
 			ethernetRM_->connect(ipAddr_);
+			connected_ = true;
 		}
 		catch(...) {
 			//release reference to APS2Ethernet
@@ -47,9 +49,9 @@ void APS2::connect(shared_ptr<APS2Ethernet> && ethernetRM) {
 
 void APS2::disconnect() {
 	FILE_LOG(logDEBUG) << ipAddr_ << " APS2::disconnect";
-	if (isOpen) {
+	if (connected_) {
 		ethernetRM_->disconnect(ipAddr_);
-
+		connected_ = false;
 		FILE_LOG(logINFO) << ipAddr_ << " closed connection to device";
 
 		//Release reference to ethernet RM
@@ -208,7 +210,7 @@ double APS2::get_uptime(){
 	return uptime.count();
 }
 
-double APS2::get_fpga_temperature(){
+float APS2::get_fpga_temperature(){
 	/*
 	* Return the FGPA die temperature in C.
 	*/
@@ -223,7 +225,7 @@ double APS2::get_fpga_temperature(){
 	}
 
 	//Temperature is return in bottom 12bits of user status and needs to be converted from the 12bit ADC value
-	double temp = static_cast<double>((temperature_reg & 0xfff))*503.975/4096 - 273.15;
+	float temp = static_cast<float>((temperature_reg & 0xfff))*503.975/4096 - 273.15;
 
 	//Don't return a stupid number of digits
 	//It seems the scale goes from 0-504K with 12bits = 0.12 degrees precision at best
@@ -377,39 +379,101 @@ void APS2::load_sequence_file(const string & seqFile){
 	}
 }
 
-void APS2::set_channel_enabled(const int & dac, const bool & enable){
+void APS2::set_channel_enabled(int dac, bool enable){
 	channels_[dac].set_enabled(enable);
 }
 
-bool APS2::get_channel_enabled(const int & dac) const{
+bool APS2::get_channel_enabled(int dac) const{
 	return channels_[dac].get_enabled();
 }
 
-void APS2::set_channel_offset(const int & dac, const float & offset){
-	//Update the waveform in driver
-	channels_[dac].set_offset(offset);
-	//Write to device if necessary
-	if (!channels_[dac].waveform_.empty()){
-		write_waveform(dac, channels_[dac].prep_waveform());
+void APS2::set_channel_offset(int dac, float offset){
+	//Scale offset to Q0.13 fixed point
+	int16_t offset_fixed = offset * MAX_WF_AMP;
+
+	//read the current value
+	uint32_t val = read_memory(CHANNEL_OFFSET_ADDR, 1)[0];
+
+	//Overwrite the upper/lower word
+	if (dac == 0) {
+		//Top half
+		val = (static_cast<uint32_t>(offset_fixed) << 16) | (val & 0xffff);
+	} else {
+		//Bottom half
+		val = (val & 0xffff0000) | (offset_fixed & 0xffff);
 	}
-
-	//Update TAZ register
-	set_offset_register(dac, channels_[dac].get_offset());
+	write_memory(CHANNEL_OFFSET_ADDR, val);
 }
 
-float APS2::get_channel_offset(const int & dac) const{
-	return channels_[dac].get_offset();
+float APS2::get_channel_offset(int dac) const{
+	//get register val
+	uint32_t val = read_memory(CHANNEL_OFFSET_ADDR, 1)[0];
+
+	//extract upper/lower half
+	int16_t offset_fixed = static_cast<int16_t>((dac == 0 ? val >> 16 : val) & 0xffff);
+
+	//covert back to float
+	return static_cast<float>(offset_fixed)/MAX_WF_AMP;
 }
 
-void APS2::set_channel_scale(const int & dac, const float & scale){
-	channels_[dac].set_scale(scale);
-	if (!channels_[dac].waveform_.empty()){
-		write_waveform(dac, channels_[dac].prep_waveform());
-	}
+void APS2::set_channel_scale(int dac, float scale){
+	//write register for future getting
+	uint32_t reg_addr = dac == 0 ? CH_A_SCALE_ADDR : CH_B_SCALE_ADDR;
+	write_memory(reg_addr, reinterpret_cast<uint32_t&>(scale));
+	//update correction matrix
+	update_correction_matrix();
 }
 
-float APS2::get_channel_scale(const int & dac) const{
-	return channels_[dac].get_scale();
+float APS2::get_channel_scale(int dac) const{
+	//get register value and convert back to float
+	uint32_t reg_addr = dac == 0 ? CH_A_SCALE_ADDR : CH_B_SCALE_ADDR;
+	return reinterpret_cast<float&>(read_memory(reg_addr, 1)[0]);
+}
+
+void APS2::set_mixer_amplitude_imbalance(float amp) {
+	//write register for future getting
+	write_memory(MIXER_AMP_IMBALANCE_ADDR, reinterpret_cast<uint32_t&>(amp));
+	//update correction matrix
+	update_correction_matrix();
+}
+
+float APS2::get_mixer_amplitude_imbalance() {
+	//get register value and convert back to float
+	return reinterpret_cast<float&>(read_memory(MIXER_AMP_IMBALANCE_ADDR, 1)[0]);
+}
+
+void APS2::set_mixer_phase_skew(float skew) {
+	//write register for future getting
+	write_memory(MIXER_PHASE_SKEW_ADDR, reinterpret_cast<uint32_t&>(skew));
+	//update correction matrix
+	update_correction_matrix();
+}
+
+float APS2::get_mixer_phase_skew() {
+	//get register value and convert back to float
+	return reinterpret_cast<float&>(read_memory(MIXER_PHASE_SKEW_ADDR, 1)[0]);
+}
+
+void APS2::update_correction_matrix() {
+	//Update the 2x2 correction matrix assuming an mixer amplitude imbalance, phase skew and independent channel scales
+	// [i_scale, 0;0, q_scale] * [amp, amp*tan(phi); 0, 1/cos(phi)] = [i_scale*amp, i_scale*amp*tan(phi); 0, q_scale*1/cos(phi)]}
+	float amp_imbalance = reinterpret_cast<float&>(read_memory(MIXER_AMP_IMBALANCE_ADDR, 1)[0]);
+	float phase_skew = reinterpret_cast<float&>(read_memory(MIXER_PHASE_SKEW_ADDR, 1)[0]);
+	float i_scale = reinterpret_cast<float&>(read_memory(CH_A_SCALE_ADDR, 1)[0]);
+	float q_scale = reinterpret_cast<float&>(read_memory(CH_B_SCALE_ADDR, 1)[0]);
+
+	//calculate matrix terms and convert to Q2.13 fixed point
+	int32_t correction_matrix_00 = static_cast<int32_t>(i_scale * amp_imbalance * MAX_WF_AMP);
+	int32_t correction_matrix_01 = static_cast<int32_t>(i_scale * amp_imbalance * tan(phase_skew) * MAX_WF_AMP);
+	int32_t correction_matrix_10 = 0;
+	int32_t correction_matrix_11 = static_cast<int32_t>(q_scale/cos(phase_skew) * MAX_WF_AMP);
+
+	//Slot into registers and write to memory
+	uint32_t row0, row1;
+	row0 = (correction_matrix_00 << 16) | (correction_matrix_01 & 0xffff );
+	write_memory(CORRECTION_MATRIX_ROW0_ADDR, row0);
+	row1 = (correction_matrix_10 << 16) | (correction_matrix_11 & 0xffff );
+	write_memory(CORRECTION_MATRIX_ROW1_ADDR, row1);
 }
 
 void APS2::set_markers(const int & dac, const vector<uint8_t> & data) {
@@ -434,39 +498,43 @@ APS2_TRIGGER_SOURCE APS2::get_trigger_source() {
 }
 
 void APS2::set_trigger_interval(const double & interval) {
-	int clockCycles;
+	FILE_LOG(logDEBUG) << ipAddr_ << " APS2::set_trigger_interval";
+	uint32_t clocks;
 	switch (host_type) {
 	case APS:
 		// SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
-		clockCycles = interval*0.25*samplingRate_*1e6;
-		FILE_LOG(logDEBUG) << ipAddr_ << " setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
+		clocks = round(interval*0.25*get_sampleRate()*1e6);
+		FILE_LOG(logDEBUG1) << ipAddr_ << " setting trigger interval to " << interval << "s (" << clocks << " cycles)";
 
-		write_memory(TRIGGER_INTERVAL_ADDR, clockCycles);
+		write_memory(TRIGGER_INTERVAL_ADDR, clocks);
 		break;
 	case TDM:
 		// TDM operates on a fixed 100 MHz clock
-		clockCycles = (interval * 100e6);
-		FILE_LOG(logDEBUG) << ipAddr_ << " setting trigger interval to " << interval << "s (" << clockCycles << " cycles)";
+		clocks = (interval * 100e6);
+		FILE_LOG(logDEBUG1) << ipAddr_ << " setting trigger interval to " << interval << "s (" << clocks << " cycles)";
 
-		write_memory(TDM_TRIGGER_INTERVAL_ADDR, clockCycles);
+		write_memory(TDM_TRIGGER_INTERVAL_ADDR, clocks);
 		break;
 	}
 }
 
 double APS2::get_trigger_interval() {
-	uint32_t clockCycles;
+	FILE_LOG(logDEBUG) << ipAddr_ << " APS2::get_trigger_interval";
+	uint32_t clocks;
 	switch (host_type) {
 	case APS:
 		// SM clock is 1/4 of samplingRate so the trigger interval in SM clock periods is
-		clockCycles = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
+		clocks = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
+		FILE_LOG(logDEBUG1) << ipAddr_ <<  " trigger intervals clocks = " << clocks;
 		// Convert from clock cycles to time
-		return static_cast<double>(clockCycles)/(0.25*samplingRate_*1e6);
+		return static_cast<double>(clocks)/(0.25*get_sampleRate()*1e6);
 		break;
 	case TDM:
-		clockCycles = read_memory(TDM_TRIGGER_INTERVAL_ADDR, 1)[0];
+		clocks = read_memory(TDM_TRIGGER_INTERVAL_ADDR, 1)[0];
+		FILE_LOG(logDEBUG1) << ipAddr_ <<  " trigger intervals clocks = " << clocks;
 		// Convert from clock cycles to time
 		// TDM operates on a fixed 100 MHz clock
-		return static_cast<double>(clockCycles)/(100e6);
+		return static_cast<double>(clocks)/(100e6);
 		break;
 	}
 	//Shoud never get here;
@@ -487,12 +555,18 @@ void APS2::run() {
 	FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::run";
 	switch (host_type) {
 	case APS:
+		FILE_LOG(logDEBUG1) << ipAddr_ << " releasing the cache controller...";
+		set_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		FILE_LOG(logDEBUG1) << ipAddr_ << " releasing pulse sequencer state machine...";
-		set_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+		set_register_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		FILE_LOG(logDEBUG1) << ipAddr_ << " enabling trigger...";
+		set_register_bit(SEQ_CONTROL_ADDR, {TRIGGER_ENABLE_BIT});
 		break;
 	case TDM:
 		FILE_LOG(logDEBUG1) << ipAddr_ << " enabling TDM trigger";
-		clear_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
+		clear_register_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
 		break;
 	}
 }
@@ -501,11 +575,13 @@ void APS2::stop() {
 	FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::stop";
 	switch (host_type) {
 	case APS:
-		//Put the state machine back in reset
-		clear_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+		//Put the sequencer and trigger back in reset
+		clear_register_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT, TRIGGER_ENABLE_BIT});
+		//hold the cache in reset
+		clear_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
 		break;
 	case TDM:
-		set_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
+		set_register_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
 		break;
 	}
 }
@@ -517,27 +593,78 @@ APS2_RUN_STATE APS2::get_runState(){
 void APS2::set_run_mode(const APS2_RUN_MODE & mode) {
 	FILE_LOG(logDEBUG) << ipAddr_ << " setting run mode to " << mode;
 
-	vector<uint64_t> instructions = WF_SEQ;
-	// inject waveform length into the instruction
-	size_t wfCount = (std::max(channels_[0].get_length(), channels_[1].get_length()) / 4) - 1;
-	FILE_LOG(logDEBUG2) << ipAddr_ <<  " setting WFM instruction count = " << wfCount;
-	instructions[1] |= wfCount << 24;
+	//If necessary pull the correct instruction sequence scaffold
+	vector<uint64_t> instructions;
 	switch (mode) {
 		case RUN_SEQUENCE:
 			// don't need to do anything... already there
-			break;
+			return;
 		case TRIG_WAVEFORM:
-			write_sequence(instructions);
+			instructions = WF_SEQ_TRIG;
 			break;
 		case CW_WAVEFORM:
-			// remove the WAIT instruction
-			instructions.erase(instructions.begin());
-			write_sequence(instructions);
+			instructions = WF_SEQ_CW;
 			break;
 		default:
 			// unknown mode
 			throw APS2_UNKNOWN_RUN_MODE;
 	}
+	//set SSB frequency
+	instructions[0] |= read_memory(WF_SSB_FREQ_ADDR, 1)[0];
+
+	// inject waveform lengths into the instructions
+	size_t wf_length_a, wf_length_b;
+	wf_length_a = read_memory(CH_A_WF_LENGTH_ADDR, 1)[0];
+	wf_length_b = read_memory(CH_B_WF_LENGTH_ADDR, 1)[0];
+	if ((wf_length_a == 0) && (wf_length_b == 0)) {
+		throw APS2_NO_WFS;
+	}
+	//get insertion point before end
+	auto goto_entry = std::prev(instructions.end());
+	if ( wf_length_a == wf_length_b ) {
+		//single broadcast wf instruction with write flag high
+		instructions.insert(goto_entry, 0x0d00000000000000L | ((wf_length_a/4 -1) << 24));
+	}
+	else if ( wf_length_b == 0 ) {
+		//single wf instruction to a with write flag high
+		instructions.insert(goto_entry, 0x0500000000000000L | ((wf_length_a/4 -1) << 24));
+	}
+	else if ( wf_length_a == 0 ) {
+		//single wf instruction to b with write flag high
+		instructions.insert(goto_entry, 0x0900000000000000L | ((wf_length_b/4 -1) << 24));
+	}
+	else {
+		//wf instruction to with write flag low; wf insruction to b with write flag high
+		instructions.insert(goto_entry, 0x0400000000000000L | ((wf_length_a/4 -1) << 24));
+		goto_entry = std::prev(instructions.end());
+		instructions.insert(goto_entry, 0x0900000000000000L | ((wf_length_b/4 -1) << 24));
+	}
+
+	FILE_LOG(logDEBUG2) << ipAddr_ << " writing waveform mode sequence:";
+	for (auto instr : instructions) {
+		FILE_LOG(logDEBUG2) << "\t" << hexn<16> << instr;
+	}
+	write_sequence(instructions);
+}
+
+void APS2::set_waveform_frequency(float freq){
+	//frequency gets converted to portion of circle per 300MHz clock cycle in range [-2, 2)
+	if ((freq >= 600e6) || (freq < -600e6)) {
+		throw APS2_WAVEFORM_FREQ_OVERFLOW;
+	}
+	uint32_t freq_increment = freq > 0 ? (freq/300e6) * (1 << 28) : (freq/300e6 + 4) * (1 << 28);
+	FILE_LOG(logDEBUG2) << ipAddr_ << " writing waveform frequency increment: " << freq_increment;
+	write_memory(WF_SSB_FREQ_ADDR, freq_increment);
+}
+
+float APS2::get_waveform_frequency(){
+	//frequency gets converted to portion of circle per 300MHz clock cycle in range [-2, 2)
+	uint32_t freq_increment = read_memory(WF_SSB_FREQ_ADDR, 1)[0];
+	float freq = static_cast<float>(freq_increment) / (1 << 28) * 300e6;
+	if ( freq > 600e6 ) {
+		freq += -1200e6;
+	}
+	return freq;
 }
 
 // FPGA memory read/write
@@ -547,10 +674,23 @@ void APS2::write_memory(const uint32_t & addr, const uint32_t & data){
 }
 
 void APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
-	/* APS2::write
-	 * addr = start byte of address space
-	 * data = vector<uint32_t> data
-	 */
+	/* APS2::write_memory
+	* addr = start byte of address space
+	* data = vector<uint32_t> data
+	*/
+
+	//Memory writes to SDRAM need to be 16 byte aligned and padded to a multiple of 16 bytes (4 words)
+	if (addr < MEMORY_ADDR + 0x40000000)
+	{
+		if ( (addr & 0xf) != 0) {
+			FILE_LOG(logERROR) << ipAddr_ << " attempted to write waveform/instruction SDRAM at an address not aligned to 16 bytes";
+			throw APS2_UNALIGNED_MEMORY_ACCESS;
+		}
+		if ( (data.size() % 4) != 0) {
+			FILE_LOG(logERROR) << ipAddr_ << " attempted to write waveform/instruction SDRAM with data not a multiple of 16 bytes";
+			throw APS2_UNALIGNED_MEMORY_ACCESS;
+		}
+	}
 
 	//Convert to datagrams and send
 	APS2Command cmd;
@@ -560,7 +700,7 @@ void APS2::write_memory(const uint32_t & addr, const vector<uint32_t> & data){
 	ethernetRM_->send(ipAddr_, dgs);
 }
 
-vector<uint32_t> APS2::read_memory(uint32_t addr, uint32_t numWords){
+vector<uint32_t> APS2::read_memory(uint32_t addr, uint32_t numWords) const{
 	//TODO: handle numWords that require mulitple requests
 
 	//Send the read request
@@ -704,13 +844,17 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET & target, const uint16_t & ad
 void APS2::write_flash(uint32_t addr, vector<uint32_t> & data) {
 	FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::write_flash";
 
-	// erase before write
-	erase_flash(addr, sizeof(uint32_t) * data.size());
-
-	// resize data to a multiple of 64 words (256 bytes)
+	//Flash writes must be 256 byte aligned and written in 256 byte chunks
+	if ( (addr & 0xff) != 0) {
+		FILE_LOG(logERROR) << ipAddr_ << " attempted to write configuration ERPOM at an address not aligned to 256 bytes";
+		throw APS2_UNALIGNED_MEMORY_ACCESS;
+	}
 	int pad_words = (64 - (data.size() % 64)) % 64;
 	FILE_LOG(logDEBUG1) << ipAddr_ << " flash write: padding payload with " << pad_words << " words";
 	data.resize(data.size() + pad_words, 0xffffffff);
+
+	// erase before write
+	erase_flash(addr, sizeof(uint32_t) * data.size());
 
 	APS2Command cmd;
 	cmd.ack = 1;
@@ -937,7 +1081,7 @@ int APS2::setup_PLL() {
 
 	// Disable DDRs
 	// int ddrMask = CSRMSK_CHA_DDR | CSRMSK_CHB_DDR;
-//	FPGA::clear_bit(socket_, FPGA_ADDR_CSR, ddrMask);
+//	FPGA::clear_register_bit(socket_, FPGA_ADDR_CSR, ddrMask);
 	// disable dac FIFOs
 	// for (int dac = 0; dac < NUM_CHANNELS; dac++)
 		// disable_DAC_FIFO(dac);
@@ -950,7 +1094,7 @@ int APS2::setup_PLL() {
 //		return -1;
 
 	// Enable DDRs
-//	FPGA::set_bit(socket_, FPGA_ADDR_CSR, ddrMask);
+//	FPGA::set_register_bit(socket_, FPGA_ADDR_CSR, ddrMask);
 
 	//Record that sampling rate has been set to 1200
 	samplingRate_ = 1200;
@@ -993,7 +1137,7 @@ int APS2::set_PLL_freq(const int & freq) {
 	// Disable DDRs
 	// int ddr_mask = CSRMSK_CHA_DDR | CSRMSK_CHB_DDR;
 	//TODO: fix!
-//	FPGA::clear_bit(socket_, FPGA_ADDR_CSR, ddr_mask);
+//	FPGA::clear_register_bit(socket_, FPGA_ADDR_CSR, ddr_mask);
 
 	// Disable oscillator by clearing APS2_STATUS_CTRL register
 	//TODO: fix!
@@ -1018,7 +1162,7 @@ int APS2::set_PLL_freq(const int & freq) {
 
 	// Enable DDRs
 	//TODO: fix!
-//	FPGA::set_bit(socket_, FPGA_ADDR_CSR, ddr_mask);
+//	FPGA::set_register_bit(socket_, FPGA_ADDR_CSR, ddr_mask);
 
 	return 0;
 }
@@ -1038,7 +1182,7 @@ int APS2::test_PLL_sync() {
 	uint32_t ch_phase, ch_phase_deg;
 
 	const vector<uint32_t> CH_PHASE_ADDR = {PHASE_COUNT_A_ADDR, PHASE_COUNT_B_ADDR};
-	const vector<int> CH_PLL_RESET_BIT = {PLL_CHA_RST_BIT, PLL_CHB_RST_BIT};
+	const vector<unsigned> CH_PLL_RESET_BIT = {PLL_CHA_RST_BIT, PLL_CHB_RST_BIT};
 
 	FILE_LOG(logINFO) << ipAddr_ << " running channel sync procedure";
 
@@ -1047,7 +1191,7 @@ int APS2::test_PLL_sync() {
 		disable_DAC_FIFO(dac);
 	}
 	// Disable DDRs
-	set_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
+	set_register_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
 
 	static const int lowPhaseCutoff = 45, highPhaseCutoff = 135;
 	// loop over channels
@@ -1064,7 +1208,7 @@ int APS2::test_PLL_sync() {
 				break;
 			} else {
 				// disable the channel PLL
-				set_bit(RESETS_ADDR, {CH_PLL_RESET_BIT[ch]});
+				set_register_bit(RESETS_ADDR, {CH_PLL_RESET_BIT[ch]});
 
 				if (ch_phase_deg >= lowPhaseCutoff && ch_phase_deg <= highPhaseCutoff) {
 					// disable then enable the DAC PLL
@@ -1073,7 +1217,7 @@ int APS2::test_PLL_sync() {
 				}
 
 				// enable the channel pll
-				clear_bit(RESETS_ADDR, {CH_PLL_RESET_BIT[ch]});
+				clear_register_bit(RESETS_ADDR, {CH_PLL_RESET_BIT[ch]});
 			}
 			if (ct == MAX_PHASE_TEST_CNT-1) {
 				FILE_LOG(logERROR) << ipAddr_ << " DAC " << ((ch==0) ? "A" : "B") << " failed to sync";
@@ -1083,7 +1227,7 @@ int APS2::test_PLL_sync() {
 	}
 
 	// Enable DDRs
-	clear_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
+	clear_register_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
 	// Enable DAC FIFOs
 	for (int dac = 0; dac < NUM_CHANNELS; dac++) {
 		enable_DAC_FIFO(dac);
@@ -1392,14 +1536,14 @@ void APS2::disable_DAC_FIFO(const int & dac) {
 int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<uint32_t> & results){
 	/*
 	Measures the DAC BIST registers for a given test vector at three stages: leaving the FPGA, registering
-	the data on the DAC at the LVDS stage, synronizing to the output stage on the DAC. It returns the BIST
+	the data on the DAC at the LVDS stage, syncronizing to the output stage on the DAC. It returns the BIST
 	results as a vector:
 	results = {IdealPhase1, IdealPhase2, FPGAPhase1, FPGAPhase2, LVDSPhase1, LVDSPhase2, SYNCPhase1, SYNCPhase2}
 	*/
 	const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0, CHIPCONFIG_TARGET_DAC_1};
 	const vector<uint32_t> FPGA_Reg_Phase1 = {DAC_BIST_CHA_PH1_ADDR, DAC_BIST_CHB_PH1_ADDR};
 	const vector<uint32_t> FPGA_Reg_Phase2 = {DAC_BIST_CHA_PH2_ADDR, DAC_BIST_CHB_PH2_ADDR};
-	const vector<int> FPGA_Reg_ResetBits = {DAC_BIST_CHA_RST_BIT, DAC_BIST_CHB_RST_BIT};
+	const vector<unsigned> FPGA_Reg_ResetBits = {DAC_BIST_CHA_RST_BIT, DAC_BIST_CHB_RST_BIT};
 	uint8_t regVal;
 
 	FILE_LOG(logINFO) << ipAddr_ << " running DAC BIST for DAC " << dac;
@@ -1497,7 +1641,7 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	write_reg(0, regVal);
 
 	// Step 2: set the zero register to 0x0000 for signed data (note inconsistency between page 44 and 45 of manual)
-	set_offset_register(dac, 0);
+	set_channel_offset(dac, 0);
 
 	// Step 3 and 4 : run data clock for 16 cycles -- should happen with ethernet latency for free
 
@@ -1525,13 +1669,13 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	// Step 11: Set CLEAR (Reg. 17, Bit 0), SYNC_EN (Reg. 17, Bit 1), and LVDS_EN (Reg. 17, Bit 2) high
 	write_reg(17, 0x07);
 	// Also reset the FPGA BIST registers at this point
-	set_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
+	set_register_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
 
 	// Step 12: wait...
 
 	// Step 13: clear the CLEAR bit
 	write_reg(17, 0x06);
-	clear_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
+	clear_register_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
 
 	// Step 14: read the BIST registers to confirm all zeros
 	// Note error in part (b's) should read registers 21-18
@@ -1547,16 +1691,15 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 
 	// Step 18: loop back to 11
 	write_reg(17, 0x07);
-	set_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
+	set_register_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
 	write_reg(17, 0x06);
-	clear_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
+	clear_register_bit(RESETS_ADDR, {FPGA_Reg_ResetBits[dac]});
 	read_BIST_sig();
 	trigger();
 
 	results.clear();
-	//Phase I and II seem to be swapped...
-	results.push_back(phase2BIST);
 	results.push_back(phase1BIST);
+	results.push_back(phase2BIST);
 	auto readResults = read_BIST_sig();
 	results.insert(results.end(), readResults.begin(), readResults.end());
 
@@ -1577,66 +1720,53 @@ int APS2::run_DAC_BIST(const int & dac, const vector<int16_t> & testVec, vector<
 	return passed;
 }
 
-int APS2::set_offset_register(const int & dac, const float & offset) {
-	/* APS2::set_offset_register
-	 * Write the zero register for the associated channel
-	 * offset - offset in normalized full range (-1, 1)
-	 */
-	int16_t scaledOffset = offset * MAX_WF_AMP;
-	FILE_LOG(logINFO) << ipAddr_ << " setting DAC " << dac << "	zero register to " << scaledOffset;
-
-	//Read current value
-	uint32_t val = read_memory(ZERO_OUT_ADDR, 1)[0];
-
-	//Overwrite the correct bits
-	if (dac == 0) {
-		//Top bits
-		val = (static_cast<uint32_t>(scaledOffset) << 16) | (val & 0xffff);
-	} else {
-		//Bottom bits
-		val = (val & 0xffff0000) | (scaledOffset & 0xffff);
+void APS2::set_register_bit(const uint32_t & addr, std::initializer_list<size_t> bits) {
+	std::bitset<32> reg_val(read_memory(addr, 1).front());
+	for (auto bit : bits) {
+		reg_val.set(bit);
 	}
-
-	write_memory(ZERO_OUT_ADDR, val);
-	return 0;
+	write_memory(addr, reg_val.to_ulong());
 }
 
-void APS2::set_bit(const uint32_t & addr, std::initializer_list<int> bits) {
-	uint32_t curReg = read_memory(addr, 1).front();
-	for (int bit : bits) {
-		curReg |= (1 << bit);
+void APS2::clear_register_bit(const uint32_t & addr, std::initializer_list<size_t> bits) {
+	std::bitset<32> reg_val(read_memory(addr, 1).front());
+	for (auto bit : bits) {
+		reg_val.reset(bit);
 	}
-	write_memory(addr, curReg);
+	write_memory(addr, reg_val.to_ulong());
 }
 
-void APS2::clear_bit(const uint32_t & addr, std::initializer_list<int> bits) {
-	uint32_t curReg = read_memory(addr, 1).front();
-	for (int bit : bits) {
-		curReg &= ~(1 << bit);
-	}
-	write_memory(addr, curReg);
-}
-
-void APS2::write_waveform(const int & ch, const vector<int16_t> & wfData) {
+void APS2::write_waveform(const int & ch, const vector<int16_t> & wf) {
 	/*Write waveform data to FPGA memory
 	 * ch = channel (0-1)
-	 * wfData = bits 0-13: signed 14-bit waveform data, bits 14-15: marker data
+	 * wf = bits 0-13: signed 14-bit waveform data, bits 14-15: marker data
 	 */
 
+	// disable/reset cache
+	clear_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
+
 	uint32_t startAddr = (ch == 0) ? MEMORY_ADDR+WFA_OFFSET : MEMORY_ADDR+WFB_OFFSET;
-
-	// disable cache
-	write_memory(CACHE_CONTROL_ADDR, 0);
-
-	FILE_LOG(logDEBUG2) << ipAddr_ << " loading waveform of length " << wfData.size() << " at address " << hexn<8> << startAddr;
-	vector<uint32_t> packedData;
-	for (size_t ct=0; ct < wfData.size(); ct += 2) {
-		packedData.push_back(((uint32_t)wfData[ct+1] << 16) | (uint16_t)wfData[ct]);
+	FILE_LOG(logDEBUG2) << ipAddr_ << " loading waveform of length " << wf.size() << " at address " << hexn<8> << startAddr;
+	vector<uint32_t> packed_data;
+	for (size_t ct=0; ct < wf.size(); ct += 2) {
+		packed_data.push_back(((uint32_t)wf[ct+1] << 16) | (uint16_t)wf[ct]);
 	}
-	write_memory(startAddr, packedData);
+
+	//SDRAM writes must be multiples of 16 bytes
+	int pad_words = (4 - (packed_data.size() % 4)) % 4;
+	if (pad_words) {
+		FILE_LOG(logDEBUG1) << ipAddr_ << " padding waveform write with " << std::dec << pad_words << " words";
+		packed_data.resize(packed_data.size() + pad_words, 0xffffffff);
+	}
+
+	write_memory(startAddr, packed_data);
+
+	//write the length register
+	uint32_t length_addr = (ch == 0) ? CH_A_WF_LENGTH_ADDR : CH_B_WF_LENGTH_ADDR;
+	write_memory(length_addr, wf.size());
 
 	// enable cache
-	write_memory(CACHE_CONTROL_ADDR, 1);
+	set_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
 }
 
 void APS2::write_sequence(const vector<uint64_t> & data) {
@@ -1649,13 +1779,20 @@ void APS2::write_sequence(const vector<uint64_t> & data) {
 		packed_instructions.push_back(static_cast<uint32_t>(data[ct] >> 32));
 	}
 
-	// disable cache
-	write_memory(CACHE_CONTROL_ADDR, 0);
+	//SDRAM writes must be multiples of 16 bytes
+	int pad_words = (4 - (packed_instructions.size() % 4)) % 4;
+	if (pad_words) {
+		FILE_LOG(logDEBUG1) << ipAddr_ << " padding instruction write with " << std::dec << pad_words << " words";
+		packed_instructions.resize(packed_instructions.size() + pad_words, 0xffffffff);
+	}
+
+	// disable/reset cache
+	clear_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
 
 	write_memory(MEMORY_ADDR+SEQ_OFFSET, packed_instructions);
 
 	// enable cache
-	write_memory(CACHE_CONTROL_ADDR, 1);
+	set_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
 }
 
 int APS2::write_memory_map(const uint32_t & wfA, const uint32_t & wfB, const uint32_t & seq) { /* see header for defaults */

@@ -1,7 +1,5 @@
 #include <iostream>
-#include <fstream>
-#include <sstream>
-
+#include <vector>
 
 #include "concol.h"
 
@@ -9,32 +7,49 @@ using std::cout;
 using std::cin;
 using std::endl;
 using std::string;
+using std::vector;
 
-string get_device_id() {
+vector<string> enumerate_slices() {
 	/*
-	Helper function than enumerates and asks for which APS to talk to.
+	Helper function to return connected slices.
 	*/
-	cout << concol::CYAN << "Enumerating devices" << concol::RESET << endl;
+	cout << concol::CYAN << "Enumerating slices" << concol::RESET << endl;
 
 	unsigned numDevices = 0;
 	get_numDevices(&numDevices);
 
-	cout << concol::CYAN << numDevices << " APS device" << (numDevices > 1 ? "s": "")	<< " found" << concol::RESET << endl;
+	cout << concol::CYAN << numDevices << " APS2 slices" << (numDevices > 1 ? "s": "")	<< " found" << concol::RESET << endl;
 
 	if (numDevices < 1)
-		return "";
+		return {""};
 
-	const char ** serialBuffer = new const char*[numDevices];
-	get_device_IPs(serialBuffer);
+	const char ** ip_addr_buffers = new const char*[numDevices];
+	get_device_IPs(ip_addr_buffers);
 
-	for (unsigned cnt=0; cnt < numDevices; cnt++) {
-		cout << concol::CYAN << "Device " << cnt << " serial #: " << serialBuffer[cnt] << concol::RESET << endl;
+	vector<string> ip_addrs;
+	for (unsigned ct=0; ct < numDevices; ct++) {
+		ip_addrs.push_back(string(ip_addr_buffers[ct]));
+		cout << concol::CYAN << "Device " << ct << " IP address: " << ip_addr_buffers[ct] << concol::RESET << endl;
 	}
 
-	string deviceSerial;
+	delete[] ip_addr_buffers;
 
-	if (numDevices == 1) {
-		deviceSerial = string(serialBuffer[0]);
+	return ip_addrs;
+}
+
+string get_device_id() {
+	/*
+	Helper function than enumerates and asks for a single APS2 to talk to.
+	*/
+
+	vector<string> ip_addrs = enumerate_slices();
+	if ( ip_addrs.size() == 0 ) {
+		return "";
+	}
+
+	string selected_ip;
+	if ( ip_addrs.size() == 1 ) {
+		selected_ip = string(ip_addrs[0]);
 	}
 	else {
 
@@ -42,17 +57,45 @@ string get_device_id() {
 		string input = "";
 		getline(cin, input);
 
-		int device_id = 0;
 		if (input.length() != 0) {
-			std::stringstream mystream(input);
-			mystream >> device_id;
+			selected_ip = string(ip_addrs[stoi(input)]);
 		}
-		deviceSerial = string(serialBuffer[device_id]);
 	}
 
-	delete[] serialBuffer;
-	return deviceSerial;
+	return selected_ip;
+}
 
+vector<string> get_device_ids() {
+	/*
+	Helper function than enumerates and asks for which (potentially "all") APS to talk to.
+	*/
+	vector<string> ip_addrs = enumerate_slices();
+	if ( ip_addrs.size() == 0 ) {
+		return {""};
+	}
+
+	vector<string> selected_ips;
+	if (ip_addrs.size() == 1) {
+		selected_ips.push_back(string(ip_addrs[0]));
+	}
+	else {
+
+		cout << concol::YELLOW << "Choose device ID (or \"all\") [0]: " << concol::RESET;
+		string input = "";
+		getline(cin, input);
+
+		if (input.length() != 0) {
+			if (input.compare("all") == 0) {
+				for (size_t ct = 0; ct < ip_addrs.size(); ct++) {
+					selected_ips.push_back(ip_addrs[ct]);
+				}
+			} else {
+				selected_ips.push_back(ip_addrs[stoi(input)]);
+			}
+		}
+	}
+
+	return selected_ips;
 }
 
 void print_title(const string & title){
