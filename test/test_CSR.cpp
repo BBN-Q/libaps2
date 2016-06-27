@@ -4,6 +4,7 @@
 // Copyright 2016 Raytheon BBN Technologies
 
 #include <string>
+#include <random>
 using std::string;
 
 #include "catch.hpp"
