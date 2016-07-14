@@ -282,31 +282,38 @@ void APS2::write_bitfile(const string & bitFile, uint32_t start_addr, APS2_BITFI
 			break;
 	}
 
-	//Now validate bitfile data (EPROM only for now)
-	//TODO: DRAM as well?
-	flash_task = VALIDATING;
-	flash_task_progress = 0;
-	if (media == BITFILE_MEDIA_EPROM) {
-		uint32_t end_addr = start_addr + 4*bitfile_words.size();
-		uint32_t addr = start_addr;
-		do {
-			uint16_t read_length;
-			//Read up to 1kB at a time
-			if ((end_addr - addr) >= (1 << 10)) {
-				read_length = 256;
-			} else {
-				read_length = (end_addr - addr)/4;
+	//Now validate bitfile data
+	bitfile_writing_task = VALIDATING;
+	bitfile_writing_task_progress = 0;
+	uint32_t end_addr = start_addr + 4*bitfile_words.size();
+	uint32_t addr = start_addr;
+	do {
+		uint16_t read_length;
+		//Read up to 1kB at a time because of ApsMsgProc limitations
+		if ((end_addr - addr) >= (1 << 10)) {
+			read_length = 256;
+		} else {
+			read_length = (end_addr - addr)/4;
+		}
+
+		vector<uint32_t> check_vec;
+		switch (media) {
+			case BITFILE_MEDIA_DRAM:
+				check_vec = read_configuration_SDRAM(addr, read_length);
+				break;
+			case BITFILE_MEDIA_EPROM:
+				check_vec = read_flash(addr, read_length);
+				break;
+		}
+
+		for (size_t ct = 0; ct < read_length; ct++) {
+			if (check_vec[ct] != bitfile_words[(addr-start_addr)/4]) {
+				throw APS2_BITFILE_VALIDATION_FAILURE;
 			}
-			auto check_vec = read_flash(addr, read_length);
-			for (size_t ct = 0; ct < read_length; ct++) {
-				if (check_vec[ct] != bitfile_words[(addr-start_addr)/4]) {
-					throw APS2_BITFILE_VALIDATION_FAILURE;
-				}
-				addr += 4;
-			}
-			flash_task_progress = static_cast<double>(addr - start_addr) / (end_addr-start_addr);
-		} while(addr < end_addr);
-	}
+			addr += 4;
+		}
+		bitfile_writing_task_progress = static_cast<double>(addr - start_addr) / (end_addr-start_addr);
+	} while(addr < end_addr);
 }
 
 void APS2::program_bitfile(uint32_t addr) {
@@ -737,7 +744,13 @@ void APS2::write_configuration_SDRAM(uint32_t addr, const vector<uint32_t> & dat
 	cmd.sel = 1; //necessary for newer firmware to demux to ApsMsgProc
 	cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::FPGACONFIG_ACK);
 	auto dgs = APS2Datagram::chunk(cmd, addr, data, 0x100); //1kB chunks to fit in fake ethernet packet to ApsMsgProc
-	ethernetRM_->send(ipAddr_, dgs);
+	bitfile_writing_task = WRITING;
+	bitfile_writing_task_progress = 0;
+	//Write 1 at a time so we can update progress
+	for (size_t ct = 0; ct < dgs.size(); ct++) {
+		ethernetRM_->send(ipAddr_, {dgs[ct]});
+		bitfile_writing_task_progress = static_cast<double>(ct+1)/static_cast<double>(dgs.size());
+	}
 }
 
 vector<uint32_t> APS2::read_configuration_SDRAM(uint32_t addr, uint32_t num_words) {
@@ -863,19 +876,19 @@ void APS2::write_flash(uint32_t addr, vector<uint32_t> & data) {
 	cmd.mode_stat = EPROM_RW;
 	auto dgs = APS2Datagram::chunk(cmd, addr, data, 0x0100); //max chunk_size is limited wrapping in Ethernet frames
 	FILE_LOG(logDEBUG1) << ipAddr_ << " flash write chunked into " << dgs.size() << " datagrams.";
-	flash_task = WRITING;
-	flash_task_progress = 0;
+	bitfile_writing_task = WRITING;
+	bitfile_writing_task_progress = 0;
 	//Write 1 at a time so we can update progress
 	for (size_t ct = 0; ct < dgs.size(); ct++) {
 		ethernetRM_->send(ipAddr_, {dgs[ct]});
-		flash_task_progress = static_cast<double>(ct+1)/static_cast<double>(dgs.size());
+		bitfile_writing_task_progress = static_cast<double>(ct+1)/static_cast<double>(dgs.size());
 	}
 }
 
 void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
 	FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::erase_flash";
-	flash_task = ERASING;
-	flash_task_progress = 0;
+	bitfile_writing_task = ERASING;
+	bitfile_writing_task_progress = 0;
 
 	// each erase command erases 64 KB of data starting at addr
 	if ((start_addr % (1 << 16)) != 0){
@@ -920,7 +933,7 @@ void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
 		}
 
 		addr += (1<<16);
-		flash_task_progress = static_cast<double>(addr - start_addr) / num_bytes;
+		bitfile_writing_task_progress = static_cast<double>(addr - start_addr) / num_bytes;
 	} while(addr < end_addr);
 }
 

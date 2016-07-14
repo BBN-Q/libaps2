@@ -119,8 +119,8 @@ public:
 	//Flash read/write
 	void write_flash(uint32_t, vector<uint32_t> &);
 	vector<uint32_t> read_flash(uint32_t, uint32_t);
-	std::atomic<APS2_FLASH_TASK> flash_task;
-	std::atomic<double> flash_task_progress;
+	std::atomic<APS2_BITFILE_WRITING_TASK> bitfile_writing_task;
+	std::atomic<double> bitfile_writing_task_progress;
 
 	//MAC and IP addresses
 	uint64_t get_mac_addr();

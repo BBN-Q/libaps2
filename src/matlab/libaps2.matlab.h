@@ -31,7 +31,7 @@ typedef enum APS2_RUN_MODE APS2_RUN_MODE;
 typedef enum APS2_RUN_STATE APS2_RUN_STATE;
 typedef enum TLogLevel TLogLevel;
 typedef enum APS2_BITFILE_STORAGE_MEDIA APS2_BITFILE_STORAGE_MEDIA;
-typedef enum APS2_FLASH_TASK APS2_FLASH_TASK;
+typedef enum APS2_BITFILE_WRITING_TASK APS2_BITFILE_WRITING_TASK;
 typedef enum APS2_RESET_MODE APS2_RESET_MODE;
 
 EXPORT const char* get_error_msg(APS2_STATUS);
@@ -113,8 +113,8 @@ EXPORT APS2_STATUS read_configuration_SDRAM(const char*, unsigned int, unsigned 
 EXPORT APS2_STATUS write_flash(const char*, unsigned int, unsigned int*, unsigned int);
 EXPORT APS2_STATUS read_flash(const char*, unsigned int, unsigned int, unsigned int*);
 
-EXPORT APS2_FLASH_TASK get_flash_task(const char *);
-EXPORT void clear_flash_progress(const char *);
+EXPORT APS2_BITFILE_WRITING_TASK get_bitfile_writing_task(const char *);
+EXPORT void clear_bitfile_writing_progress(const char *);
 EXPORT double get_flash_progress(const char *);
 
 EXPORT uint64_t get_mac_addr(const char*);
