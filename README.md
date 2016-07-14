@@ -16,7 +16,7 @@ Building
 For those wishing to develop or build the driver from source for use on Linux or OS X. Prebuilt binaries for Windows are available on the releases tab.
 
 ### Clone repository
-We get the [asio] dependency via a submodule we need the --recursive switch
+We get the [asio](http://think-async.com/Asio) dependency via a submodule we need the --recursive switch
 
   ```bash
   git clone --recursive git@github.com:BBN-Q/libaps2.git
