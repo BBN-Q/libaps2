@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
 		uptime_seconds -= uptime_minutes;
 		uptime_pretty << std::fixed << std::setprecision(3) << uptime_seconds.count();
 
-		cout << concol::CYAN << "Device " << ct << " at IPv4 address " << serialBuffer[ct] <<
+		cout << concol::CYAN << "Device " << ct+1 << " at IPv4 address " << serialBuffer[ct] <<
 		" running firmware version " << version_string <<
 		" has been up " << uptime_pretty.str() << concol::RESET << endl;
 		disconnect_APS(serialBuffer[ct]);

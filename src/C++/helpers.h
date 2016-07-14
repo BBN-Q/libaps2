@@ -29,7 +29,7 @@ vector<string> enumerate_slices() {
 	vector<string> ip_addrs;
 	for (unsigned ct=0; ct < numDevices; ct++) {
 		ip_addrs.push_back(string(ip_addr_buffers[ct]));
-		cout << concol::CYAN << "Device " << ct << " IP address: " << ip_addr_buffers[ct] << concol::RESET << endl;
+		cout << concol::CYAN << "Device " << ct+1 << " IP address: " << ip_addr_buffers[ct] << concol::RESET << endl;
 	}
 
 	delete[] ip_addr_buffers;
@@ -47,18 +47,14 @@ string get_device_id() {
 		return "";
 	}
 
-	string selected_ip;
-	if ( ip_addrs.size() == 1 ) {
-		selected_ip = string(ip_addrs[0]);
-	}
-	else {
-
-		cout << concol::YELLOW << "Choose device ID [0]: " << concol::RESET;
+	string selected_ip = string(ip_addrs[0]);
+	if ( ip_addrs.size() > 1 ) {
+		cout << concol::YELLOW << "Choose device ID [1]: " << concol::RESET;
 		string input = "";
 		getline(cin, input);
 
 		if (input.length() != 0) {
-			selected_ip = string(ip_addrs[stoi(input)]);
+			selected_ip = string(ip_addrs[stoi(input)-1]);
 		}
 	}
 
@@ -74,13 +70,9 @@ vector<string> get_device_ids() {
 		return {""};
 	}
 
-	vector<string> selected_ips;
-	if (ip_addrs.size() == 1) {
-		selected_ips.push_back(string(ip_addrs[0]));
-	}
-	else {
-
-		cout << concol::YELLOW << "Choose device ID (or \"all\") [0]: " << concol::RESET;
+	vector<string> selected_ips = {string(ip_addrs[0])};
+	if (ip_addrs.size() > 1) {
+		cout << concol::YELLOW << "Choose device ID (or \"all\") [1]: " << concol::RESET;
 		string input = "";
 		getline(cin, input);
 
@@ -90,7 +82,7 @@ vector<string> get_device_ids() {
 					selected_ips.push_back(ip_addrs[ct]);
 				}
 			} else {
-				selected_ips.push_back(ip_addrs[stoi(input)]);
+				selected_ips = {ip_addrs[stoi(input)-1]};
 			}
 		}
 	}
