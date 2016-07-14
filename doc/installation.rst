@@ -132,9 +132,8 @@ Linux
 ~~~~~~~~~~~~~~~
 
 Temporary IP addresses can be obtained by adding additional ethernet
-interfaces::
-
-	sudo ifconfig eth0:0 192.168.2.1 netmask 255.255.255.0 up
+interfaces using the `ip` command::
+	sudo ip addr add 192.168.2.29/24 dev eth0
 
 A more permanent solution would involve editing the network interfaces file,
 e.g. ``/etc/network/interfaces``.
