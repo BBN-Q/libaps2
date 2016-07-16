@@ -10,7 +10,7 @@
 # If your HDF5 install is in a non-standard location set the HDF5_ROOT environment variable
 
 PROJECT( libaps2 )
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
 set(APS2_VERSION_MAJOR 1)
 set(APS2_VERSION_MINOR 0)
@@ -32,8 +32,8 @@ ADD_DEFINITIONS(-DASIO_STANDALONE)
 #Catch unit-testing
 INCLUDE_DIRECTORIES("../deps/Catch/include")
 
-#Add flag for C++11
-ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11")
+#Make sure we have C++11 support
+set (CMAKE_CXX_STANDARD 11)
 
 #mingw64 defaults to WindowsXP SP03 which doesn't support the network calls we want
 #https://github.com/Alexpux/mingw-w64/blob/e960f8fffb399036079cef960a44e86a9abebc71/mingw-w64-headers/include/sdkddkver.h#L145
