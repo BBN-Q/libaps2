@@ -11,13 +11,11 @@ using std::string;
 
 class APS2Connector {
 public:
-	
-	APS2Connector(string);
-	~APS2Connector();
+  APS2Connector(string);
+  ~APS2Connector();
 
 private:
-	string ip_addr_;
-
+  string ip_addr_;
 };
 
 #endif /* end of include guard: APS2Connector_H */
