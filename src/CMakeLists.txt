@@ -21,29 +21,33 @@ set(APS2_VERSION_MINOR 0)
 set(APS2_VERSION_PATCH 0)
 set(APS2_VERSION_STRING ${APS2_VERSION_MAJOR}.${APS2_VERSION_MINOR}.${APS2_VERSION_PATCH})
 
-# Look for HDF5
+# look for HDF5
 FIND_PACKAGE(HDF5 REQUIRED COMPONENTS C CXX)
 INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIRS} )
 LINK_DIRECTORIES( ${LINK_DIRECTORIES} ${HDF5_LIBRARY_DIRS} )
 
-#Grab all the header files in the src directory including concol.h
+# look for threading library
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+# Grab all the header files in the src directory including concol.h
 INCLUDE_DIRECTORIES("./lib/")
 
-#ASIO
+# ASIO
 INCLUDE_DIRECTORIES( "../deps/asio/asio/include" )
 ADD_DEFINITIONS(-DASIO_STANDALONE)
 
-#Catch unit-testing
+# Catch unit-testing
 INCLUDE_DIRECTORIES("../deps/Catch/include")
 
-#mingw64 defaults to WindowsXP SP03 which doesn't support the network calls we want
-#https://github.com/Alexpux/mingw-w64/blob/e960f8fffb399036079cef960a44e86a9abebc71/mingw-w64-headers/include/sdkddkver.h#L145
-#define windows 7 instead
+# mingw64 defaults to WindowsXP SP03 which doesn't support the network calls we want
+# https://github.com/Alexpux/mingw-w64/blob/e960f8fffb399036079cef960a44e86a9abebc71/mingw-w64-headers/include/sdkddkver.h#L145
+# define windows 7 instead
 if(WIN32)
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-D_WIN32_WINNT=0x0601")
 endif(WIN32)
 
-#Warn all for better code
+# Warn all for better code
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
 
 SET ( DLL_SRC
@@ -93,7 +97,7 @@ ADD_EXECUTABLE(run_tests
 	../test/APS2Connector.cpp
 	../test/test_CSR.cpp
 )
-TARGET_LINK_LIBRARIES(run_tests aps2 pthread)
+TARGET_LINK_LIBRARIES(run_tests aps2 Threads::Threads)
 
 ADD_EXECUTABLE(flash
 	./util/flash.cpp
@@ -122,9 +126,9 @@ TARGET_LINK_LIBRARIES(dac_bist aps2)
 SET(bin_targets enumerate play_waveform play_sequence flash reset program dac_bist run_tests)
 
 if(WIN32)
-TARGET_LINK_LIBRARIES(aps2 hdf5 hdf5_cpp ws2_32 iphlpapi pthread)
+TARGET_LINK_LIBRARIES(aps2 hdf5 hdf5_cpp ws2_32 iphlpapi Threads::Threads)
 else(WIN32)
-TARGET_LINK_LIBRARIES(aps2 hdf5 hdf5_cpp pthread)
+TARGET_LINK_LIBRARIES(aps2 hdf5 hdf5_cpp Threads::Threads)
 endif(WIN32)
 
 # installation section
