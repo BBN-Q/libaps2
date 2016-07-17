@@ -9,15 +9,19 @@
 #
 # If your HDF5 install is in a non-standard location set the HDF5_ROOT environment variable
 
-PROJECT( libaps2 )
 CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
+
+PROJECT( libaps2 )
+
+# Make sure we have C++11 support
+set (CMAKE_CXX_STANDARD 11)
 
 set(APS2_VERSION_MAJOR 1)
 set(APS2_VERSION_MINOR 0)
 set(APS2_VERSION_PATCH 0)
 set(APS2_VERSION_STRING ${APS2_VERSION_MAJOR}.${APS2_VERSION_MINOR}.${APS2_VERSION_PATCH})
 
-#Look for HDF5
+# Look for HDF5
 FIND_PACKAGE(HDF5 REQUIRED COMPONENTS C CXX)
 INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIRS} )
 LINK_DIRECTORIES( ${LINK_DIRECTORIES} ${HDF5_LIBRARY_DIRS} )
@@ -32,9 +36,6 @@ ADD_DEFINITIONS(-DASIO_STANDALONE)
 #Catch unit-testing
 INCLUDE_DIRECTORIES("../deps/Catch/include")
 
-#Make sure we have C++11 support
-set (CMAKE_CXX_STANDARD 11)
-
 #mingw64 defaults to WindowsXP SP03 which doesn't support the network calls we want
 #https://github.com/Alexpux/mingw-w64/blob/e960f8fffb399036079cef960a44e86a9abebc71/mingw-w64-headers/include/sdkddkver.h#L145
 #define windows 7 instead
@@ -44,17 +45,6 @@ endif(WIN32)
 
 #Warn all for better code
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
-
-#Work around a gcc-4.7 issue with sleep_for
-#See: http://stackoverflow.com/questions/4438084/stdthis-threadsleep-for-and-gcc
-#Drop once Matlab supports gcc 4.8 on Linux
-message(STATUS, "Compiler ID: " ${CMAKE_CXX_COMPILER_ID} " " ${CMAKE_CXX_COMPILER_VERSION})
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8)
-		message(STATUS, "Found GCC 4.7.3 compiler so adding D_GLIBCXX_USE_NANOSLEEP workaround.")
-		ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-D_GLIBCXX_USE_NANOSLEEP")
-	endif()
-endif()
 
 SET ( DLL_SRC
 	./lib/libaps2.cpp
