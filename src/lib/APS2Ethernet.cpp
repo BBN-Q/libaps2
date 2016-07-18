@@ -14,8 +14,10 @@ using std::queue;
 #include "logger.h"
 
 #ifdef _WIN32
-#include <iphlpapi.h>
+// need to include wincrypt to get definitions for CERT_NAME_BLOB and CRYPT_HASH_BLOB
+// see bug report https://sourceforge.net/p/mingw-w64/bugs/523/
 #include <wincrypt.h>
+#include <iphlpapi.h>
 #else
 #include <ifaddrs.h>
 #endif
