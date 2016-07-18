@@ -6,12 +6,6 @@ import numpy.ctypeslib as npct
 from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, c_char_p, addressof, create_string_buffer, byref, POINTER
 import sys
 
-build_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "build"))
-#On Windows add build path to system path to pick up DLL mingw dependencies
-if "Windows" in platform.platform():
-	os.environ["PATH"] += build_path
-libaps2 = npct.load_library("libaps2", build_path)
-
 np_double_1D = npct.ndpointer(dtype=np.double,  ndim=1, flags='CONTIGUOUS')
 np_float_1D  = npct.ndpointer(dtype=np.float32, ndim=1, flags='CONTIGUOUS')
 np_int16_1D  = npct.ndpointer(dtype=np.int16,   ndim=1, flags='CONTIGUOUS')
@@ -20,6 +14,36 @@ np_uint64_1D = npct.ndpointer(dtype=np.uint64,  ndim=1, flags='CONTIGUOUS')
 np_uint32_1D = npct.ndpointer(dtype=np.uint32,  ndim=1, flags='CONTIGUOUS')
 np_uint16_1D = npct.ndpointer(dtype=np.uint16,  ndim=1, flags='CONTIGUOUS')
 np_uint8_1D  = npct.ndpointer(dtype=np.uint8,   ndim=1, flags='CONTIGUOUS')
+
+# load the shared library
+build_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "build"))
+#On Windows add build path to system path to pick up DLL mingw dependencies
+if "Windows" in platform.platform():
+	os.environ["PATH"] += build_path
+libaps2 = npct.load_library("libaps2", build_path)
+
+libaps2.get_device_IPs.argtypes       = [POINTER(c_char_p)]
+libaps2.get_device_IPs.restype        = c_int
+libaps2.get_firmware_version.argtypes = [c_char_p, POINTER(c_ulong), POINTER(c_ulong), POINTER(c_ulong), c_char_p]
+libaps2.get_firmware_version.restype  = c_int
+libaps2.set_waveform_float.argtypes   = [c_char_p, c_int, np_float_1D, c_int]
+libaps2.set_waveform_float.restype    = c_int
+libaps2.set_waveform_int.argtypes     = [c_char_p, c_int, np_int16_1D, c_int]
+libaps2.set_waveform_int.restype      = c_int
+libaps2.set_markers.argtypes          = [c_char_p, c_int, np_int8_1D,  c_int]
+libaps2.set_markers.restype           = c_int
+libaps2.write_sequence.argtypes       = [c_char_p, np_uint64_1D, c_ulong]
+libaps2.write_sequence.restype        = c_int
+libaps2.load_sequence_file.argtypes   = [c_char_p, c_char_p]
+libaps2.load_sequence_file.restype    = c_int
+libaps2.set_log.argtypes              = [c_char_p]
+libaps2.set_log.restype               = c_int
+libaps2.set_logging_level.argtypes    = [c_int]
+libaps2.set_logging_level.restype     = c_int
+libaps2.get_ip_addr.argtypes          = [c_char_p, POINTER(c_char)]
+libaps2.get_ip_addr.restype           = c_int
+libaps2.set_ip_addr.argtypes          = [c_char_p, c_char_p]
+libaps2.set_ip_addr.restype           = c_int
 
 # APS2_TRIGGER_SOURCE
 EXTERNAL = 0
@@ -295,29 +319,6 @@ class APS2(metaclass=Parser):
 	def __init__(self):
 		super(APS2, self).__init__()
 		self.ip_address = ""
-
-		libaps2.get_device_IPs.argtypes       = [POINTER(c_char_p)]
-		libaps2.get_device_IPs.restype        = c_int
-		libaps2.get_firmware_version.argtypes = [c_char_p, POINTER(c_ulong), POINTER(c_ulong), POINTER(c_ulong), c_char_p]
-		libaps2.get_firmware_version.restype  = c_int
-		libaps2.set_waveform_float.argtypes   = [c_char_p, c_int, np_float_1D, c_int]
-		libaps2.set_waveform_float.restype    = c_int
-		libaps2.set_waveform_int.argtypes     = [c_char_p, c_int, np_int16_1D, c_int]
-		libaps2.set_waveform_int.restype      = c_int
-		libaps2.set_markers.argtypes          = [c_char_p, c_int, np_int8_1D,  c_int]
-		libaps2.set_markers.restype           = c_int
-		libaps2.write_sequence.argtypes       = [c_char_p, np_uint64_1D, c_ulong]
-		libaps2.write_sequence.restype        = c_int
-		libaps2.load_sequence_file.argtypes   = [c_char_p, c_char_p]
-		libaps2.load_sequence_file.restype    = c_int
-		libaps2.set_log.argtypes              = [c_char_p]
-		libaps2.set_log.restype               = c_int
-		libaps2.set_logging_level.argtypes    = [c_int]
-		libaps2.set_logging_level.restype     = c_int
-		libaps2.get_ip_addr.argtypes          = [c_char_p, POINTER(c_char)]
-		libaps2.get_ip_addr.restype           = c_int
-		libaps2.set_ip_addr.argtypes          = [c_char_p, c_char_p]
-		libaps2.set_ip_addr.restype           = c_int
 
 	def __del__(self):
 		try:
