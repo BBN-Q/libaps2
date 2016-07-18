@@ -438,6 +438,24 @@ APS2_STATUS get_mixer_phase_skew(const char *deviceSerial, float *skew) {
   return aps2_getter(deviceSerial, &APS2::get_mixer_phase_skew, skew);
 }
 
+APS2_STATUS set_mixer_correction_matrix(const char *deviceSerial, float *mat) {
+  return aps2_call(deviceSerial, &APS2::set_mixer_correction_matrix,
+                   vector<float>(mat, mat + 4));
+}
+
+APS2_STATUS get_mixer_correction_matrix(const char *deviceSerial, float *mat) {
+  try {
+    auto correction_mat =
+        APSs[string(deviceSerial)]->get_mixer_correction_matrix();
+    std::copy(correction_mat.begin(), correction_mat.end(), mat);
+  } catch (APS2_STATUS status) {
+    return status;
+  } catch (...) {
+    return APS2_UNKNOWN_ERROR;
+  }
+  return APS2_OK;
+}
+
 APS2_STATUS set_run_mode(const char *deviceSerial, APS2_RUN_MODE mode) {
   return aps2_call(deviceSerial, &APS2::set_run_mode, mode);
 }

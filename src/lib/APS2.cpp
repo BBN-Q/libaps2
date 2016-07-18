@@ -483,6 +483,40 @@ float APS2::get_mixer_phase_skew() {
   return reinterpret_cast<float &>(read_memory(MIXER_PHASE_SKEW_ADDR, 1)[0]);
 }
 
+void APS2::set_mixer_correction_matrix(const vector<float> &mat) {
+  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::set_mixer_correction_matrix";
+  // convert to Q2.13 fixed point
+  vector<int32_t> correction_matrix;
+  for (auto &val : mat) {
+    correction_matrix.push_back(static_cast<int32_t>(MAX_WF_AMP * val));
+  }
+  // Slot into registers and write to memory
+  uint32_t row0, row1;
+  row0 = (correction_matrix[0] << 16) | (correction_matrix[1] & 0xffff);
+  write_memory(CORRECTION_MATRIX_ROW0_ADDR, row0);
+  row1 = (correction_matrix[2] << 16) | (correction_matrix[3] & 0xffff);
+  write_memory(CORRECTION_MATRIX_ROW1_ADDR, row1);
+}
+
+vector<float> APS2::get_mixer_correction_matrix() {
+  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::get_mixer_correction_matrix";
+  // read packed registers
+  uint32_t row0, row1;
+  row0 = read_memory(CORRECTION_MATRIX_ROW0_ADDR, 1)[0];
+  row1 = read_memory(CORRECTION_MATRIX_ROW1_ADDR, 1)[0];
+  // convert back to float
+  vector<float> correction_matrix;
+  correction_matrix.push_back(
+      static_cast<float>(static_cast<int16_t>(row0 >> 16)) / MAX_WF_AMP);
+  correction_matrix.push_back(
+      static_cast<float>(static_cast<int16_t>(row0 & 0xffff)) / MAX_WF_AMP);
+  correction_matrix.push_back(
+      static_cast<float>(static_cast<int16_t>(row1 >> 16)) / MAX_WF_AMP);
+  correction_matrix.push_back(
+      static_cast<float>(static_cast<int16_t>(row1 & 0xffff)) / MAX_WF_AMP);
+  return correction_matrix;
+}
+
 void APS2::update_correction_matrix() {
   // Update the 2x2 correction matrix assuming an mixer amplitude imbalance,
   // phase skew and independent channel scales

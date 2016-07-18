@@ -40,7 +40,7 @@ TEST_CASE("CSR", "CSR") {
   }
 
   SECTION("direct CSR register write") {
-    // direct memory writes Read/write the trigger interval
+    // direct memory writes read/write the trigger interval
     uint32_t cur_val{0}, test_val{0}, check_val{0};
     status = read_memory(ip_addr.c_str(), TRIGGER_INTERVAL_ADDR, &cur_val, 1);
     REQUIRE(status == APS2_OK);
@@ -165,6 +165,35 @@ TEST_CASE("CSR", "CSR") {
     REQUIRE(check_val_f == Approx(test_val_f));
     // set it back
     status = set_mixer_phase_skew(ip_addr.c_str(), phase_skew);
+    REQUIRE(status == APS2_OK);
+
+    // correction matrix
+    vector<float> cur_correction_matrix(4);
+    // get the current values
+    status = get_mixer_correction_matrix(ip_addr.c_str(),
+                                         cur_correction_matrix.data());
+    REQUIRE(status == APS2_OK);
+
+    // set random values
+    std::uniform_real_distribution<float> correction_matrix_dist(-2, 2);
+    vector<float> test_matrix;
+    for (size_t ct = 0; ct < 4; ct++) {
+      test_matrix.push_back(correction_matrix_dist(engine));
+    }
+    status = set_mixer_correction_matrix(ip_addr.c_str(), test_matrix.data());
+    REQUIRE(status == APS2_OK);
+
+    // check
+    vector<float> check_matrix(4);
+    status = get_mixer_correction_matrix(ip_addr.c_str(), check_matrix.data());
+    REQUIRE(status == APS2_OK);
+    for (size_t ct = 0; ct < 4; ct++) {
+      // correction matrix stored as Q2.13
+      REQUIRE(check_matrix[ct] == Approx(test_matrix[ct]).epsilon(1e-4));
+    }
+    // set it back
+    status = set_mixer_correction_matrix(ip_addr.c_str(),
+                                         cur_correction_matrix.data());
     REQUIRE(status == APS2_OK);
   }
 }

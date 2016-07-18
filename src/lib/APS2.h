@@ -72,6 +72,8 @@ public:
   float get_mixer_amplitude_imbalance();
   void set_mixer_phase_skew(float);
   float get_mixer_phase_skew();
+  void set_mixer_correction_matrix(const vector<float> &);
+  vector<float> get_mixer_correction_matrix();
   void update_correction_matrix();
 
   template <typename T>
