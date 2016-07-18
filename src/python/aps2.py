@@ -22,28 +22,32 @@ if "Windows" in platform.platform():
 	os.environ["PATH"] += build_path
 libaps2 = npct.load_library("libaps2", build_path)
 
-libaps2.get_device_IPs.argtypes       = [POINTER(c_char_p)]
-libaps2.get_device_IPs.restype        = c_int
-libaps2.get_firmware_version.argtypes = [c_char_p, POINTER(c_ulong), POINTER(c_ulong), POINTER(c_ulong), c_char_p]
-libaps2.get_firmware_version.restype  = c_int
-libaps2.set_waveform_float.argtypes   = [c_char_p, c_int, np_float_1D, c_int]
-libaps2.set_waveform_float.restype    = c_int
-libaps2.set_waveform_int.argtypes     = [c_char_p, c_int, np_int16_1D, c_int]
-libaps2.set_waveform_int.restype      = c_int
-libaps2.set_markers.argtypes          = [c_char_p, c_int, np_int8_1D,  c_int]
-libaps2.set_markers.restype           = c_int
-libaps2.write_sequence.argtypes       = [c_char_p, np_uint64_1D, c_ulong]
-libaps2.write_sequence.restype        = c_int
-libaps2.load_sequence_file.argtypes   = [c_char_p, c_char_p]
-libaps2.load_sequence_file.restype    = c_int
-libaps2.set_log.argtypes              = [c_char_p]
-libaps2.set_log.restype               = c_int
-libaps2.set_logging_level.argtypes    = [c_int]
-libaps2.set_logging_level.restype     = c_int
-libaps2.get_ip_addr.argtypes          = [c_char_p, POINTER(c_char)]
-libaps2.get_ip_addr.restype           = c_int
-libaps2.set_ip_addr.argtypes          = [c_char_p, c_char_p]
-libaps2.set_ip_addr.restype           = c_int
+libaps2.get_device_IPs.argtypes              = [POINTER(c_char_p)]
+libaps2.get_device_IPs.restype               = c_int
+libaps2.get_firmware_version.argtypes        = [c_char_p, POINTER(c_ulong), POINTER(c_ulong), POINTER(c_ulong), c_char_p]
+libaps2.get_firmware_version.restype         = c_int
+libaps2.set_waveform_float.argtypes          = [c_char_p, c_int, np_float_1D, c_int]
+libaps2.set_waveform_float.restype           = c_int
+libaps2.set_waveform_int.argtypes            = [c_char_p, c_int, np_int16_1D, c_int]
+libaps2.set_waveform_int.restype             = c_int
+libaps2.set_markers.argtypes                 = [c_char_p, c_int, np_int8_1D,  c_int]
+libaps2.set_markers.restype                  = c_int
+libaps2.write_sequence.argtypes              = [c_char_p, np_uint64_1D, c_ulong]
+libaps2.write_sequence.restype               = c_int
+libaps2.load_sequence_file.argtypes          = [c_char_p, c_char_p]
+libaps2.load_sequence_file.restype           = c_int
+libaps2.set_log.argtypes                     = [c_char_p]
+libaps2.set_log.restype                      = c_int
+libaps2.set_logging_level.argtypes           = [c_int]
+libaps2.set_logging_level.restype            = c_int
+libaps2.get_ip_addr.argtypes                 = [c_char_p, POINTER(c_char)]
+libaps2.get_ip_addr.restype                  = c_int
+libaps2.set_ip_addr.argtypes                 = [c_char_p, c_char_p]
+libaps2.set_ip_addr.restype                  = c_int
+libaps2.get_mixer_correction_matrix.argtypes = [c_char_p, npct.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS')]
+libaps2.get_mixer_correction_matrix.restype  = c_int
+libaps2.set_mixer_correction_matrix.argtypes = [c_char_p, npct.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS')]
+libaps2.set_mixer_correction_matrix.restype  = c_int
 
 # APS2_TRIGGER_SOURCE
 EXTERNAL = 0
@@ -380,3 +384,11 @@ class APS2(metaclass=Parser):
 
 	def set_ip_addr(self, new_ip_address):
 		check(libaps2.set_ip_addr(self.ip_address.encode('utf-8'), new_ip_address.encode('utf-8')))
+
+	def get_mixer_correction_matrix(self):
+		matrix = np.zeros((2,2), dtype=np.float32)
+		check(libaps2.get_mixer_correction_matrix(self.ip_address.encode('utf-8'), matrix))
+		return matrix
+
+	def set_mixer_correction_matrix(self, matrix):
+		check(libaps2.set_mixer_correction_matrix(self.ip_address.encode('utf-8'), matrix))

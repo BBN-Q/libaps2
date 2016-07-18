@@ -190,6 +190,17 @@ classdef APS2 < handle
             val = aps2_getter(obj, 'get_mixer_phase_skew');
         end
 
+        function set_mixer_correction_matrix(obj, matrix)
+            aps2_call(obj, 'set_mixer_correction_matrix', matrix')
+        end
+
+        function matrix = get_mixer_correction_matrix(obj)
+            matrixPtr = libpointer('singlePtr', zeros(2,2));
+            [status, ~, ~] = calllib('libaps2', 'get_mixer_correction_matrix', obj.ip_addr, matrixPtr);
+            APS2.check_status(status);
+            matrix = matrixPtr.value';
+        end
+
         function setAll(obj,settings)
             %setAll - Sets up the APS2 with a settings structure
             % APS2.setAll(settings)
@@ -261,7 +272,7 @@ classdef APS2 < handle
             'APS2 library call failed with message: %s', calllib('libaps2', 'get_error_msg', status));
         end
 
-        function [ip_addrs] = enumerate()
+        function ip_addrs = enumerate()
             APS2.load_library();
             [status, numDevices] = calllib('libaps2', 'get_numDevices', 0);
             APS2.check_status(status);
