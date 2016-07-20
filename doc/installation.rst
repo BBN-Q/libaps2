@@ -87,12 +87,14 @@ Writing Sequences
 
 The BBN APS2 has advanced sequencing capabilities. Fully taking advantage of
 these capabilities may require use of higher-level languages which can be
-'compiled down' into sequence instructions. BBN has produced one such language,
-called Quantum Gate Language (QGL), as part of the PyQLab suite
-(http://github.com/BBN-Q/QGL).  We encourage end-users to explore using QGL for
-creating pulse sequences. You may also find the sequence file export code to be
-a useful template when developing your own libraries. A detailed instruction
-format specification can be found in the :ref:`instruction-spec` section.
+'compiled down' into sequence instructions. BBN has produced one such
+language, called Quantum Gate Language (QGL, http://github.com/BBN-Q/QGL), as
+well as a parameter management GUI in the PyQLab suite
+(http://github.com/BBN-Q/PyQLab). We encourage end-users to explore using QGL
+for creating pulse sequences. You may also find the sequence file export code
+to be a useful template when developing your own libraries. A detailed
+instruction format specification can be found in the :ref:`instruction-spec`
+section.
 
 Networking Setup
 ----------------
@@ -108,12 +110,13 @@ packet on its port, we recommend placing the APS2 system on a private network,
 or behind a firewall. The APS2 can also be setup to obtain a dynamically
 assigned IP address from a DHCP server.  The ``flash`` utitily can be used to
 toggle between static and dynamic but the APS2 must be reset or power cycled for
-the setting to take effect. If the DHCP look up fails the
+the setting to take effect. If the DHCP look-up fails the system will fall back 
+to its static IP address.
 
 The control computer must be on the same subnet as the APS2 to respond to
 returning packets. Most operating systems allow multiple IP addresses to coexist
-on the same network card so the control computer must add a virtual IP on the
-subnet.
+on the same network card so the control computer can add a virtual IP on the
+APS2 subnet.
 
 Windows
 ~~~~~~~~~~~~~~
@@ -184,7 +187,7 @@ the new firmware on a power cycle. This process involves erasing, writing and
 verifying and takes several minutes. The backup firmware should only be
 programmed in the rare case BBN releases an update to the backup image.  Should
 something catastrophic happen during programming (unplugging the ethernet cable)
-the module may drop the backup image which has a fixed IP of 192.168.2.123.
+the module may drop to the backup image which has a fixed IP of 192.168.2.123.
 
 .. rubric:: Footnotes
 

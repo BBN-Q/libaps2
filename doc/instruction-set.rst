@@ -27,6 +27,7 @@ instructions are:
 | LOAD_REPEAT *count*
 | REPEAT *address*
 | CMP *operator* *N*
+| LOAD_CMP
 | GOTO *address*
 | CALL *address*
 | RETURN
@@ -61,6 +62,10 @@ counter.
 CMP---Compares the value of the comparison register to the mask *N* with any
 of these operators: :math:`=, \neq, >, <`. So, (CMP :math:`\neq` 0) would be
 true if the comparison register contains any value other than zero.
+
+LOAD_CMP---Loads the comparison register with the next value from the message
+queue (received from the trigger distribution module). If the queue is empty,
+this instruction will halt execution until a message arrives.
 
 GOTO---Jumps to the given address by updating the instruction counter.
 
@@ -209,6 +214,14 @@ The CMP operation compares the current value of the 8-bit comparison register
 to *mask* using the operator given by the *cmp code*. The result of this
 comparison effects conditional execution of following GOTO, CALL, and RETURN
 instructions.
+
+LOAD_CMP
+^^^^^^^^
+
+Loads the comparison register with the next value from the message
+queue (received from the trigger distribution module). If the queue is empty,
+this instruction will halt execution until a message arrives. This instruction
+ignores all payload data.
 
 GOTO, CALL, and REPEAT
 ^^^^^^^^^^^^^^^^^^^^^^
