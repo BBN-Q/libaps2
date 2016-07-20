@@ -48,35 +48,37 @@ The releases follow a directory structure that corresponds to the git
 repository.
 
 * `examples` - Example sequence and waveform files
-  - `aps2_demo.m` - Matlab demonstration script
+	- `aps2_demo.m` - Matlab demonstration script
 	- `aps2_demo.py` - Python demonstration script
 		+ a full scale ramp;
 		+ gaussian pulses from 256 samples down to 8 samples with 10ns gaps;
 		+ square wave from 256 down to 8 samples with 10ns gaps;
 		+ wfB.dat is negative wfA.dat.
 	- `cpmg.h5` - a CPMG sequence `Y90 - ( delay - X180 - delay)^n - Y90m` with n = [4, 8, 16, 32, 64]
-	- `instr_prefetch` - demonstration of subroutine prefetching
+	- `instr_prefetch.h5` - demonstration of subroutine prefetching
 	- `ramsey.h5` - a Ramsey sequence `X90 - delay - X90m`
 	- `ramsey_tppi.h5` - a Ramsey experiment with the second pulse phase modulated by Time Proportional Phase Increment using the `PHASE_OFFSET` instruction
-	- `ramsey_tppi_ssb.h`- same as `ramsey_tppi` but with SSB modulation of the pulses using on-board modulation.
+	- `ramsey_tppi_ssb.h5`- same as `ramsey_tppi` but with SSB modulation of the pulses using on-board modulation.
 	- `ramsey_slipped.h5` - a Ramsey pattern but with the markers slipped by one sample to show the marker resolution and jitter.
 	- `wfA.dat`/`wfB.dat` - test waveform patterns for `play_waveform` executable as signed integers one sample per line:
 * `src` - the source code
 	- `src/lib` - the shared library. ``libaps2.h`` contains the public API definitions.
 	- `src/matlab` - Matlab bindings to libaps2
 	- `src/julia` - Julia bindings to libaps2
+	- `src/python` - python bindings to libaps2
 	- `src/util` - test and utility command line programs. See below for description.
 	- `src/C++` - C++ command line programs to play waveforms and sequences.
 	- `src/wireshark` - lua dissector for sniffing APS2 packets.
 * `build` - compiled shared library and executable programs
 	- Shared library
 		+ `libaps2.dll` - the main shared library
-		+ load time dependencies for libaps2: `libgcc_s_seh-1.dll, libhdf5-0.dll, libhdf5_cpp-0.dll, libstdc++-6.dll, libwinpthread-1.dll, libszip-0.dll, zlib1.dll`
+		+ load time dependencies for libaps2: `libgcc_s_seh-1.dll, libhdf5-0.dll, libhdf5_cpp-0.dll, libstdc++-6.dll, libszip-0.dll, zlib1.dll`
 	- Command line programs
 		+ `play_waveform.exe` - command line program to play a single waveform on the analog channels.
 		+ `play_sequence.exe` - command line program to play a HDF5 sequence file.
 	- Command line utilities
-		+ `program.exe` - update the firmwave.  See `Firmware Updates`_.
+		+ `enumerate.exe` - get a list of APS2 modules visible on the network subnet.
+		+ `program.exe` - update the firmware.  See `Firmware Updates`_.
 		+ `flash.exe` - update IP/DHCP and MAC addresses and the boot chip configuration sequence.
 		+ `reset.exe` - reset an APS2.
 	- Self-test programs
