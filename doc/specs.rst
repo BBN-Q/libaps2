@@ -70,14 +70,10 @@ to trigger the APS2 via the host computer with the `trigger()` API method.
 Communications Interface
 ------------------------
 
-The APS2 communicates with a host PC via the UDP protocol over 1GigE. The
-current APS2 firmware requires a fixed IPv4 address. Instructions for setting
-the APS2 IP address are contained in the :ref:`software-installation` section.
-Use of the UDP protocol allows for a large-througput link from the host PC to
-the APS2; however, it does not natively support error checking of the sent
-data. The libaps2 driver adds some error-checking and packet resending to UDP,
-but it is recommended to not place too many network hops between the host PC and
-the APS2.
+The APS2 communicates with a host PC via UDP/TCP over 1GigE. 1GigE is required
+so ensure all switches between the host computer and APS2 support 1GigE. The
+APS2 supports static and DHCP assigned IP addresses. Instructions for setting
+the APS2 IP addresses are contained in the :ref:`software-installation` section.
 
 Status LED's
 ------------------------
@@ -87,8 +83,10 @@ and sequencing (L2) firmware components.
 
 L1:
 
+* off - SFP port failure
 * green breathing - no ethernet connection;
-* green blinks - receiving or transmitting an ethernet packet;
+* solid green - link established (but not necessarily connected to host);
+* green blinks - receiving or transmitting data;
 * red - fatal communication error. Power cycle the module to restore connectivity.
 
 L2:
@@ -96,5 +94,6 @@ L2:
 * dark - idle;
 * solid green - playback enabled and outputing sequences;
 * green breathing - playback enabled but no trigger received in the past 100ms;
-* red - fatal cache controller error. Power cycle the module to restore playback
+* solid red - fatal cache controller error. Power cycle the module to restore playback
   functionality.
+* blinking red - cache stall in playback.  See :ref:`cache` for details.

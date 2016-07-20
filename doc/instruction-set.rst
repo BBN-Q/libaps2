@@ -30,7 +30,9 @@ instructions are:
 | GOTO *address*
 | CALL *address*
 | RETURN
+| MODULATOR
 | PREFETCH *address*
+| NOOP
 
 We explain each of these instructions below.
 
@@ -65,18 +67,21 @@ GOTO---Jumps to the given address by updating the instruction counter.
 CALL---Pushes the current instruction and repeat counters onto the stack, then
 jumps to the given address by updating the instruction counter.
 
+MODULATOR---A modulator instruction.
+
 RETURN---Moves (pops) the top values on the stack to the instruction and
 repeat counters, jumping back to the most recent CALL instruction.
 
-PREFETCH---Flushes the waveform caches and refills starting at the currently
-requested address.
+PREFETCH---Prefetches a cache line of instructions starting at address
+
+NOOP---Null or No Operation
 
 These instructions easily facilitate two kinds of looping: iteration and while
-loops. The former is achieved through use of LOAD to set the value of the
-repeat counter, followed by the loop body, and terminated by REPEAT to jump
-back to the beginning of the loop. The latter is achieved by a conditional
-GOTO followed by the loop body, where the address of the GOTO is set to the
-end of the loop body.
+loops. The former is achieved through use of LOAD_REPEAT to set the value of the
+repeat counter, followed by the loop body, and terminated by REPEAT to jump back
+to the beginning of the loop. The latter is achieved by a conditional GOTO
+followed by the loop body, where the address of the GOTO is set to the end of
+the loop body.
 
 Subroutines are implemented with the CALL and RETURN instructions. The address
 of a CALL instruction can indicate the first instruction in instruction memory
@@ -136,7 +141,9 @@ Code  instruction
 0x7    CALL
 0x8    RETURN
 0x9    SYNC
-0xA    PREFETCH
+0xA    MODULATOR
+0xB    LOAD_CMP
+0xC    PREFETCH
 ====  ===========
 
 Instruction payload (56-bits)
@@ -151,20 +158,21 @@ WAVEFORM
 ======  ===========
 Bit(s)  Description
 ======  ===========
-47-46   op code (0 = play waveform, 1 = wait for trig, 2 = wait for sync)
+47-46   op code (0 = play waveform, 1 = wait for trig, 2 = wait for sync, 3 = prefetch)
 45      T/A pair flag
 44-24   count
 23-0    address
 ======  ===========
 
-The top two bits of the WAVEFORM payload are an op code for the waveform
-engine. A PLAY_WAVEFORM op code causes the waveform engine to play the
-waveform starting at *address* for *count* quad-samples. When the
-time/amplitude pair flag is set, the waveform engine will create a constant-
-amplitude waveform by holding the analog output at the value given at
-*address* for *count* quad-samples. The WAIT_FOR_TRIG and
-WAIT_FOR_SYNC op codes direct the waveform engine to pause until receipt of
-an input trigger or a sequence SYNC input, respectively.
+The top two bits of the WAVEFORM payload are an op code for the waveform engine.
+A PLAY_WAVEFORM op code causes the waveform engine to play the waveform starting
+at *address* for *count* quad-samples. When the time/amplitude pair flag is set,
+the waveform engine will create a constant- amplitude waveform by holding the
+analog output at the value given at *address* for *count* quad-samples. The
+WAIT_FOR_TRIG and WAIT_FOR_SYNC op codes direct the waveform engine to pause
+until receipt of an input trigger or a sequence SYNC input, respectively. The
+PREFETCH op code causes the waveform cache to prefetch 64k samples from
+*addresss* into the pending waveform cache bank.
 
 MARKER
 ^^^^^^
@@ -232,11 +240,11 @@ PREFETCH
 ======  ===========
 Bit(s)  Description
 ======  ===========
-23-0    address
+25-0    address
 ======  ===========
 
-Refills the waveform cache starting at *address*. Sequencer execution halts
-until the cache is filled.
+Prefetches a cache-line (128 instructions) starting at *address* into the
+subroutine cache.
 
 WAIT and SYNC
 ^^^^^^^^^^^^^
@@ -252,11 +260,54 @@ and MARKER payloads. Therefore, in addition to indicating WAIT or SYNC in the
 instruction header, the instruction type must also appear in the payload. The
 write flag should be set to immediately dispatch this instruction.
 
-
 RETURN
 ^^^^^^
 
 This instruction ignores all payload data.
+
+MODULATOR
+^^^^^^^^^
+
+====== =============
+Bit(s)  Description
+====== =============
+47-45  op code
+44     reserved
+43-40  nco select
+39-32  reserved
+31-0   payload
+====== =============
+
+The modulator op codes are enumerate as follows:
+
+0x0
+	modulate using selected nco for count (payload)
+0x1
+	reset selected nco phase accumulator
+0x2
+	wait for trigger
+0x3
+	set selected nco phase increment (payload)
+0x4
+	wait for sync
+0x5
+	set selected nco phase offset (payload)
+0x6
+	reserved
+0x7
+	update selected nco frame (payload)
+
+The nco select bit field gives one bit to each NCO.  In the current firmware
+there are two NCO's. For example, to set the frequency of the second NCO the bit
+field would read ``0010`` or to reset the phase of both NCOs it would read ``0011``.
+
+All phase payloads are fixed point integers UQ2.28 representing portions of a
+circle.  The frequency is determined with respect to the 300MHz system clock.
+For example, setting a phase increment of 1/3 * 2^28 = 0x02aaaaab gives a
+modulation frequency of 50MHz.  Integers greater than 2 give frequencies greater
+than the Nyquist frequency of 600MHz and will be folded back in as negative
+frequencies.
+
 
 Example Sequences
 -----------------
@@ -301,25 +352,55 @@ CPMG
 ^^^^
 
 The Carr-Purcell-Meiboom-Gill pulse sequence uses a repeated delay-π-delay
-sequence to refocus spins in a fluctuating environment. For this sequence one
-could use a waveform library with three entries: a null pulse at offset 0x00,
-a 16-sample π/2-pulse at offset 0x01, and a 16-sample π-pulse at
-offset 0x05. Note that offsets are also written in terms of quad-samples, so
-the memory address range of the first π/2 pulse is [0x01,0x04]. Then a CPMG
-sequence with 10 delay-π-delay blocks might be programmed as::
+sequence to refocus spins in a fluctuating environment. The π pulse is offset by
+90 degrees to the intial π/2 pulse that creates the coherence and even numbers
+of π pulses are prefered for robustness. We can pull in many elements of
+arbitrary flow control to compactly describe this sequence. We will use a
+waveform library with three entries: a null pulse at offset 0x00, a 16-sample
+π/2-pulse at offset 0x01, and a 16-sample π-pulse at offset 0x05. Note that
+offsets are also written in terms of quad-samples, so the memory address range
+of the first π/2 pulse is [0x01,0x04]. The Hahn echo delay-π-delay is considered
+a subroutine. To ensure even multiples a CPMG subroutine then loops over the
+Hahn echo twice. The two subroutines are placed at the cache-line aligned
+address 1024 Then a CPMG sequence with 2, 4, 8, 16 ... loops is::
 
 	SYNC
 	WAIT
-	WAVEFORM 0x01 4
-	LOAD_REPEAT 9
-	WAVEFORM T/A 0x00 25
-	WAVEFORM 0x05 4
-	WAVEFORM T/A 0x00 25
-	REPEAT
-	WAVEFORM 0x01 4
+	WAVEFORM 0x01 4 # first 90
+	LOAD_REPEAT 0
+	CALL 1024 # call the CPMG subroutine
+	REPEAT 3
+	LOAD_REPEAT 1
+	CALL 1024 # call the CPMG subroutine
+	REPEAT 6
+	LOAD_REPEAT 3
+	CALL 1024 # call the CPMG subroutine
+	REPEAT 6
+	LOAD_REPEAT 7
+	CALL 1024 # call the CPMG subroutine
+	REPEAT 9
+			.
+			.
+			.
+	WAVEFORM 0x01 4 # final 90
 	GOTO 0x00
-
-Note that we load a repeat count of 9 in order to loop the block 10 times.
+  NOOP
+	NOOP
+	NOOP
+			.
+			.
+			.
+	# pad with NOOP's to address 1024
+	# start CPMG subroutine
+	LOAD_REPEAT 1
+	CALL 1028
+	REPEAT 1024
+	RETURN
+	# start Hahn echo subroutine
+	WAVEFORM T/A 0x00 25 # delay
+	WAVEFORM 0x05 4 # π pulse
+	WAVEFORM T/A 0x00 25 #delay
+	RETURN
 
 Active Qubit Reset
 ^^^^^^^^^^^^^^^^^^
