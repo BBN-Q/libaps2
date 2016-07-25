@@ -112,7 +112,6 @@ void APS2Ethernet::sort_packet(const vector<uint8_t> &packetData,
       string response = string(packetData.begin(), packetData.end());
       FILE_LOG(logDEBUG2) << "Enumerate response string " << response;
       if (response.compare("I am an APS2") == 0) {
-        devInfo_[senderIP] = EthernetDevInfo();
         devInfo_[senderIP].supports_tcp = true;
         FILE_LOG(logDEBUG1) << "Adding device info for IP " << senderIP;
       }
