@@ -413,6 +413,7 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> &datagrams) {
                           << hexn<8> << dg.addr << " with payload size "
                           << std::dec << dg.payload.size() << " for total size "
                           << data.size();
+
       std::future<size_t> write_result = asio::async_write(
           *tcp_sockets_[ipAddr], asio::buffer(data), asio::use_future);
 
@@ -564,6 +565,13 @@ APS2Datagram APS2Ethernet::read(string ipAddr,
       if (read_result.wait_for(timeout) == std::future_status::timeout) {
         FILE_LOG(logERROR) << "TCP receive timed out!";
         throw APS2_RECEIVE_TIMEOUT;
+      }
+      try {
+        size_t bytes_read = read_result.get();
+      } catch (std::system_error e) {
+        FILE_LOG(logERROR) << ipAddr
+                           << " read errored with message: " << e.what();
+        throw APS2_COMMS_ERROR;
       }
     };
 
