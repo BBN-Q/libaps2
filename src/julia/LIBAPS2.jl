@@ -136,19 +136,32 @@ function init(aps::APS2, force=1)
 	check_status(status)
 end
 
+@enum(logLEVEL,
+	logERROR,
+	logWARNING,
+	logINFO,
+	logDEBUG,
+	logDEBUG1,
+	logDEBUG2,
+	logDEBUG3,
+	logDEBUG4)
+
 set_logging_level(level) = ccall((:set_logging_level, "libaps2"), APS2_STATUS, (Cint,), level)
 
 function get_firmware_version(aps::APS2)
-	ver = Ref{UInt32}(0)
-	git_sha1 = Ref{UInt32}(0)
-	build_timestamp = Ref{UInt32}(0)
-	ver_string = Array(UInt8, 64)
-	status = ccall((:get_firmware_version, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Ref{UInt32}, Ref{UInt32}, Ref{UInt32}, Ptr{UInt8}), string(aps.ip_addr), ver, git_sha1, build_timestamp, ver_string)
+	ver = Array{UInt32}(1)
+	git_sha1 = Array{UInt32}(1)
+	build_timestamp = Array{UInt32}(1)
+	ver_string = Array{UInt8}(64)
+	status = ccall((:get_firmware_version, "libaps2"),
+		APS2_STATUS,
+		(Cstring, Ptr{UInt32}, Ptr{UInt32}, Ptr{UInt32}, Ptr{UInt8}),
+		string(aps.ip_addr), ver, git_sha1, build_timestamp, ver_string)
 	check_status(status)
-	return (ver[], git_sha1[], build_timestamp[], bytestring(pointer(ver_string)))
+	ver_string[end] = '\0'
+	return (ver[1], git_sha1[1], build_timestamp[1], unsafe_string(pointer(ver_string)))
 end
 
-@aps2_getter get_firmware_version UInt32
 @aps2_getter get_uptime Float64
 @aps2_getter get_fpga_temperature Float32
 
