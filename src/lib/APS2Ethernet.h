@@ -63,14 +63,13 @@ private:
   unordered_map<string, queue<APS2EthernetPacket>> msgQueues_;
 
   vector<std::pair<string, string>> get_local_IPs();
-
   void reset_maps();
 
   // ASIO service and sockets
   asio::io_service ios_;
   udp::socket udp_socket_old_;
   udp::socket udp_socket_;
-  unordered_map<string, std::unique_ptr<tcp::socket>> tcp_sockets_;
+  unordered_map<string, std::shared_ptr<tcp::socket>> tcp_sockets_;
 
   // storage for received UDP packets and remote endpoints
   uint8_t received_udp_data_old_[2048];
@@ -79,10 +78,9 @@ private:
   udp::endpoint remote_udp_endpoint_;
 
   void setup_udp_receive(udp::socket &, uint8_t *, udp::endpoint &);
-
   void sort_packet(const vector<uint8_t> &, const udp::endpoint &);
-
   void send_chunk(string, vector<APS2EthernetPacket>, bool);
+  void tcp_connect(string, std::shared_ptr<tcp::socket>);
 
   std::thread receiveThread_;
   std::mutex msgQueue_lock_;

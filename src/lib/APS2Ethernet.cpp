@@ -335,30 +335,42 @@ void APS2Ethernet::connect(string ip_addr_str) {
 
   if (devInfo_[ip_addr_str].supports_tcp) {
     // C++14
-    // tcp_sockets_.insert(ip_addr_str, std::make_unique<tcp::socket>(ios_));
+    // tcp_sockets_.insert(ip_addr_str, std::make_shared<tcp::socket>(ios_));
     // lowly C++11
-    std::unique_ptr<tcp::socket> sock(new tcp::socket(ios_));
+    std::shared_ptr<tcp::socket> sock(new tcp::socket(ios_));
     FILE_LOG(logDEBUG1) << ip_addr_str << " trying to connect to TCP port";
-    std::future<void> connect_result = sock->async_connect(
-        tcp::endpoint(asio::ip::address_v4::from_string(ip_addr_str), TCP_PORT),
-        asio::use_future);
-    if (connect_result.wait_for(COMMS_TIMEOUT) == std::future_status::timeout) {
-      FILE_LOG(logERROR) << "Timed out trying to connect to " << ip_addr_str;
-      throw APS2_FAILED_TO_CONNECT;
-    }
+
     try {
-      connect_result.get();
-    } catch (std::system_error e) {
-      FILE_LOG(logERROR) << "Failed to connect to " << ip_addr_str
-                         << " with error: " << e.what();
-      throw APS2_FAILED_TO_CONNECT;
+      tcp_connect(ip_addr_str, sock);
+    } catch (APS2_STATUS status) {
+      FILE_LOG(logWARNING) << "Failed to connect. Resetting APS2 TCP and retrying";
+      reset_tcp(ip_addr_str);
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      tcp_connect(ip_addr_str, sock);
     }
 
-    tcp_sockets_.insert(std::make_pair(ip_addr_str, std::move(sock)));
+    tcp_sockets_.insert(std::make_pair(ip_addr_str, sock));
   } else {
     msgQueue_lock_.lock();
     msgQueues_[ip_addr_str] = queue<APS2EthernetPacket>();
     msgQueue_lock_.unlock();
+  }
+}
+
+void APS2Ethernet::tcp_connect(string ip_addr_str, std::shared_ptr<tcp::socket> sock) {
+  std::future<void> connect_result = sock->async_connect(
+    tcp::endpoint(asio::ip::address_v4::from_string(ip_addr_str), TCP_PORT),
+    asio::use_future);
+  if (connect_result.wait_for(COMMS_TIMEOUT) == std::future_status::timeout) {
+    FILE_LOG(logERROR) << "Timed out trying to connect to " << ip_addr_str;
+    throw APS2_FAILED_TO_CONNECT;
+  }
+  try {
+    connect_result.get();
+  } catch (std::system_error e) {
+    FILE_LOG(logERROR) << "Failed to connect to " << ip_addr_str
+                       << " with error: " << e.what();
+    throw APS2_FAILED_TO_CONNECT;
   }
 }
 
