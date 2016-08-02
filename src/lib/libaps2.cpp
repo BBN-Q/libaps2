@@ -50,8 +50,12 @@ shared_ptr<APS2Ethernet> get_interface() {
   if (!myEthernetRM) {
     try {
       myEthernetRM = std::make_shared<APS2Ethernet>();
-    } catch (...) {
+    } catch (APS2_STATUS e) {
       FILE_LOG(logERROR) << "Failed to create ethernet interface.";
+      throw;
+    } catch (std::system_error e) {
+      FILE_LOG(logERROR) << "Unexpected error creating ethernet interface. Msg: " << e.what();
+      throw APS2_UNKNOWN_ERROR;
     }
     ethernetRM = myEthernetRM;
   }

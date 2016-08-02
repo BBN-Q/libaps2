@@ -25,12 +25,6 @@ using std::queue;
 APS2Ethernet::APS2Ethernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
   FILE_LOG(logDEBUG) << "APS2Ethernet::APS2Ethernet";
 
-  // Move the io_service to a background thread
-  // Give it something to chew on so that it doesn't return from the background
-  // thread
-  asio::io_service::work work(ios_);
-  receiveThread_ = std::thread([this]() { ios_.run(); });
-
   // Bind the old UDP socket at local port bb4e
   try {
     udp_socket_old_.open(udp::v4());
@@ -51,10 +45,16 @@ APS2Ethernet::APS2Ethernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
   udp_socket_old_.set_option(asio::socket_base::broadcast(true));
   udp_socket_.set_option(asio::socket_base::broadcast(true));
 
+  // Move the io_service to a background thread
+  // Give it something to chew on so that it doesn't return from the background
+  // thread
+  asio::io_service::work work(ios_);
+  receiveThread_ = std::thread([this]() { ios_.run(); });
+
   setup_udp_receive(udp_socket_old_, received_udp_data_old_,
                     remote_udp_endpoint_old_);
   setup_udp_receive(udp_socket_, received_udp_data_, remote_udp_endpoint_);
-};
+}
 
 APS2Ethernet::~APS2Ethernet() {
   FILE_LOG(logDEBUG) << "Cleaning up ethernet interface";
