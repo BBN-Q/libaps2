@@ -2104,36 +2104,23 @@ string APS2::print_status_bank(const APSStatusBank_t &status) {
   std::ostringstream ret;
 
   ret << endl << endl;
-  ret << "Host Firmware Version = " << hexn<8> << status.hostFirmwareVersion
-      << endl;
-  ret << "User Firmware Version = " << hexn<8> << status.userFirmwareVersion
-      << endl;
-  ret << "Configuration Source	= " << hexn<8> << status.configurationSource
-      << endl;
-  ret << "User Status					 = "
-      << hexn<8> << status.userStatus << endl;
-  ret << "DAC 0 Status					= "
-      << hexn<8> << status.dac0Status << endl;
-  ret << "DAC 1 Status					= "
-      << hexn<8> << status.dac1Status << endl;
-  ret << "PLL Status						= "
-      << hexn<8> << status.pllStatus << endl;
-  ret << "VCXO Status					 = "
-      << hexn<8> << status.vcxoStatus << endl;
+  ret << "Host Firmware Version = " << hexn<8> << status.hostFirmwareVersion << endl;
+  ret << "User Firmware Version = " << hexn<8> << status.userFirmwareVersion << endl;
+  ret << "Configuration Source	= " << hexn<8> << status.configurationSource << endl;
+  ret << "User Status           = " << hexn<8> << status.userStatus << endl;
+  ret << "DAC 0 Status          = " << hexn<8> << status.dac0Status << endl;
+  ret << "DAC 1 Status          = " << hexn<8> << status.dac1Status << endl;
+  ret << "PLL Status            = " << hexn<8> << status.pllStatus << endl;
+  ret << "VCXO Status           = " << hexn<8> << status.vcxoStatus << endl;
   ret << std::dec;
-  ret << "Send Packet Count		 = " << status.sendPacketCount << endl;
-  ret << "Recv Packet Count		 = " << status.receivePacketCount
-      << endl;
-  ret << "Seq Skip Count				= "
-      << status.sequenceSkipCount << endl;
-  ret << "Seq Dup.	Count			 = " << status.sequenceDupCount
-      << endl;
-  ret << "FCS Overrun Count		 = " << status.fcsOverrunCount << endl;
-  ret << "Packet Overrun Count	= " << status.packetOverrunCount << endl;
-  ret << "Uptime (s)						= "
-      << status.uptimeSeconds << endl;
-  ret << "Uptime (ns)					 = "
-      << status.uptimeNanoSeconds << endl;
+  ret << "Send Packet Count     = " << status.sendPacketCount << endl;
+  ret << "Recv Packet Count     = " << status.receivePacketCount << endl;
+  ret << "Seq Skip Count        = " << status.sequenceSkipCount << endl;
+  ret << "Seq Dup.	Count       = " << status.sequenceDupCount << endl;
+  ret << "FCS Overrun Count     = " << status.fcsOverrunCount << endl;
+  ret << "Packet Overrun Count  = " << status.packetOverrunCount << endl;
+  ret << "Uptime (s)            = " << status.uptimeSeconds << endl;
+  ret << "Uptime (ns)           = " << status.uptimeNanoSeconds << endl;
   return ret.str();
 }
 
