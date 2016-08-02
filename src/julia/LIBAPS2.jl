@@ -35,6 +35,7 @@ export APS2,
 	write_memory
 
 using Compat
+import Base.run
 
 type APS2
 	ip_addr::IPv4
@@ -57,8 +58,9 @@ const CW_WAVEFORM = 2
 
 function check_status(status::APS2_STATUS)
 	if status != APS2_OK
-		msg = ccall((:get_error_msg, "libaps2"), Ptr{UInt8}, (APS2_STATUS,), status)
-		error("APS2 library call failed with error: $(bytestring(msg))")
+		cmsg = ccall((:get_error_msg, "libaps2"), Ptr{UInt8}, (APS2_STATUS,), status)
+		msg = unsafe_string(cmsg)
+		error("APS2 library call failed with error: $(msg)")
 	end
 end
 
