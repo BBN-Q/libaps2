@@ -120,8 +120,8 @@ Waveform Modulation
 -----------------------
 
 When an APS2 slice is used to drive the I and Q ports of an I/Q mixer to
-amplitude and phase modulate modulate a microwave carrier it is convenient to
-bring some features typically backed into the waveforms into the hardware. For
+amplitude and phase modulate a microwave carrier it is convenient to
+bring some features typically baked into the waveforms back into the hardware. For
 example, if the I/Q mixer is used to single-side-band modulate the carrier the
 hardware can track the phase evolution through non deterministic delays and the
 phase modulation can be updated as part of the sequence. This can then even

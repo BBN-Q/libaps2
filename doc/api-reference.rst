@@ -32,7 +32,7 @@ High-level methods
 ------------------
 
 Getter calls return the value in the memory referenced by the passed pointer.
-The caller is responsible allocating and managing the memory.
+The caller is responsible for allocating and managing the memory.
 
 `const char *get_error_msg(APS2_STATUS)`
 
