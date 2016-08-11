@@ -580,6 +580,7 @@ APS2Datagram APS2Ethernet::read(string ipAddr,
       }
       try {
         size_t bytes_read = read_result.get();
+        FILE_LOG(logDEBUG3) << ipAddr << " read " << bytes_read << " bytes from stream";
       } catch (std::system_error e) {
         FILE_LOG(logERROR) << ipAddr
                            << " read errored with message: " << e.what();
