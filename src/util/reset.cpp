@@ -86,6 +86,11 @@ int main(int argc, char *argv[]) {
   } else {
     deviceSerial = get_device_id();
   }
+  if ( deviceSerial.empty() ) {
+    cout << concol::RED << "No APS2 devices connected! Exiting..."
+         << concol::RESET << endl;
+    return 0;
+  }
 
   APS2_RESET_MODE mode;
   if (options[RESET_MODE]) {

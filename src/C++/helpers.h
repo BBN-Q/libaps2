@@ -24,7 +24,7 @@ vector<string> enumerate_slices() {
        << (numDevices > 1 ? "s" : "") << " found" << concol::RESET << endl;
 
   if (numDevices < 1)
-    return {""};
+    return {};
 
   const char **ip_addr_buffers = new const char *[numDevices];
   get_device_IPs(ip_addr_buffers);
@@ -72,7 +72,7 @@ vector<string> get_device_ids() {
   */
   vector<string> ip_addrs = enumerate_slices();
   if (ip_addrs.size() == 0) {
-    return {""};
+    return {};
   }
 
   vector<string> selected_ips = {string(ip_addrs[0])};

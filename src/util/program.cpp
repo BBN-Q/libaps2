@@ -127,6 +127,11 @@ int main(int argc, char *argv[]) {
   } else {
     ip_addrs = get_device_ids();
   }
+  if ( ip_addrs.empty() ) {
+    cout << concol::RED << "No APS2 devices connected! Exiting..."
+         << concol::RESET << endl;
+    return 0;
+  }
 
   PROGRAM_TARGET target;
   if (options[PROG_MODE]) {
