@@ -84,7 +84,7 @@ vector<string> get_device_ids() {
 
     if (input.length() != 0) {
       if (input.compare("all") == 0) {
-        for (size_t ct = 0; ct < ip_addrs.size(); ct++) {
+        for (size_t ct = 1; ct < ip_addrs.size(); ct++) {
           selected_ips.push_back(ip_addrs[ct]);
         }
       } else {
