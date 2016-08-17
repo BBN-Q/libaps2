@@ -1805,7 +1805,11 @@ int APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
     uint32_t lfsr = 0;
     const uint32_t maskBottom14 = 0x3fff;
     for (auto v : dataVec) {
-      if (v != 0) {
+      // modulator shifts positive values down by 1
+      if ((v != 0) && (v != 1)) {
+        if (v > 0) {
+          v -= 1;
+        }
         // Shift
         lfsr = (lfsr << 1) | (lfsr >> 31);
         // Now ~xor the bottom 14 bits with the input data
