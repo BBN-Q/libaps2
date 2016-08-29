@@ -12,5 +12,7 @@ namespace RandomHelpers {
 
 uint32_t random_address(uint32_t, uint32_t, uint32_t);
 
-std::vector<uint32_t> random_data(size_t length);
+std::vector<uint32_t> random_data(size_t);
+
+std::vector<int16_t> random_waveform(size_t);
 }

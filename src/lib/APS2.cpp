@@ -1727,7 +1727,7 @@ void APS2::disable_DAC_FIFO(const int &dac) {
   write_SPI(msg);
 }
 
-int APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
+bool APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
                        vector<uint32_t> &results) {
   /*
   Measures the DAC BIST registers for a given test vector at three stages:
@@ -1951,9 +1951,9 @@ int APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
   write_reg(DAC_CONTROLLERCLOCK_ADDR, ccd);
 
   bool passed =
-      (readResults[0] == phase2BIST) && (readResults[1] == phase1BIST) &&
-      (readResults[2] == phase2BIST) && (readResults[3] == phase1BIST) &&
-      (readResults[4] == phase2BIST) && (readResults[5] == phase1BIST);
+      (readResults[0] == phase1BIST) && (readResults[1] == phase2BIST) &&
+      (readResults[2] == phase1BIST) && (readResults[3] == phase2BIST) &&
+      (readResults[4] == phase1BIST) && (readResults[5] == phase2BIST);
   return passed;
 }
 

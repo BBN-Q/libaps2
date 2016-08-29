@@ -143,7 +143,7 @@ public:
   void program_bitfile(uint32_t);
 
   // DAC BIST test
-  int run_DAC_BIST(const int &, const vector<int16_t> &, vector<uint32_t> &);
+  bool run_DAC_BIST(const int &, const vector<int16_t> &, vector<uint32_t> &);
   void set_DAC_SD(const int &, const uint8_t &);
 
 private:

@@ -96,6 +96,7 @@ ADD_EXECUTABLE(run_tests
 	../test/test_cache.cpp
 	../test/APS2Connector.cpp
 	../test/test_CSR.cpp
+	../test/test_DACs.cpp
 )
 TARGET_LINK_LIBRARIES(run_tests aps2 Threads::Threads)
 

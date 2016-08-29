@@ -28,3 +28,13 @@ vector<uint32_t> RandomHelpers::random_data(size_t length) {
   }
   return data;
 }
+
+vector<int16_t> RandomHelpers::random_waveform(size_t length){
+  //Create random waveform data
+  std::uniform_int_distribution<int16_t> wf_distribution(-8192, 8191);
+  vector<int16_t> data(length);
+  for (auto &val : data){
+    val = wf_distribution(generator);
+  }
+  return data;
+}
