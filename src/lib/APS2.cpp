@@ -1672,7 +1672,7 @@ void APS2::enable_DAC_FIFO(const int &dac) {
   }
 
   uint8_t data = 0;
-  FILE_LOG(logDEBUG) << ipAddr_ << "enabling DAC " << dac << " FIFO";
+  FILE_LOG(logDEBUG) << ipAddr_ << " enabling DAC " << dac << " FIFO";
   const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0,
                                                 CHIPCONFIG_TARGET_DAC_1};
 
@@ -1845,6 +1845,18 @@ int APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
   // Clear the channel data on both channels so we get the right waveform length
   clear_channel_data();
   set_waveform(dac, testVec);
+  // zero out waveform on other DAC so there is no interaction through the
+  // modulator
+  vector<int16_t> zero_wf = vector<int16_t>(testVec.size(), 0);
+  set_waveform(dac == 0 ? 1 : 0, zero_wf);
+  // reset the modulator parameters
+  set_waveform_frequency(0.0);
+  set_mixer_phase_skew(0.0);
+  set_mixer_amplitude_imbalance(1.0);
+  set_channel_scale(dac, 1.0);
+
+  // setup for software triggered waveform so we can send the test pattern
+  // through on our mark
   set_run_mode(TRIG_WAVEFORM);
   set_trigger_source(SOFTWARE);
   run();
@@ -2113,9 +2125,12 @@ string APS2::print_status_bank(const APSStatusBank_t &status) {
   std::ostringstream ret;
 
   ret << endl << endl;
-  ret << "Host Firmware Version = " << hexn<8> << status.hostFirmwareVersion << endl;
-  ret << "User Firmware Version = " << hexn<8> << status.userFirmwareVersion << endl;
-  ret << "Configuration Source	= " << hexn<8> << status.configurationSource << endl;
+  ret << "Host Firmware Version = " << hexn<8> << status.hostFirmwareVersion
+      << endl;
+  ret << "User Firmware Version = " << hexn<8> << status.userFirmwareVersion
+      << endl;
+  ret << "Configuration Source	= " << hexn<8> << status.configurationSource
+      << endl;
   ret << "User Status           = " << hexn<8> << status.userStatus << endl;
   ret << "DAC 0 Status          = " << hexn<8> << status.dac0Status << endl;
   ret << "DAC 1 Status          = " << hexn<8> << status.dac1Status << endl;
