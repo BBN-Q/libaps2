@@ -76,11 +76,37 @@ macro aps2_getter(funcName, dataType)
 	Expr(:function, esc(funcProto), esc(funcBody))
 end
 
+macro aps2_channel_getter(funcName, dataType)
+	funcProto = :($funcName(aps::APS2, chan::Int))
+	funcNameBis = string(funcName)
+	funcBody = quote
+				val = Array($dataType, 1)
+				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS,
+					(Ptr{UInt8}, Cint, Ptr{$dataType}),
+					string(aps.ip_addr), chan-1, val)
+				check_status(status)
+				return val[1]
+			end
+	Expr(:function, esc(funcProto), esc(funcBody))
+end
+
 macro aps2_setter(funcName, dataType)
 	funcProto = :($funcName(aps::APS2, val::$dataType))
 	funcNameBis = string(funcName)
 	funcBody = quote
 				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{UInt8}, $dataType), string(aps.ip_addr), val)
+				check_status(status)
+			end
+	Expr(:function, esc(funcProto), esc(funcBody))
+end
+
+macro aps2_channel_setter(funcName, dataType)
+	funcProto = :($funcName(aps::APS2, chan::Int, val::$dataType))
+	funcNameBis = string(funcName)
+	funcBody = quote
+				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS,
+					(Ptr{UInt8}, Cint, $dataType),
+					string(aps.ip_addr), chan-1, val)
 				check_status(status)
 			end
 	Expr(:function, esc(funcProto), esc(funcBody))
@@ -174,14 +200,14 @@ end
 @aps2_setter set_waveform_frequency Float32
 @aps2_getter get_waveform_frequency Float32
 
-@aps2_setter set_channel_offset Float32
-@aps2_getter get_channel_offset Float32
+@aps2_channel_setter set_channel_offset Float32
+@aps2_channel_getter get_channel_offset Float32
 
-@aps2_setter set_channel_scale Float32
-@aps2_getter get_channel_scale Float32
+@aps2_channel_setter set_channel_scale Float32
+@aps2_channel_getter get_channel_scale Float32
 
-@aps2_setter set_channel_enabled Cint
-@aps2_getter get_channel_enabled Cint
+@aps2_channel_setter set_channel_enabled Cint
+@aps2_channel_getter get_channel_enabled Cint
 
 @aps2_setter set_mixer_amplitude_imbalance Float32
 @aps2_getter get_mixer_amplitude_imbalance Float32
