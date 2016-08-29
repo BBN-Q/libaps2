@@ -35,9 +35,9 @@ void print_results(const vector<uint32_t> &results) {
   print_pass_fail(results[3] == results[1]);
 
   cout << " LVDS: ";
-  print_pass_fail(results[4] == results[0]);
+  print_pass_fail(results[4] == results[2]);
   cout << " / ";
-  print_pass_fail(results[5] == results[1]);
+  print_pass_fail(results[5] == results[3]);
 
   cout << " SYNC: ";
   print_pass_fail(results[6] == results[4]);
