@@ -221,12 +221,12 @@ end
 @aps2_call trigger
 
 function load_waveform{T<:Integer}(aps::APS2, chan, wf::Vector{T})
-	status = ccall((:set_waveform_int, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Cint, Ptr{Int16}, UInt32), string(aps.ip_addr), Cint(chan-1), int16(wf), length(wf))
+	status = ccall((:set_waveform_int, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Cint, Ptr{Int16}, UInt32), string(aps.ip_addr), Cint(chan-1), map(Int16, wf), length(wf))
 	check_status(status)
 end
 
 function load_waveform{T<:Real}(aps::APS2, chan, wf::Vector{T})
-	status = ccall((:set_waveform_float, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Cint, Ptr{Float32}, UInt32), string(aps.ip_addr), Cint(chan-1), float32(wf), length(wf))
+	status = ccall((:set_waveform_float, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Cint, Ptr{Float32}, UInt32), string(aps.ip_addr), Cint(chan-1), map(Float32, wf), length(wf))
 	check_status(status)
 end
 
