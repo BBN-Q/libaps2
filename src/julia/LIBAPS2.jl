@@ -91,7 +91,7 @@ macro aps2_channel_getter(funcName, dataType)
 end
 
 macro aps2_setter(funcName, dataType)
-	funcProto = :($funcName(aps::APS2, val::$dataType))
+	funcProto = :($funcName(aps::APS2, val))
 	funcNameBis = string(funcName)
 	funcBody = quote
 				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS, (Ptr{UInt8}, $dataType), string(aps.ip_addr), val)
@@ -101,7 +101,7 @@ macro aps2_setter(funcName, dataType)
 end
 
 macro aps2_channel_setter(funcName, dataType)
-	funcProto = :($funcName(aps::APS2, chan::Int, val::$dataType))
+	funcProto = :($funcName(aps::APS2, chan::Int, val))
 	funcNameBis = string(funcName)
 	funcBody = quote
 				status = ccall(($funcNameBis, "libaps2"), APS2_STATUS,
