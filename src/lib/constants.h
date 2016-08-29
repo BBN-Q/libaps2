@@ -25,6 +25,7 @@ const size_t MAX_WF_LENGTH =
 const int MAX_WF_AMP = (1 << 13) - 1; // 14 bit signed DAC
 const int WF_MODULUS = 4;
 const size_t MAX_LL_LENGTH = (1 << 24);
+const unsigned CORRECTION_MATRIX_SCALING = (1 << 13); //Q2.13
 
 const std::chrono::seconds COMMS_TIMEOUT = std::chrono::seconds(3);
 

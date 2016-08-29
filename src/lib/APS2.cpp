@@ -488,7 +488,8 @@ void APS2::set_mixer_correction_matrix(const vector<float> &mat) {
   // convert to Q2.13 fixed point
   vector<int32_t> correction_matrix;
   for (auto &val : mat) {
-    correction_matrix.push_back(static_cast<int32_t>(MAX_WF_AMP * val));
+    correction_matrix.push_back(
+        static_cast<int32_t>(CORRECTION_MATRIX_SCALING * val));
   }
   // Slot into registers and write to memory
   uint32_t row0, row1;
@@ -507,13 +508,17 @@ vector<float> APS2::get_mixer_correction_matrix() {
   // convert back to float
   vector<float> correction_matrix;
   correction_matrix.push_back(
-      static_cast<float>(static_cast<int16_t>(row0 >> 16)) / MAX_WF_AMP);
+      static_cast<float>(static_cast<int16_t>(row0 >> 16)) /
+      CORRECTION_MATRIX_SCALING);
   correction_matrix.push_back(
-      static_cast<float>(static_cast<int16_t>(row0 & 0xffff)) / MAX_WF_AMP);
+      static_cast<float>(static_cast<int16_t>(row0 & 0xffff)) /
+      CORRECTION_MATRIX_SCALING);
   correction_matrix.push_back(
-      static_cast<float>(static_cast<int16_t>(row1 >> 16)) / MAX_WF_AMP);
+      static_cast<float>(static_cast<int16_t>(row1 >> 16)) /
+      CORRECTION_MATRIX_SCALING);
   correction_matrix.push_back(
-      static_cast<float>(static_cast<int16_t>(row1 & 0xffff)) / MAX_WF_AMP);
+      static_cast<float>(static_cast<int16_t>(row1 & 0xffff)) /
+      CORRECTION_MATRIX_SCALING);
   return correction_matrix;
 }
 
@@ -531,12 +536,12 @@ void APS2::update_correction_matrix() {
 
   // calculate matrix terms and convert to Q2.13 fixed point
   int32_t correction_matrix_00 =
-      static_cast<int32_t>(i_scale * amp_imbalance * MAX_WF_AMP);
+      static_cast<int32_t>(i_scale * amp_imbalance * CORRECTION_MATRIX_SCALING);
   int32_t correction_matrix_01 = static_cast<int32_t>(
-      i_scale * amp_imbalance * tan(phase_skew) * MAX_WF_AMP);
+      i_scale * amp_imbalance * tan(phase_skew) * CORRECTION_MATRIX_SCALING);
   int32_t correction_matrix_10 = 0;
-  int32_t correction_matrix_11 =
-      static_cast<int32_t>(q_scale / cos(phase_skew) * MAX_WF_AMP);
+  int32_t correction_matrix_11 = static_cast<int32_t>(
+      q_scale / cos(phase_skew) * CORRECTION_MATRIX_SCALING);
 
   // Slot into registers and write to memory
   uint32_t row0, row1;
