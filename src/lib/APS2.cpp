@@ -109,7 +109,7 @@ APS2_STATUS APS2::init(const bool &forceReload, const int &bitFileNum) {
   if (!initialized || forceReload) {
     FILE_LOG(logINFO) << ipAddr_ << " initializing APS2";
 
-    // toggle the OSERDES reset
+    // toggle the OSERDES reset for firmware < v4.3
     set_register_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
     clear_register_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
 
@@ -132,21 +132,6 @@ void APS2::setup_DACs() {
   // Call the setup function for each DAC
   align_DAC_LVDS_capture(0);
   align_DAC_LVDS_capture(1);
-  //Measure the two FIFO phases and bitslip the earlier channel
-  auto phase_diff = get_DAC_FIFO_phase(0) - get_DAC_FIFO_phase(1);
-  if (phase_diff == 0) {
-    FILE_LOG(logDEBUG) << ipAddr_ << " no FIFO phase difference; setting DAC bitslips to 0";
-    write_memory(BITSLIP_A_ADDR, 0);
-    write_memory(BITSLIP_B_ADDR, 0);
-  } else if (phase_diff < 0) {
-    FILE_LOG(logDEBUG) << ipAddr_ << " DAC 0 FIFO phase less than DAC 1; setting DAC 0 bitslip to " << abs(phase_diff);
-    write_memory(BITSLIP_A_ADDR, abs(phase_diff));
-    write_memory(BITSLIP_B_ADDR, 0);
-  } else {
-    FILE_LOG(logDEBUG) << ipAddr_ << " DAC 0 FIFO phase greater than DAC 1; setting DAC 1 bitslip to " << abs(phase_diff);
-    write_memory(BITSLIP_A_ADDR, 0);
-    write_memory(BITSLIP_B_ADDR, abs(phase_diff));
-  }
 }
 
 APSStatusBank_t APS2::read_status_registers() {
@@ -1572,7 +1557,7 @@ void APS2::align_DAC_LVDS_capture(int dac)
   // write_SPI(msg);
 
   // turn on SYNC FIFO
-  enable_DAC_FIFO(dac);
+  // enable_DAC_FIFO(dac);
 }
 
 void APS2::set_DAC_SD(const int &dac, const uint8_t &sd) {
