@@ -331,6 +331,9 @@ class APS2(metaclass=Parser):
     set_channel_enabled = APS2_Chan_Setter(c_int)
     get_channel_enabled = APS2_Chan_Getter(c_int, return_type=bool)
 
+    set_channel_delay = APS2_Chan_Setter(c_uint)
+    get_channel_delay = APS2_Chan_Getter(c_uint)
+
     set_waveform_frequency = APS2_Setter(c_float)
     get_waveform_frequency = APS2_Getter(c_float)
 

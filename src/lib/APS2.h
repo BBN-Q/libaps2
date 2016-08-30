@@ -59,6 +59,8 @@ public:
   bool get_channel_enabled(int) const;
   void set_channel_offset(int, float);
   float get_channel_offset(int) const;
+  void set_channel_bitslip(int, unsigned);
+  unsigned get_channel_bitslip(int);
 
   // the next six functions assume we can store a float in a 4 byte register on
   // the device

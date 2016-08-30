@@ -25,6 +25,8 @@ export APS2,
 	get_channel_scale,
 	set_channel_enabled,
 	get_channel_enabled,
+	set_channel_delay,
+	get_channel_delay,
 	set_mixer_amplitude_imbalance,
 	get_mixer_amplitude_imbalance,
 	set_mixer_phase_skew,
@@ -40,6 +42,7 @@ import Base.run
 type APS2
 	ip_addr::IPv4
 end
+
 APS2() = APS2(IPv4(0))
 
 __init__() = push!(Libdl.DL_LOAD_PATH, joinpath(dirname(@__FILE__), "../../build/"))
@@ -154,9 +157,11 @@ function connect!(aps::APS2, ip_addr::IPv4)
 end
 
 function disconnect!(aps::APS2)
-	status = ccall((:disconnect_APS, "libaps2"), APS2_STATUS, (Ptr{UInt8},), string(aps.ip_addr))
-	check_status(status)
-	aps.ip_addr = IPv4(0)
+	if aps.ip_addr !== IPv4(0)
+		status = ccall((:disconnect_APS, "libaps2"), APS2_STATUS, (Ptr{UInt8},), string(aps.ip_addr))
+		check_status(status)
+		aps.ip_addr = IPv4(0)
+	end
 end
 
 function init(aps::APS2, force=1)
@@ -208,6 +213,9 @@ end
 
 @aps2_channel_setter set_channel_enabled Cint
 @aps2_channel_getter get_channel_enabled Cint
+
+@aps2_channel_setter set_channel_delay Cuint
+@aps2_channel_getter get_channel_delay Cuint
 
 @aps2_setter set_mixer_amplitude_imbalance Float32
 @aps2_getter get_mixer_amplitude_imbalance Float32

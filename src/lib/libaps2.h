@@ -59,6 +59,8 @@ EXPORT APS2_STATUS set_channel_scale(const char *, int, float);
 EXPORT APS2_STATUS get_channel_scale(const char *, int, float *);
 EXPORT APS2_STATUS set_channel_enabled(const char *, int, int);
 EXPORT APS2_STATUS get_channel_enabled(const char *, int, int *);
+EXPORT APS2_STATUS set_channel_delay(const char *, int, unsigned int);
+EXPORT APS2_STATUS get_channel_delay(const char *, int, unsigned int *);
 
 EXPORT APS2_STATUS set_mixer_amplitude_imbalance(const char *, float);
 EXPORT APS2_STATUS get_mixer_amplitude_imbalance(const char *, float *);

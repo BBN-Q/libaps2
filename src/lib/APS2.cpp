@@ -406,6 +406,14 @@ bool APS2::get_channel_enabled(int dac) const {
   return channels_[dac].get_enabled();
 }
 
+void APS2::set_channel_bitslip(int dac, unsigned slip) {
+  write_memory(dac == 0 ? BITSLIP_A_ADDR : BITSLIP_B_ADDR, slip & 0x3);
+}
+
+unsigned APS2::get_channel_bitslip(int dac) {
+  return read_memory(dac == 0 ? BITSLIP_A_ADDR : BITSLIP_B_ADDR, 1).front() & 0x3;
+}
+
 void APS2::set_channel_offset(int dac, float offset) {
   // Scale offset to Q0.13 fixed point
   int16_t offset_fixed = offset * MAX_WF_AMP;
