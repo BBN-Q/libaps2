@@ -224,8 +224,8 @@ enum CONFIGURATION_SOURCE {
 // APS2 registers
 const uint32_t CSR_AXI_OFFSET = 0x44A00000u;
 const uint32_t PLL_STATUS_ADDR = CSR_AXI_OFFSET + 0 * 4;
-const uint32_t PHASE_COUNT_A_ADDR = CSR_AXI_OFFSET + 1 * 4;
-const uint32_t PHASE_COUNT_B_ADDR = CSR_AXI_OFFSET + 2 * 4;
+const uint32_t BITSLIP_A_ADDR = CSR_AXI_OFFSET + 1 * 4;
+const uint32_t BITSLIP_B_ADDR = CSR_AXI_OFFSET + 2 * 4;
 const uint32_t CACHE_STATUS_ADDR = CSR_AXI_OFFSET + 3 * 4;
 const uint32_t CACHE_CONTROL_ADDR = CSR_AXI_OFFSET + 4 * 4;
 const uint32_t WFA_OFFSET_ADDR = CSR_AXI_OFFSET + 5 * 4;

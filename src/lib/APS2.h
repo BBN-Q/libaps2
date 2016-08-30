@@ -34,7 +34,7 @@ public:
 
   int setup_VCXO() const;
   int setup_PLL() const;
-  int setup_DACs();
+  void setup_DACs();
   void run_chip_config(uint32_t addr = 0x0);
 
   APSStatusBank_t read_status_registers();
@@ -164,7 +164,6 @@ private:
   // PLL methods
   int setup_PLL();
   int set_PLL_freq(const int &);
-  int test_PLL_sync();
   void check_clocks_status();
   int get_PLL_freq();
   void enable_DAC_clock(const int &);
@@ -174,9 +173,10 @@ private:
   void setup_VCXO();
 
   // DAC methods
-  void setup_DAC(const int &);
+  void align_DAC_LVDS_capture(int);
   void enable_DAC_FIFO(const int &);
   void disable_DAC_FIFO(const int &);
+  int get_DAC_FIFO_phase(const int);
 
   // int trigger();
   // int disable();
