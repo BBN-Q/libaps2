@@ -132,6 +132,10 @@ void APS2::setup_DACs() {
   // Call the setup function for each DAC
   align_DAC_LVDS_capture(0);
   align_DAC_LVDS_capture(1);
+  disable_DAC_clock(0);
+  disable_DAC_clock(1);
+  enable_DAC_clock(0);
+  enable_DAC_clock(1);
 }
 
 APSStatusBank_t APS2::read_status_registers() {
