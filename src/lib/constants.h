@@ -29,7 +29,7 @@ const unsigned CORRECTION_MATRIX_SCALING = (1 << 13); //Q2.13
 
 const std::chrono::seconds COMMS_TIMEOUT = std::chrono::seconds(3);
 
-const int MAX_PHASE_TEST_CNT = 20;
+const int MAX_DAC_CLOCK_PHASE_TEST_TRIES = 20;
 
 // Chip config SPI commands for setting up DAC,PLL,VXCO
 // Possible target bytes
@@ -224,8 +224,8 @@ enum CONFIGURATION_SOURCE {
 // APS2 registers
 const uint32_t CSR_AXI_OFFSET = 0x44A00000u;
 const uint32_t PLL_STATUS_ADDR = CSR_AXI_OFFSET + 0 * 4;
-const uint32_t BITSLIP_A_ADDR = CSR_AXI_OFFSET + 1 * 4;
-const uint32_t BITSLIP_B_ADDR = CSR_AXI_OFFSET + 2 * 4;
+const uint32_t PHASE_COUNT_A_ADDR = CSR_AXI_OFFSET + 1 * 4;
+const uint32_t PHASE_COUNT_B_ADDR = CSR_AXI_OFFSET + 2 * 4;
 const uint32_t CACHE_STATUS_ADDR = CSR_AXI_OFFSET + 3 * 4;
 const uint32_t CACHE_CONTROL_ADDR = CSR_AXI_OFFSET + 4 * 4;
 const uint32_t WFA_OFFSET_ADDR = CSR_AXI_OFFSET + 5 * 4;
@@ -258,6 +258,11 @@ const uint32_t MIXER_PHASE_SKEW_ADDR = CSR_AXI_OFFSET + 31 * 4;
 const uint32_t CH_A_WF_LENGTH_ADDR = CSR_AXI_OFFSET + 32 * 4;
 const uint32_t CH_B_WF_LENGTH_ADDR = CSR_AXI_OFFSET + 33 * 4;
 const uint32_t WF_SSB_FREQ_ADDR = CSR_AXI_OFFSET + 34 * 4;
+const uint32_t BITSLIP_A_ADDR = CSR_AXI_OFFSET + 35 * 4;
+const uint32_t BITSLIP_B_ADDR = CSR_AXI_OFFSET + 36 * 4;
+const uint32_t DAC_CLK_DELAY_A_ADDR = CSR_AXI_OFFSET + 37 * 4;
+const uint32_t DAC_CLK_DELAY_B_ADDR = CSR_AXI_OFFSET + 38 * 4;
+
 
 // TDM registers
 const uint32_t TDM_RESETS_ADDR = CSR_AXI_OFFSET + 0 * 4;
