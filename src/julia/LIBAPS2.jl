@@ -252,6 +252,14 @@ end
 write_memory(aps::APS2, addr, data::Vector{UInt32}) =
 	ccall((:write_memory, "libaps2"), Cint, (Ptr{Cchar}, UInt32, Ptr{UInt32}, UInt32), string(aps.ip_addr), addr, data, length(data))
 
+function run_DAC_BIST(aps::APS2, chan, test_vec)
+	results = Array{UInt32}(8)
+	passed = ccall((:run_DAC_BIST, "libaps2"),
+									Cint,
+									(Ptr{Cchar}, Cint, Ptr{Cshort}, Cuint, Ptr{Cuint}),
+									string(aps.ip_addr), chan-1, test_vec, length(test_vec), results)
+	passed != 0, results
+end
 
 function create_test_waveform()
 	#Create a test pattern with the follow pattens separated by 10ns of zero:
