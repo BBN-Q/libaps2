@@ -175,6 +175,7 @@ private:
   void setup_VCXO();
 
   // DAC methods
+  void align_DAC_clock(int);
   void align_DAC_LVDS_capture(int);
   void enable_DAC_FIFO(const int &);
   void disable_DAC_FIFO(const int &);

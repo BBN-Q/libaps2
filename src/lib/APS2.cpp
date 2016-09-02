@@ -1,7 +1,7 @@
 #include <bitset>
 #include <fstream>
 #include <stdexcept> //std::runtime_error
-#include <utility> //std::swap
+#include <utility>   //std::swap
 using std::endl;
 
 #include "APS2.h"
@@ -129,13 +129,10 @@ APS2_STATUS APS2::init(const bool &forceReload, const int &bitFileNum) {
 }
 
 void APS2::setup_DACs() {
-  // Call the setup function for each DAC
+  align_DAC_clock(0);
+  align_DAC_clock(1);
   align_DAC_LVDS_capture(0);
   align_DAC_LVDS_capture(1);
-  disable_DAC_clock(0);
-  disable_DAC_clock(1);
-  enable_DAC_clock(0);
-  enable_DAC_clock(1);
 }
 
 APSStatusBank_t APS2::read_status_registers() {
@@ -706,6 +703,19 @@ void APS2::set_run_mode(const APS2_RUN_MODE &mode) {
   }
   // get insertion point before end
   auto goto_entry = std::prev(instructions.end());
+  // insert marker instructions on MK 1/MK 2 for TRIG_WAVEFORM
+  if (mode == TRIG_WAVEFORM) {
+    if (wf_length_a > 0) {
+      instructions.insert(goto_entry,
+                          0x1000000100000000 | (wf_length_a / 4 - 1));
+      goto_entry = std::prev(instructions.end());
+    }
+    if (wf_length_b > 0) {
+      instructions.insert(goto_entry,
+                          0x1400000100000000 | (wf_length_b / 4 - 1));
+      goto_entry = std::prev(instructions.end());
+    }
+  }
   if (wf_length_a == wf_length_b) {
     // single broadcast wf instruction with write flag high
     instructions.insert(goto_entry,
@@ -1441,6 +1451,34 @@ void APS2::setup_VCXO() {
   write_SPI(msg);
 }
 
+void APS2::align_DAC_clock(int dac) {
+  // toggle DAC clocks until DATACLK_OUT comes up "aligned" to system 600
+  const vector<uint32_t> PHASE_COUNT_ADDR = {PHASE_COUNT_A_ADDR,
+                                             PHASE_COUNT_B_ADDR};
+  // Loop over number of tries
+  for (int ct = 0; ct < MAX_DAC_CLOCK_PHASE_TEST_TRIES; ct++) {
+    // register returns a value in [0, 0xffff]. Re-interpret as portion of
+    // circle
+    auto dac_clk_phase =
+        static_cast<double>(read_memory(PHASE_COUNT_ADDR[dac], 1)[0]) /
+        (0xffff);
+
+    FILE_LOG(logDEBUG1) << ipAddr_ << " measured DAC "
+                        << ((dac == 0) ? "A" : "B") << " clock phase of "
+                        << dac_clk_phase;
+
+    if (dac_clk_phase < 0.5) {
+      // done with this channel
+      break;
+    } else {
+      // disable then enable the DAC clock source
+      disable_DAC_clock(dac);
+      enable_DAC_clock(dac);
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+  }
+}
+
 void APS2::align_DAC_LVDS_capture(int dac)
 /*
  * Description: Aligns the data valid window of the DAC with the output of the
@@ -1601,7 +1639,8 @@ int APS2::get_DAC_FIFO_phase(const int dac) {
 
   // phase (FIFOPHASE) is in bits <6:4>
   data = (data & 0x70) >> 4;
-  FILE_LOG(logDEBUG) << ipAddr_ << " DAC " << dac << " FIFO phase = " << int(data);
+  FILE_LOG(logDEBUG) << ipAddr_ << " DAC " << dac
+                     << " FIFO phase = " << int(data);
   return data;
 }
 
@@ -1663,7 +1702,7 @@ void APS2::disable_DAC_FIFO(const int &dac) {
 }
 
 bool APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
-                       vector<uint32_t> &results) {
+                        vector<uint32_t> &results) {
   /*
   Measures the DAC BIST registers for a given test vector at three stages:
   leaving the FPGA, registering
@@ -1886,17 +1925,19 @@ bool APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
   write_reg(DAC_CONTROLLERCLOCK_ADDR, ccd);
 
   // check if DAC is bitslipped and swap results accordingly
-  auto bitslip = read_memory(dac == 0 ? BITSLIP_A_ADDR : BITSLIP_B_ADDR, 1).front();
-  if ( bitslip % 2 ) {
-    FILE_LOG(logDEBUG) << ipAddr_ << " DAC " << dac << " has odd bitslip so swapping LVDS and SYNC BIST vals";
+  auto bitslip =
+      read_memory(dac == 0 ? BITSLIP_A_ADDR : BITSLIP_B_ADDR, 1).front();
+  if (bitslip % 2) {
+    FILE_LOG(logDEBUG)
+        << ipAddr_ << " DAC " << dac
+        << " has odd bitslip so swapping LVDS and SYNC BIST vals";
     std::swap(results[4], results[5]);
     std::swap(results[6], results[7]);
   }
 
-  bool passed =
-      (results[2] == phase1BIST) && (results[3] == phase2BIST) &&
-      (results[4] == phase1BIST) && (results[5] == phase2BIST) &&
-      (results[6] == phase1BIST) && (results[7] == phase2BIST);
+  bool passed = (results[2] == phase1BIST) && (results[3] == phase2BIST) &&
+                (results[4] == phase1BIST) && (results[5] == phase2BIST) &&
+                (results[6] == phase1BIST) && (results[7] == phase2BIST);
   return passed;
 }
 
