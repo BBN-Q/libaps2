@@ -1475,7 +1475,7 @@ void APS2::align_DAC_clock(int dac) {
 
     if (dac_clk_phase < 0.5) {
       // done with this channel
-      break;
+      return;
     } else {
       // toggle DAC clock to try and get different phase
       toggle_DAC_clock(dac);
@@ -1483,6 +1483,8 @@ void APS2::align_DAC_clock(int dac) {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
   }
+  // if we got here then we never aligned
+  FILE_LOG(logERROR) << ipAddr_ << " failed to align DAC " << dac;
 }
 
 void APS2::align_DAC_LVDS_capture(int dac)
