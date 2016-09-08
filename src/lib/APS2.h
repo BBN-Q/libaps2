@@ -147,6 +147,7 @@ public:
   // DAC BIST test
   bool run_DAC_BIST(const int &, const vector<int16_t> &, vector<uint32_t> &);
   void set_DAC_SD(const int &, const uint8_t &);
+  void toggle_DAC_clock(const int);
 
 private:
   string ipAddr_;
@@ -168,8 +169,8 @@ private:
   int set_PLL_freq(const int &);
   void check_clocks_status();
   int get_PLL_freq();
-  void enable_DAC_clock(const int &);
-  void disable_DAC_clock(const int &);
+  void enable_DAC_clock(const int);
+  void disable_DAC_clock(const int);
 
   // VCXO methods
   void setup_VCXO();

@@ -261,6 +261,11 @@ function run_DAC_BIST(aps::APS2, chan, test_vec)
 	passed != 0, results
 end
 
+function toggle_DAC_clock(aps::APS2, dac)
+	status = ccall((:toggle_DAC_clock, "libaps2"), APS2_STATUS, (Ptr{UInt8}, Cint), string(aps.ip_addr), dac-1)
+	check_status(status)
+end
+
 function create_test_waveform()
 	#Create a test pattern with the follow pattens separated by 10ns of zero:
 	# * a full scale ramp

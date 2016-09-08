@@ -131,6 +131,7 @@ APS2_STATUS APS2::init(const bool &forceReload, const int &bitFileNum) {
 void APS2::setup_DACs() {
   align_DAC_clock(0);
   align_DAC_clock(1);
+
   align_DAC_LVDS_capture(0);
   align_DAC_LVDS_capture(1);
 }
@@ -1419,7 +1420,7 @@ int APS2::get_PLL_freq() {
   return freq;
 }
 
-void APS2::enable_DAC_clock(const int &dac) {
+void APS2::enable_DAC_clock(const int dac) {
   // enables the PLL output to a DAC (0 or 1)
   const vector<uint16_t> DAC_PLL_ADDR = {0xF0, 0xF1};
 
@@ -1428,13 +1429,18 @@ void APS2::enable_DAC_clock(const int &dac) {
   write_SPI(msg);
 }
 
-void APS2::disable_DAC_clock(const int &dac) {
+void APS2::disable_DAC_clock(const int dac) {
   const vector<uint16_t> DAC_PLL_ADDR = {0xF0, 0xF1};
 
   vector<SPI_AddrData_t> disable_msg = {{DAC_PLL_ADDR[dac], 0x02},
                                         {0x232, 0x1}};
   auto msg = build_PLL_SPI_msg(disable_msg);
   write_SPI(msg);
+}
+
+void APS2::toggle_DAC_clock(const int dac) {
+  disable_DAC_clock(dac);
+  enable_DAC_clock(dac);
 }
 
 void APS2::setup_VCXO() {
@@ -1471,9 +1477,9 @@ void APS2::align_DAC_clock(int dac) {
       // done with this channel
       break;
     } else {
-      // disable then enable the DAC clock source
-      disable_DAC_clock(dac);
-      enable_DAC_clock(dac);
+      // toggle DAC clock to try and get different phase
+      toggle_DAC_clock(dac);
+      // wait for phase count to run
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
   }

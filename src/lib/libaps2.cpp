@@ -625,6 +625,10 @@ APS2_STATUS set_DAC_SD(const char *deviceSerial, const int dac,
   return aps2_call(deviceSerial, &APS2::set_DAC_SD, dac, sd);
 }
 
+APS2_STATUS toggle_DAC_clock(const char *deviceSerial, const int dac) {
+  return aps2_call(deviceSerial, &APS2::toggle_DAC_clock, dac);
+}
+
 #ifdef __cplusplus
 }
 #endif
