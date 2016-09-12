@@ -10,16 +10,7 @@
 
 #include "../lib/APS2_enums.h"
 #include "../lib/APS2_errno.h"
-enum TLogLevel {
-  logERROR,
-  logWARNING,
-  logINFO,
-  logDEBUG,
-  logDEBUG1,
-  logDEBUG2,
-  logDEBUG3,
-  logDEBUG4
-};
+enum TLogLevel {logERROR, logWARNING, logINFO, logDEBUG, logDEBUG1, logDEBUG2, logDEBUG3, logDEBUG4};
 
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
@@ -54,8 +45,8 @@ EXPORT APS2_STATUS disconnect_APS(const char *);
 EXPORT APS2_STATUS reset(const char *, APS2_RESET_MODE);
 EXPORT APS2_STATUS init_APS(const char *, int);
 
-EXPORT APS2_STATUS get_firmware_version(const char *, unsigned int *,
-                                        unsigned int *, unsigned int *, char *);
+EXPORT APS2_STATUS get_firmware_version(const char *, unsigned int *, unsigned int *,
+                                        unsigned int *, char *);
 EXPORT APS2_STATUS get_uptime(const char *, double *);
 EXPORT APS2_STATUS get_fpga_temperature(const char *, float *);
 
@@ -68,6 +59,8 @@ EXPORT APS2_STATUS set_channel_scale(const char *, int, float);
 EXPORT APS2_STATUS get_channel_scale(const char *, int, float *);
 EXPORT APS2_STATUS set_channel_enabled(const char *, int, int);
 EXPORT APS2_STATUS get_channel_enabled(const char *, int, int *);
+EXPORT APS2_STATUS set_channel_delay(const char *, int, unsigned int);
+EXPORT APS2_STATUS get_channel_delay(const char *, int, unsigned int *);
 
 EXPORT APS2_STATUS set_mixer_amplitude_imbalance(const char *, float);
 EXPORT APS2_STATUS get_mixer_amplitude_imbalance(const char *, float *);
@@ -111,25 +104,21 @@ EXPORT APS2_STATUS set_dhcp_enable(const char *, const int);
 
 /* private API methods */
 
-EXPORT APS2_STATUS write_memory(const char *, unsigned int, unsigned int *,
-                                unsigned int);
-EXPORT APS2_STATUS read_memory(const char *, unsigned int, unsigned int *,
-                               unsigned int);
+EXPORT APS2_STATUS write_memory(const char *, unsigned int, unsigned int *, unsigned int);
+EXPORT APS2_STATUS read_memory(const char *, unsigned int, unsigned int *, unsigned int);
 EXPORT APS2_STATUS read_register(const char *, unsigned int, unsigned int *);
 
 EXPORT APS2_STATUS write_bitfile(const char *, const char *, unsigned int,
                                  APS2_BITFILE_STORAGE_MEDIA);
 EXPORT APS2_STATUS program_bitfile(const char *, unsigned int);
 
-EXPORT APS2_STATUS write_configuration_SDRAM(const char *, unsigned int,
-                                             unsigned int *, unsigned int);
-EXPORT APS2_STATUS read_configuration_SDRAM(const char *, unsigned int,
-                                            unsigned int, unsigned int *);
+EXPORT APS2_STATUS write_configuration_SDRAM(const char *, unsigned int, unsigned int *,
+                                             unsigned int);
+EXPORT APS2_STATUS read_configuration_SDRAM(const char *, unsigned int, unsigned int,
+                                            unsigned int *);
 
-EXPORT APS2_STATUS write_flash(const char *, unsigned int, unsigned int *,
-                               unsigned int);
-EXPORT APS2_STATUS read_flash(const char *, unsigned int, unsigned int,
-                              unsigned int *);
+EXPORT APS2_STATUS write_flash(const char *, unsigned int, unsigned int *, unsigned int);
+EXPORT APS2_STATUS read_flash(const char *, unsigned int, unsigned int, unsigned int *);
 
 EXPORT APS2_BITFILE_WRITING_TASK get_bitfile_writing_task(const char *);
 EXPORT void clear_bitfile_writing_progress(const char *);

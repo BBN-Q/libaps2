@@ -396,6 +396,11 @@ APS2_STATUS trigger(const char *deviceSerial) {
   return aps2_call(deviceSerial, &APS2::trigger);
 }
 
+APS2_STATUS set_channel_delay(const char *deviceSerial, int channelNum,
+                               unsigned delay) {
+  return aps2_call(deviceSerial, &APS2::set_channel_bitslip, channelNum, delay);
+}
+
 APS2_STATUS set_channel_offset(const char *deviceSerial, int channelNum,
                                float offset) {
   return aps2_call(deviceSerial, &APS2::set_channel_offset, channelNum, offset);
@@ -404,10 +409,17 @@ APS2_STATUS set_channel_scale(const char *deviceSerial, int channelNum,
                               float scale) {
   return aps2_call(deviceSerial, &APS2::set_channel_scale, channelNum, scale);
 }
+
 APS2_STATUS set_channel_enabled(const char *deviceSerial, int channelNum,
                                 int enable) {
   return aps2_call(deviceSerial, &APS2::set_channel_enabled, channelNum,
                    enable);
+}
+
+APS2_STATUS get_channel_delay(const char *deviceSerial, int channelNum,
+                               unsigned *delay) {
+  return aps2_getter(deviceSerial, &APS2::get_channel_bitslip, delay,
+                     channelNum);
 }
 
 APS2_STATUS get_channel_offset(const char *deviceSerial, int channelNum,
@@ -611,6 +623,10 @@ int run_DAC_BIST(const char *deviceSerial, const int dac, int16_t *data,
 APS2_STATUS set_DAC_SD(const char *deviceSerial, const int dac,
                        const uint8_t sd) {
   return aps2_call(deviceSerial, &APS2::set_DAC_SD, dac, sd);
+}
+
+APS2_STATUS toggle_DAC_clock(const char *deviceSerial, const int dac) {
+  return aps2_call(deviceSerial, &APS2::toggle_DAC_clock, dac);
 }
 
 #ifdef __cplusplus

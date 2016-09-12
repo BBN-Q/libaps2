@@ -1,6 +1,7 @@
 #include <bitset>
 #include <fstream>
 #include <stdexcept> //std::runtime_error
+#include <utility>   //std::swap
 using std::endl;
 
 #include "APS2.h"
@@ -108,17 +109,9 @@ APS2_STATUS APS2::init(const bool &forceReload, const int &bitFileNum) {
   if (!initialized || forceReload) {
     FILE_LOG(logINFO) << ipAddr_ << " initializing APS2";
 
-    // send hard reset to APS2
-    // reset(RECONFIG_EPROM);
-    // reconfigure the PLL and VCX0 from EPROM
-    // run_chip_config();
-    // this won't be necessary if running the chip config above
-
-    // sync DAC clock phase with PLL
-    int status = test_PLL_sync();
-    if (status) {
-      FILE_LOG(logERROR) << ipAddr_ << " DAC PLLs failed to sync";
-    }
+    // toggle the OSERDES reset for firmware < v4.3
+    set_register_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
+    clear_register_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
 
     // align DAC data clock boundaries
     setup_DACs();
@@ -135,12 +128,12 @@ APS2_STATUS APS2::init(const bool &forceReload, const int &bitFileNum) {
   return APS2_OK;
 }
 
-int APS2::setup_DACs() {
-  // Call the setup function for each DAC
-  for (int dac = 0; dac < NUM_CHANNELS; dac++) {
-    setup_DAC(dac);
-  }
-  return 0;
+void APS2::setup_DACs() {
+  align_DAC_clock(0);
+  align_DAC_clock(1);
+
+  align_DAC_LVDS_capture(0);
+  align_DAC_LVDS_capture(1);
 }
 
 APSStatusBank_t APS2::read_status_registers() {
@@ -413,6 +406,14 @@ void APS2::set_channel_enabled(int dac, bool enable) {
 
 bool APS2::get_channel_enabled(int dac) const {
   return channels_[dac].get_enabled();
+}
+
+void APS2::set_channel_bitslip(int dac, unsigned slip) {
+  write_memory(dac == 0 ? BITSLIP_A_ADDR : BITSLIP_B_ADDR, slip & 0x3);
+}
+
+unsigned APS2::get_channel_bitslip(int dac) {
+  return read_memory(dac == 0 ? BITSLIP_A_ADDR : BITSLIP_B_ADDR, 1).front() & 0x3;
 }
 
 void APS2::set_channel_offset(int dac, float offset) {
@@ -703,6 +704,19 @@ void APS2::set_run_mode(const APS2_RUN_MODE &mode) {
   }
   // get insertion point before end
   auto goto_entry = std::prev(instructions.end());
+  // insert marker instructions on MK 1/MK 2 for TRIG_WAVEFORM
+  if (mode == TRIG_WAVEFORM) {
+    if (wf_length_a > 0) {
+      instructions.insert(goto_entry,
+                          0x1000000100000000 | (wf_length_a / 4 - 1));
+      goto_entry = std::prev(instructions.end());
+    }
+    if (wf_length_b > 0) {
+      instructions.insert(goto_entry,
+                          0x1400000100000000 | (wf_length_b / 4 - 1));
+      goto_entry = std::prev(instructions.end());
+    }
+  }
   if (wf_length_a == wf_length_b) {
     // single broadcast wf instruction with write flag high
     instructions.insert(goto_entry,
@@ -1319,81 +1333,6 @@ int APS2::set_PLL_freq(const int &freq) {
   return 0;
 }
 
-int APS2::test_PLL_sync() {
-  /*
-   * APS2_TestPllSync synchronized the phases of the DAC clocks with the
-   * following procedure:
-   * 1) Test CHA_PHASE:
-   * 	 a) if close to zero, continue
-   * 	 b) if close to pi, reset channel PLL
-   * 	 c) if close to pi/2, reset main PLL and channel PLL
-   * 2) Repeat for CHB_PHASE
-   */
-
-  uint32_t ch_phase, ch_phase_deg;
-
-  const vector<uint32_t> CH_PHASE_ADDR = {PHASE_COUNT_A_ADDR,
-                                          PHASE_COUNT_B_ADDR};
-  const vector<unsigned> CH_PLL_RESET_BIT = {PLL_CHA_RST_BIT, PLL_CHB_RST_BIT};
-
-  FILE_LOG(logINFO) << ipAddr_ << " running channel sync procedure";
-
-  // Disable DAC FIFOs
-  for (int dac = 0; dac < NUM_CHANNELS; dac++) {
-    disable_DAC_FIFO(dac);
-  }
-  // Disable DDRs
-  set_register_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
-
-  static const int lowPhaseCutoff = 45, highPhaseCutoff = 135;
-  // loop over channels
-  for (int ch = 0; ch < 2; ch++) {
-    // Loop over number of tries
-    for (int ct = 0; ct < MAX_PHASE_TEST_CNT; ct++) {
-      ch_phase = read_memory(CH_PHASE_ADDR[ch], 1)[0];
-      // register returns a value in [0, 2^16]. Re-interpret as an angle in [0,
-      // 180].
-      ch_phase_deg = 180 * ch_phase / (1 << 16);
-      FILE_LOG(logDEBUG1) << ipAddr_ << " measured DAC "
-                          << ((ch == 0) ? "A" : "B") << " phase of "
-                          << ch_phase_deg;
-
-      if (ch_phase_deg < lowPhaseCutoff) {
-        // done with this channel
-        break;
-      } else {
-        // disable the channel PLL
-        set_register_bit(RESETS_ADDR, {CH_PLL_RESET_BIT[ch]});
-
-        if (ch_phase_deg >= lowPhaseCutoff && ch_phase_deg <= highPhaseCutoff) {
-          // disable then enable the DAC PLL
-          disable_DAC_clock(ch);
-          enable_DAC_clock(ch);
-        }
-
-        // enable the channel pll
-        clear_register_bit(RESETS_ADDR, {CH_PLL_RESET_BIT[ch]});
-      }
-      if (ct == MAX_PHASE_TEST_CNT - 1) {
-        FILE_LOG(logERROR) << ipAddr_ << " DAC " << ((ch == 0) ? "A" : "B")
-                           << " failed to sync";
-        // return -3;
-      }
-    }
-  }
-
-  // Enable DDRs
-  clear_register_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
-  // Enable DAC FIFOs
-  for (int dac = 0; dac < NUM_CHANNELS; dac++) {
-    enable_DAC_FIFO(dac);
-  }
-
-  FILE_LOG(logINFO) << ipAddr_ << " sync test complete";
-
-  return 0;
-}
-
 void APS2::check_clocks_status() {
   /*
    * Reads the locked status of the clock distribution PLL and the FPGA MMCM's
@@ -1481,7 +1420,7 @@ int APS2::get_PLL_freq() {
   return freq;
 }
 
-void APS2::enable_DAC_clock(const int &dac) {
+void APS2::enable_DAC_clock(const int dac) {
   // enables the PLL output to a DAC (0 or 1)
   const vector<uint16_t> DAC_PLL_ADDR = {0xF0, 0xF1};
 
@@ -1490,13 +1429,18 @@ void APS2::enable_DAC_clock(const int &dac) {
   write_SPI(msg);
 }
 
-void APS2::disable_DAC_clock(const int &dac) {
+void APS2::disable_DAC_clock(const int dac) {
   const vector<uint16_t> DAC_PLL_ADDR = {0xF0, 0xF1};
 
   vector<SPI_AddrData_t> disable_msg = {{DAC_PLL_ADDR[dac], 0x02},
                                         {0x232, 0x1}};
   auto msg = build_PLL_SPI_msg(disable_msg);
   write_SPI(msg);
+}
+
+void APS2::toggle_DAC_clock(const int dac) {
+  disable_DAC_clock(dac);
+  enable_DAC_clock(dac);
 }
 
 void APS2::setup_VCXO() {
@@ -1513,7 +1457,37 @@ void APS2::setup_VCXO() {
   write_SPI(msg);
 }
 
-void APS2::setup_DAC(const int &dac)
+void APS2::align_DAC_clock(int dac) {
+  // toggle DAC clocks until DATACLK_OUT comes up "aligned" to system 600
+  const vector<uint32_t> PHASE_COUNT_ADDR = {PHASE_COUNT_A_ADDR,
+                                             PHASE_COUNT_B_ADDR};
+  // Loop over number of tries
+  for (int ct = 0; ct < MAX_DAC_CLOCK_PHASE_TEST_TRIES; ct++) {
+    // register returns a value in [0, 0xffff]. Re-interpret as portion of
+    // circle
+    auto dac_clk_phase =
+        static_cast<double>(read_memory(PHASE_COUNT_ADDR[dac], 1)[0]) /
+        (0xffff);
+
+    FILE_LOG(logDEBUG1) << ipAddr_ << " measured DAC "
+                        << ((dac == 0) ? "A" : "B") << " clock phase of "
+                        << dac_clk_phase;
+
+    if (dac_clk_phase < 0.5) {
+      // done with this channel
+      return;
+    } else {
+      // toggle DAC clock to try and get different phase
+      toggle_DAC_clock(dac);
+      // wait for phase count to run
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+  }
+  // if we got here then we never aligned
+  FILE_LOG(logERROR) << ipAddr_ << " failed to align DAC " << dac;
+}
+
+void APS2::align_DAC_LVDS_capture(int dac)
 /*
  * Description: Aligns the data valid window of the DAC with the output of the
  * FPGA.
@@ -1543,6 +1517,7 @@ void APS2::setup_DAC(const int &dac)
   msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLERCLOCK_ADDR, 5}});
   write_SPI(msg);
 
+  // disable SYNC FIFO
   disable_DAC_FIFO(dac);
 
   // Step 1: calibrate and set the LVDS controller.
@@ -1640,7 +1615,7 @@ void APS2::setup_DAC(const int &dac)
   // write_SPI(msg);
 
   // turn on SYNC FIFO
-  enable_DAC_FIFO(dac);
+  // enable_DAC_FIFO(dac);
 }
 
 void APS2::set_DAC_SD(const int &dac, const uint8_t &sd) {
@@ -1661,6 +1636,23 @@ void APS2::run_chip_config(uint32_t addr /* default = 0 */) {
   cmd.ack = 1;
   cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::RUNCHIPCONFIG);
   ethernetRM_->send(ipAddr_, {{cmd, addr, {}}});
+}
+
+int APS2::get_DAC_FIFO_phase(const int dac) {
+  const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0,
+                                                CHIPCONFIG_TARGET_DAC_1};
+
+  auto data = read_SPI(targets[dac], DAC_FIFOSTAT_ADDR);
+  FILE_LOG(logDEBUG2) << ipAddr_ << " read: " << hexn<2> << int(data & 0xFF);
+
+  uint8_t phase = (data & 0x70) >> 4;  // phase (FIFOPHASE) is in bits <6:4>
+  uint8_t valid = (data >> 3) & 0x1;   // VALID is bit 3
+  uint8_t status = (data  >> 7) & 0x1; // error STATUS is bit 7
+  FILE_LOG(logDEBUG) << ipAddr_ << " DAC " << dac
+                     << " FIFO phase = " << int(phase)
+                     << " (valid=" << int(valid)
+                     << ", status=" << int(status) << ")";
+  return phase;
 }
 
 void APS2::enable_DAC_FIFO(const int &dac) {
@@ -1688,19 +1680,14 @@ void APS2::enable_DAC_FIFO(const int &dac) {
   write_SPI(msg);
 
   // read back FIFO phase to ensure we are in a safe zone
-  data = read_SPI(targets[dac], DAC_FIFOSTAT_ADDR);
-  FILE_LOG(logDEBUG2) << ipAddr_ << " read: " << hexn<2> << int(data & 0xFF);
-
-  // phase (FIFOPHASE) is in bits <6:4>
-  data = (data & 0x70) >> 4;
-  FILE_LOG(logDEBUG) << ipAddr_ << " FIFO phase = " << int(data);
+  uint8_t phase = get_DAC_FIFO_phase(dac);
 
   // fix the FIFO phase if too close together
   // want to get to a phase of 3 or 4, but can only change it by decreasing in
   // steps of 2 (mod 8),
   // i.e. setting OFFSET = 1, decreases the phase by 2
   // reduce the problem to making 0, 1, 2, 3 move towards 2
-  int8_t offset = ((data + 1) / 2) % 4;
+  int8_t offset = ((phase + 1) / 2) % 4;
   offset = mymod(offset - 2, 4);
   FILE_LOG(logDEBUG) << ipAddr_ << " setting FIFO offset = " << int(offset);
 
@@ -1708,9 +1695,7 @@ void APS2::enable_DAC_FIFO(const int &dac) {
   write_SPI(msg);
 
   // verify by measuring FIFO offset again
-  data = read_SPI(targets[dac], DAC_FIFOSTAT_ADDR);
-  data = (data & 0x70) >> 4;
-  FILE_LOG(logDEBUG) << ipAddr_ << " FIFO phase = " << int(data);
+  get_DAC_FIFO_phase(dac);
 }
 
 void APS2::disable_DAC_FIFO(const int &dac) {
@@ -1728,7 +1713,7 @@ void APS2::disable_DAC_FIFO(const int &dac) {
 }
 
 bool APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
-                       vector<uint32_t> &results) {
+                        vector<uint32_t> &results) {
   /*
   Measures the DAC BIST registers for a given test vector at three stages:
   leaving the FPGA, registering
@@ -1950,10 +1935,20 @@ bool APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
   write_reg(DAC_SD_ADDR, sd);
   write_reg(DAC_CONTROLLERCLOCK_ADDR, ccd);
 
-  bool passed =
-      (readResults[0] == phase1BIST) && (readResults[1] == phase2BIST) &&
-      (readResults[2] == phase1BIST) && (readResults[3] == phase2BIST) &&
-      (readResults[4] == phase1BIST) && (readResults[5] == phase2BIST);
+  // check if DAC is bitslipped and swap results accordingly
+  auto bitslip =
+      read_memory(dac == 0 ? BITSLIP_A_ADDR : BITSLIP_B_ADDR, 1).front();
+  if (bitslip % 2) {
+    FILE_LOG(logDEBUG)
+        << ipAddr_ << " DAC " << dac
+        << " has odd bitslip so swapping LVDS and SYNC BIST vals";
+    std::swap(results[4], results[5]);
+    std::swap(results[6], results[7]);
+  }
+
+  bool passed = (results[2] == phase1BIST) && (results[3] == phase2BIST) &&
+                (results[4] == phase1BIST) && (results[5] == phase2BIST) &&
+                (results[6] == phase1BIST) && (results[7] == phase2BIST);
   return passed;
 }
 

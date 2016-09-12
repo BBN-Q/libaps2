@@ -34,7 +34,7 @@ public:
 
   int setup_VCXO() const;
   int setup_PLL() const;
-  int setup_DACs();
+  void setup_DACs();
   void run_chip_config(uint32_t addr = 0x0);
 
   APSStatusBank_t read_status_registers();
@@ -59,6 +59,8 @@ public:
   bool get_channel_enabled(int) const;
   void set_channel_offset(int, float);
   float get_channel_offset(int) const;
+  void set_channel_bitslip(int, unsigned);
+  unsigned get_channel_bitslip(int);
 
   // the next six functions assume we can store a float in a 4 byte register on
   // the device
@@ -145,6 +147,7 @@ public:
   // DAC BIST test
   bool run_DAC_BIST(const int &, const vector<int16_t> &, vector<uint32_t> &);
   void set_DAC_SD(const int &, const uint8_t &);
+  void toggle_DAC_clock(const int);
 
 private:
   string ipAddr_;
@@ -164,19 +167,20 @@ private:
   // PLL methods
   int setup_PLL();
   int set_PLL_freq(const int &);
-  int test_PLL_sync();
   void check_clocks_status();
   int get_PLL_freq();
-  void enable_DAC_clock(const int &);
-  void disable_DAC_clock(const int &);
+  void enable_DAC_clock(const int);
+  void disable_DAC_clock(const int);
 
   // VCXO methods
   void setup_VCXO();
 
   // DAC methods
-  void setup_DAC(const int &);
+  void align_DAC_clock(int);
+  void align_DAC_LVDS_capture(int);
   void enable_DAC_FIFO(const int &);
   void disable_DAC_FIFO(const int &);
+  int get_DAC_FIFO_phase(const int);
 
   // int trigger();
   // int disable();

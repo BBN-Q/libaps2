@@ -174,6 +174,14 @@ classdef APS2 < handle
             aps2_call(obj, 'set_channel_enabled', channel-1, enabled);
         end
 
+        function val = get_channel_delay(obj, channel)
+            val = aps2_getter(obj, 'get_channel_delay', channel-1);
+        end
+
+        function set_channel_delay(obj, channel, delay)
+            aps2_call(obj, 'set_channel_delay', channel-1, delay);
+        end
+
         function set_mixer_amplitude_imbalance(obj, amp)
           aps2_call(obj, 'set_mixer_amplitude_imbalance', amp);
         end
