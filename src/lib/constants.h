@@ -341,12 +341,11 @@ typedef std::pair<uint16_t, uint8_t> SPI_AddrData_t;
 
 // Startup sequences
 
-// PLL setup sequence (modified for 300 MHz FPGA sys_clk and 1.2 GHz DACs)
+// PLL setup sequence (modified for 600 MHz FPGA sys_clk and 1.2 GHz DACs)
 const vector<SPI_AddrData_t> PLL_INIT = {
     {0x0, 0x99},  // Use SDO, Long instruction mode
     {0x10, 0x7C}, // Enable PLL, set charge pump to 4.8ma
-    {0x11,
-     0x5}, // Set reference divider R to 5 to divide 125 MHz reference to 25 MHz
+    {0x11, 0x5},  // Set reference divider R to 5 to divide 125 MHz reference to 25 MHz
     {0x14, 0x6},  // Set B counter to 6
     {0x16, 0x5},  // Set P prescaler to 16 and enable B counter (N = P*B = 96 to
                   // divide 2400 MHz to 25 MHz)
@@ -364,15 +363,12 @@ const vector<SPI_AddrData_t> PLL_INIT = {
     {0xF0, 0x00}, // Enable un-inverted 400mV clock on OUT0 (goes to DACA)
     {0xF1, 0x00}, // Enable un-inverted 400mV clock on OUT1 (goes to DACB)
     {0xF2, 0x02}, // Disable OUT2
-    {0xF3,
-     0x00}, // Enable un-inverted 400mV clock on OUT3 (goes to FPGA sys_clk)
+    {0xF3, 0x00}, // Enable un-inverted 400mV clock on OUT3 (goes to FPGA sys_clk)
     {0xF4, 0x02}, // Disable OUT4
-    {0xF5,
-     0x00}, // Enable un-inverted 400mV clock on OUT5 (goes to FPGA mem_clk)
+    {0xF5, 0x00}, // Enable un-inverted 400mV clock on OUT5 (goes to FPGA mem_clk)
     {0x190, 0x00}, // channel 0: no division
     {0x191, 0x80}, // Bypass 0 divider
-    // {0x193, 0x11}, // channel 1: (2 high, 2 low = 1.2 GHz / 4 = 300 MHz
-    // sys_clk)
+    // {0x193, 0x11}, // channel 1: (2 high, 2 low = 1.2 GHz / 4 = 300 MHz sys_clk)
     {0x193, 0x00}, // channel 1: (1 high, 1 low = 1.2 GHz / 2 = 600 MHz sys_clk)
     {0x196, 0x10}, // channel 2: (2 high, 1 low = 1.2 GHz / 3 = 400 MHz mem_clk)
     {0x1E0, 0x0},  // Set VCO post divide to 2
