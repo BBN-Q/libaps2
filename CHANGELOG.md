@@ -1,3 +1,15 @@
+# Version 1.1
+
+## Features:
+* consistent and stable aligned DAC outputs with firmware v4.3
+* bitslipping for single sample DAC delays
+
+## Fixes:
+* only program first slice once when using "all" (#83)
+* graceful exit when no APS2 slices found ()
+* Julia channel setter/getters fixed (#60) and removed unnecessary argument typing
+* asio updates to allow compiling on gcc 5.x and 6.x (#75)
+
 # Version 1.0
 
 ## Features:
