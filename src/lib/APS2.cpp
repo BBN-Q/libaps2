@@ -1645,11 +1645,14 @@ int APS2::get_DAC_FIFO_phase(const int dac) {
   auto data = read_SPI(targets[dac], DAC_FIFOSTAT_ADDR);
   FILE_LOG(logDEBUG2) << ipAddr_ << " read: " << hexn<2> << int(data & 0xFF);
 
-  // phase (FIFOPHASE) is in bits <6:4>
-  data = (data & 0x70) >> 4;
+  uint8_t phase = (data & 0x70) >> 4;  // phase (FIFOPHASE) is in bits <6:4>
+  uint8_t valid = (data >> 3) & 0x1;   // VALID is bit 3
+  uint8_t status = (data  >> 7) & 0x1; // error STATUS is bit 7
   FILE_LOG(logDEBUG) << ipAddr_ << " DAC " << dac
-                     << " FIFO phase = " << int(data);
-  return data;
+                     << " FIFO phase = " << int(phase)
+                     << " (valid=" << int(valid)
+                     << ", status=" << int(status) << ")";
+  return phase;
 }
 
 void APS2::enable_DAC_FIFO(const int &dac) {
