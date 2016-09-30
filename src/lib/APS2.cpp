@@ -1411,6 +1411,11 @@ int APS2::get_PLL_freq() {
       freq = 600;
       break;
     default:
+        FILE_LOG(logERROR) << "Unexpected PLL cycles value";
+        FILE_LOG(logERROR) << ipAddr_
+                            << " pll_cycles_val = " << hexn<2> << pll_cycles_val;
+        FILE_LOG(logERROR) << ipAddr_
+                            << " pll_bypass_val = " << hexn<2> << pll_bypass_val;
       throw APS2_BAD_PLL_VALUE;
     }
   }
