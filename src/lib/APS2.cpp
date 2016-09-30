@@ -1471,7 +1471,7 @@ void APS2::align_DAC_clock(int dac) {
     // register returns a value in [0, 0xffff]. Re-interpret as portion of
     // circle
     auto dac_clk_phase =
-        static_cast<double>(read_memory(PHASE_COUNT_ADDR[dac], 1)[0]) /
+        static_cast<double>(read_memory(PHASE_COUNT_ADDR[dac], 1)[0] & 0xffff) /
         (0xffff);
 
     FILE_LOG(logDEBUG1) << ipAddr_ << " measured DAC "
