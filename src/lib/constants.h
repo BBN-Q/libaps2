@@ -260,9 +260,6 @@ const uint32_t CH_B_WF_LENGTH_ADDR = CSR_AXI_OFFSET + 33 * 4;
 const uint32_t WF_SSB_FREQ_ADDR = CSR_AXI_OFFSET + 34 * 4;
 const uint32_t BITSLIP_A_ADDR = CSR_AXI_OFFSET + 35 * 4;
 const uint32_t BITSLIP_B_ADDR = CSR_AXI_OFFSET + 36 * 4;
-const uint32_t DAC_CLK_DELAY_A_ADDR = CSR_AXI_OFFSET + 37 * 4;
-const uint32_t DAC_CLK_DELAY_B_ADDR = CSR_AXI_OFFSET + 38 * 4;
-
 
 // TDM registers
 const uint32_t TDM_RESETS_ADDR = CSR_AXI_OFFSET + 0 * 4;
