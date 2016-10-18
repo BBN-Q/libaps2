@@ -400,23 +400,35 @@ void APS2::load_sequence_file(const string &seqFile) {
   }
 }
 
+void APS2::check_channel_num(int chan) const {
+  if (chan < 0 || chan >= NUM_ANALOG_CHANNELS) {
+    FILE_LOG(logERROR) << ipAddr_ << " invalid DAC " << chan;
+    throw APS2_INVALID_DAC;
+  }
+}
+
 void APS2::set_channel_enabled(int dac, bool enable) {
+  check_channel_num(dac);
   channels_[dac].set_enabled(enable);
 }
 
 bool APS2::get_channel_enabled(int dac) const {
+  check_channel_num(dac);
   return channels_[dac].get_enabled();
 }
 
 void APS2::set_channel_bitslip(int dac, unsigned slip) {
+  check_channel_num(dac);
   write_memory(dac == 0 ? BITSLIP_A_ADDR : BITSLIP_B_ADDR, slip & 0x3);
 }
 
 unsigned APS2::get_channel_bitslip(int dac) {
+  check_channel_num(dac);
   return read_memory(dac == 0 ? BITSLIP_A_ADDR : BITSLIP_B_ADDR, 1).front() & 0x3;
 }
 
 void APS2::set_channel_offset(int dac, float offset) {
+  check_channel_num(dac);
   // Scale offset to Q0.13 fixed point
   int16_t offset_fixed = offset * MAX_WF_AMP;
 
@@ -435,6 +447,7 @@ void APS2::set_channel_offset(int dac, float offset) {
 }
 
 float APS2::get_channel_offset(int dac) const {
+  check_channel_num(dac);
   // get register val
   uint32_t val = read_memory(CHANNEL_OFFSET_ADDR, 1)[0];
 
@@ -447,6 +460,7 @@ float APS2::get_channel_offset(int dac) const {
 }
 
 void APS2::set_channel_scale(int dac, float scale) {
+  check_channel_num(dac);
   // write register for future getting
   uint32_t reg_addr = dac == 0 ? CH_A_SCALE_ADDR : CH_B_SCALE_ADDR;
   write_memory(reg_addr, reinterpret_cast<uint32_t &>(scale));
@@ -455,6 +469,7 @@ void APS2::set_channel_scale(int dac, float scale) {
 }
 
 float APS2::get_channel_scale(int dac) const {
+  check_channel_num(dac);
   // get register value and convert back to float
   uint32_t reg_addr = dac == 0 ? CH_A_SCALE_ADDR : CH_B_SCALE_ADDR;
   return reinterpret_cast<float &>(read_memory(reg_addr, 1)[0]);
@@ -1226,22 +1241,8 @@ int APS2::setup_PLL() {
   // 300 MHz sys_clk to FPGA, and 400 MHz mem_clk to FPGA)
   FILE_LOG(logINFO) << ipAddr_ << " running base-line setup of PLL";
 
-  // Disable DDRs
-  // int ddrMask = CSRMSK_CHA_DDR | CSRMSK_CHB_DDR;
-  //	FPGA::clear_register_bit(socket_, FPGA_ADDR_CSR, ddrMask);
-  // disable dac FIFOs
-  // for (int dac = 0; dac < NUM_CHANNELS; dac++)
-  // disable_DAC_FIFO(dac);
-
   vector<uint32_t> msg = build_PLL_SPI_msg(PLL_INIT);
   write_SPI(msg);
-
-  // enable the oscillator
-  //	if (APS2::reset_status_ctrl() != 1)
-  //		return -1;
-
-  // Enable DDRs
-  //	FPGA::set_register_bit(socket_, FPGA_ADDR_CSR, ddrMask);
 
   // Record that sampling rate has been set to 1200
   samplingRate_ = 1200;
@@ -1426,6 +1427,7 @@ int APS2::get_PLL_freq() {
 }
 
 void APS2::enable_DAC_clock(const int dac) {
+  check_channel_num(dac);
   // enables the PLL output to a DAC (0 or 1)
   const vector<uint16_t> DAC_PLL_ADDR = {0xF0, 0xF1};
 
@@ -1435,6 +1437,7 @@ void APS2::enable_DAC_clock(const int dac) {
 }
 
 void APS2::disable_DAC_clock(const int dac) {
+  check_channel_num(dac);
   const vector<uint16_t> DAC_PLL_ADDR = {0xF0, 0xF1};
 
   vector<SPI_AddrData_t> disable_msg = {{DAC_PLL_ADDR[dac], 0x02},
@@ -1463,6 +1466,7 @@ void APS2::setup_VCXO() {
 }
 
 void APS2::align_DAC_clock(int dac) {
+  check_channel_num(dac);
   // toggle DAC clocks until DATACLK_OUT comes up "aligned" to system 600
   const vector<uint32_t> PHASE_COUNT_ADDR = {PHASE_COUNT_A_ADDR,
                                              PHASE_COUNT_B_ADDR};
@@ -1505,10 +1509,7 @@ void APS2::align_DAC_LVDS_capture(int dac)
   uint8_t SD, MSD, MHD;
   uint8_t edgeMSD, edgeMHD;
 
-  if (dac < 0 || dac >= NUM_CHANNELS) {
-    FILE_LOG(logERROR) << ipAddr_ << " APS2::setup_DAC unknown DAC, " << dac;
-    throw APS2_INVALID_DAC;
-  }
+  check_channel_num(dac);
   FILE_LOG(logINFO) << ipAddr_ << " setting up DAC " << dac;
 
   const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0,
@@ -1644,6 +1645,7 @@ void APS2::run_chip_config(uint32_t addr /* default = 0 */) {
 }
 
 int APS2::get_DAC_FIFO_phase(const int dac) {
+  check_channel_num(dac);
   const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0,
                                                 CHIPCONFIG_TARGET_DAC_1};
 
@@ -1662,7 +1664,7 @@ int APS2::get_DAC_FIFO_phase(const int dac) {
 
 void APS2::enable_DAC_FIFO(const int &dac) {
 
-  if (dac < 0 || dac >= NUM_CHANNELS) {
+  if (dac < 0 || dac >= NUM_ANALOG_CHANNELS) {
     FILE_LOG(logERROR) << ipAddr_ << " APS2::enable_DAC_FIFO unknown DAC, "
                        << dac;
     throw APS2_INVALID_DAC;

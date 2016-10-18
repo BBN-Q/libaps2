@@ -135,6 +135,10 @@ TEST_CASE("CSR", "CSR") {
     status = set_channel_scale(ip_addr.c_str(), chan, scale);
     REQUIRE(status == APS2_OK);
 
+    // trying to set channel scale on invalid channel should throw APS2_INVALID_DAC
+    status = set_channel_scale(ip_addr.c_str(), 2, 0.0);
+    REQUIRE(status == APS2_INVALID_DAC);
+
     // mixer amplitude imbalance
     float imbalance;
     // get current value

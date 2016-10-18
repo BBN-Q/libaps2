@@ -51,7 +51,7 @@ static std::map<APS2_STATUS, std::string> messages = {
                              "it is connected to network and that no other "
                              "system is connected."},
     {APS2_INVALID_DAC,
-     "API call requested invalide DAC channel.  Only 2 channels per module."},
+     "API call requested invalid DAC channel.  Only 2 channels per module."},
     {APS2_NO_SUCH_BITFILE, "Could not find bitfile at location specified."},
     {APS2_MAC_ADDR_VALIDATION_FAILURE,
      "Failed to validate the update to the MAC address in flash memory."},

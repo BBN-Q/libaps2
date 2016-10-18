@@ -19,7 +19,7 @@ using std::shared_ptr;
 class APS2 {
 
 public:
-  static const int NUM_CHANNELS = 2;
+  static const int NUM_ANALOG_CHANNELS = 2;
 
   // Constructors
   APS2();
@@ -55,6 +55,7 @@ public:
   double get_trigger_interval();
   void trigger();
 
+  void check_channel_num(const int) const;
   void set_channel_enabled(int, bool);
   bool get_channel_enabled(int) const;
   void set_channel_offset(int, float);
