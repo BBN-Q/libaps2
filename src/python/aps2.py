@@ -20,7 +20,7 @@ build_path = os.path.abspath(os.path.join(
     os.path.dirname(__file__), "..", "..", "build"))
 #On Windows add build path to system path to pick up DLL mingw dependencies
 if "Windows" in platform.platform():
-    os.environ["PATH"] += build_path
+    os.environ["PATH"] += ";" + build_path
 libaps2 = npct.load_library("libaps2", build_path)
 
 libaps2.get_device_IPs.argtypes              = [POINTER(c_char_p)]
@@ -163,7 +163,11 @@ def get_device_IPs():
 
 def enumerate():
     device_IPs = get_device_IPs()
-    return (len(device_IPs), device_IPs)
+    if device_IPs:
+        n = len(device_IPs)
+    else:
+        n = 0
+    return (n, device_IPs)
 
 
 def set_log(filename):
