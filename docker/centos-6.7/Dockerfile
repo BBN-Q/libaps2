@@ -15,8 +15,8 @@ RUN echo "source /opt/rh/devtoolset-3/enable" >> /root/.bashrc
 
 #install hdf5
 RUN source /opt/rh/devtoolset-3/enable && mkdir hdf5 && cd /hdf5 && \
-  wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.16.tar.bz2 && \
-  tar xjf hdf5-1.8.16.tar.bz2 && \
-  cd hdf5-1.8.16 && \
+  wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.17.tar.bz2 && \
+  tar xjf hdf5-1.8.17.tar.bz2 && \
+  cd hdf5-1.8.17 && \
   ./configure --prefix=/usr/local/hdf5 --enable-cxx && \
   make install
