@@ -1,3 +1,15 @@
+# Version 1.2
+
+## Features:
+* Compatibility with firmware v4.4
+* Faster queued interface between cache and main memory, giving more consistent
+performance
+* Revised channel alignment strategy that does not require calibration for each
+bit file
+
+## Fixes:
+* Removes spurious waveform cache miss indicator.
+
 # Version 1.1
 
 ## Features:
@@ -6,7 +18,7 @@
 
 ## Fixes:
 * only program first slice once when using "all" (#83)
-* graceful exit when no APS2 slices found ()
+* graceful exit when no APS2 slices found
 * Julia channel setter/getters fixed (#60) and removed unnecessary argument typing
 * asio updates to allow compiling on gcc 5.x and 6.x (#75)
 
