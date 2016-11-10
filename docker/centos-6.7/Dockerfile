@@ -29,3 +29,7 @@ RUN source /opt/rh/devtoolset-3/enable && mkdir cmake && cd /cmake && \
   cmake . && \
   make && \
   make install
+
+ENV HDF5_ROOT /usr/local/hdf5
+
+ENTRYPOINT ["/bin/bash"]
