@@ -29,7 +29,7 @@ const option::Descriptor usage[] = {
      "(0: external; 1: internal; 2: "
      "software - optional; default=1)."},
     {TRIG_INTERVAL, 0, "", "trigInterval", option::Arg::Numeric,
-     "	--trigRep	\t(optional) Internal trigger interval (optional; "
+     "	--trigInterval	\t(optional) Internal trigger interval (optional; "
      "default=10ms)."},
     {LOG_LEVEL, 0, "", "logLevel", option::Arg::Numeric,
      "	--logLevel	\t(optional) Logging level level to print to console "
