@@ -221,7 +221,7 @@ def add_setter(instr, name, cmd):
     getattr(libaps2, name).restype = c_int
     if isinstance(cmd, APS2_Chan_Setter):
         # There's an extra channel parameter here
-        getattr(libaps2, name).argtypes = [c_char_p, c_uint, cmd.arg_type]
+        getattr(libaps2, name).argtypes = [c_char_p, c_int, cmd.arg_type]
     else:
         getattr(libaps2, name).argtypes = [c_char_p, cmd.arg_type]
 
@@ -247,7 +247,7 @@ def add_getter(instr, name, cmd):
     if isinstance(cmd, APS2_Chan_Getter):
         # There's an extra channel parameter here
         getattr(libaps2,
-                name).argtypes = [c_char_p, c_uint, POINTER(cmd.arg_type)]
+                name).argtypes = [c_char_p, c_int, POINTER(cmd.arg_type)]
     else:
         getattr(libaps2, name).argtypes = [c_char_p, POINTER(cmd.arg_type)]
 
@@ -333,7 +333,7 @@ class APS2(metaclass=Parser):
     get_channel_scale = APS2_Chan_Getter(c_float)
 
     set_channel_enabled = APS2_Chan_Setter(c_int)
-    get_channel_enabled = APS2_Chan_Getter(c_int, return_type=bool)
+    get_channel_enabled = APS2_Chan_Getter(c_int)#, return_type=bool)
 
     set_channel_delay = APS2_Chan_Setter(c_uint)
     get_channel_delay = APS2_Chan_Getter(c_uint)
