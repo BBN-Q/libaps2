@@ -16,6 +16,15 @@ PROJECT( libaps2 )
 # Make sure we have C++11 support
 set (CMAKE_CXX_STANDARD 11)
 
+# build the library version string from git
+execute_process(
+  COMMAND git describe
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_DESCRIBE
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+string( REGEX MATCH "v(\d+)\.(\d+)-g.*$" VERSION_MAJOR VERSION_MINOR ${GIT_DESCRIBE} )
+
 set(APS2_VERSION_MAJOR 1)
 set(APS2_VERSION_MINOR 2)
 set(APS2_VERSION_PATCH 0)
