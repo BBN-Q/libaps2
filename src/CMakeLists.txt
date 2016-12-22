@@ -135,7 +135,7 @@ endif(WIN32)
 
 # IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 # 	SET(CMAKE_INSTALL_PREFIX "${PROJECT_BINARY_DIR}/install"
-# 		CACHE PATH "default install path")
+# 		CACHE PATH "default install path" FORCE)
 # ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 INSTALL(TARGETS ${bin_targets} aps2
@@ -146,7 +146,7 @@ INSTALL(FILES "${PROJECT_SOURCE_DIR}/lib/libaps2.h"
 			DESTINATION include)
 
 # On linux we need to ship the system libraries
-IF(UNIX AND NOT APPLE)
+IF(UNIX AND NOT APPLE AND NOT CONDA_BUILD)
 	GET_FILENAME_COMPONENT(GCC_PATH ${CMAKE_CXX_COMPILER} DIRECTORY)
 	FIND_LIBRARY(LIBGCC NAMES libgcc_s.so.1 HINTS ${GCC_PATH}/../lib64)
 	get_filename_component(LIBGCC_DIR ${LIBGCC} DIRECTORY)
@@ -188,10 +188,10 @@ ENDIF()
 INCLUDE( InstallRequiredSystemLibraries )
 
 if(APPLE)
-	set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH "@loader_path/../lib")
+	# set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH "@loader_path/../lib")
 	set_target_properties(aps2 PROPERTIES INSTALL_RPATH "@loader_path")
 elseif(UNIX)
-	set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
+	# set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
 	set_target_properties(aps2 PROPERTIES INSTALL_RPATH "\$ORIGIN")
 endif()
 
