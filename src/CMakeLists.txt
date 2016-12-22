@@ -146,7 +146,7 @@ INSTALL(FILES "${PROJECT_SOURCE_DIR}/lib/libaps2.h"
 			DESTINATION include)
 
 # On linux we need to ship the system libraries
-IF(UNIX AND NOT APPLE AND NOT CONDA_BUILD)
+IF(UNIX AND NOT APPLE)
 	GET_FILENAME_COMPONENT(GCC_PATH ${CMAKE_CXX_COMPILER} DIRECTORY)
 	FIND_LIBRARY(LIBGCC NAMES libgcc_s.so.1 HINTS ${GCC_PATH}/../lib64)
 	get_filename_component(LIBGCC_DIR ${LIBGCC} DIRECTORY)
@@ -185,7 +185,9 @@ IF(WIN32)
 		${CMAKE_THREAD_LIBS_INIT})
 ENDIF()
 
-INCLUDE( InstallRequiredSystemLibraries )
+IF(NOT ${CONDA_BUILD})
+	INCLUDE( InstallRequiredSystemLibraries )
+ENDIF()
 
 if(APPLE)
 	# set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH "@loader_path/../lib")
