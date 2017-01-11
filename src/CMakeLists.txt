@@ -22,8 +22,16 @@ set(APS2_VERSION_PATCH 0)
 set(APS2_VERSION_STRING ${APS2_VERSION_MAJOR}.${APS2_VERSION_MINOR}.${APS2_VERSION_PATCH})
 
 # look for HDF5
-FIND_PACKAGE(HDF5 REQUIRED COMPONENTS C CXX)
-INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIRS} )
+find_package (HDF5 COMPONENTS C CXX NO_MODULE REQUIRED static)
+INCLUDE_DIRECTORIES (${HDF5_INCLUDE_DIR})
+set (HDF5_LINK_LIBS ${HDF5_CXX_STATIC_LIBRARY})
+
+if(HDF5_FOUND)
+	message("Found HDF5 version ${HDF5_VERSION} and libraries ${HDF5_LINK_LIBS} with headers in ${HDF5_INCLUDE_DIR}")
+else()
+	message("HDF5 not found!")
+endif()
+#INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIRS} )
 
 # look for threading library
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -131,9 +139,9 @@ TARGET_LINK_LIBRARIES(dac_bist aps2)
 SET(bin_targets enumerate play_waveform play_sequence flash reset program dac_bist run_tests)
 
 if(WIN32)
-TARGET_LINK_LIBRARIES(aps2 ${HDF5_CXX_LIBRARIES} ws2_32 iphlpapi Threads::Threads)
+TARGET_LINK_LIBRARIES(aps2 ${HDF5_LINK_LIBS} ws2_32 iphlpapi Threads::Threads)
 else(WIN32)
-TARGET_LINK_LIBRARIES(aps2 ${HDF5_CXX_LIBRARIES} Threads::Threads)
+TARGET_LINK_LIBRARIES(aps2 ${HDF5_LINK_LIBS} Threads::Threads)
 endif(WIN32)
 
 # installation section
