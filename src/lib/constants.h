@@ -305,7 +305,7 @@ const unsigned AXI_RESET_BIT = 21;
 const unsigned AXI_RESETN_BIT = 20;
 
 // TDM reset control bits
-const int TDM_TRIGGER_RESET_BIT = 0;
+const unsigned TDM_TRIGGER_RESET_BIT = 0;
 
 // DAC SPI Addresses
 const uint8_t DAC_SYNC_ADDR = 0x0;

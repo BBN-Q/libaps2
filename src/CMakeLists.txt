@@ -46,6 +46,11 @@ if(WIN32)
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-D_WIN32_WINNT=0x0601")
 endif(WIN32)
 
+# don't let windows.h clobber std::min and std::max
+IF(MSVC)
+    add_definitions(-DNOMINMAX)
+ENDIF()
+
 # Warn all for better code
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
 
