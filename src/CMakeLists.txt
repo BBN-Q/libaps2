@@ -24,7 +24,7 @@ set(APS2_VERSION_STRING ${APS2_VERSION_MAJOR}.${APS2_VERSION_MINOR}.${APS2_VERSI
 if(MSVC)
 # look for HDF5 using the HDF5 provided hdf5-config.cmake
 # only works on Windows for now because there both Anaconda and HDF5 provide hdf5-config.cmake
-find_package (HDF5 REQUIRED COMPONENTS C CXX NO_MODULE static)
+find_package (HDF5 COMPONENTS C CXX NO_MODULE REQUIRED static)
 INCLUDE_DIRECTORIES (${HDF5_INCLUDE_DIR})
 set (HDF5_LINK_LIBS ${HDF5_CXX_STATIC_LIBRARY})
 else()
