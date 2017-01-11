@@ -21,17 +21,23 @@ set(APS2_VERSION_MINOR 2)
 set(APS2_VERSION_PATCH 0)
 set(APS2_VERSION_STRING ${APS2_VERSION_MAJOR}.${APS2_VERSION_MINOR}.${APS2_VERSION_PATCH})
 
-# look for HDF5
-find_package (HDF5 COMPONENTS C CXX NO_MODULE REQUIRED static)
+if(MSVC)
+# look for HDF5 using the HDF5 provided hdf5-config.cmake
+# only works on Windows for now because there both Anaconda and HDF5 provide hdf5-config.cmake
+find_package (HDF5 REQUIRED COMPONENTS C CXX NO_MODULE static)
 INCLUDE_DIRECTORIES (${HDF5_INCLUDE_DIR})
 set (HDF5_LINK_LIBS ${HDF5_CXX_STATIC_LIBRARY})
+else()
+# otherwise fall back to CMake's built-in FindHDF5.cmake logic
+FIND_PACKAGE(HDF5 REQUIRED COMPONENTS C CXX)
+INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIRS} )
+set (HDF5_LINK_LIBS ${HDF5_CXX_LIBRARIES})
+set (HDF5_INCLUDE_DIR ${HDF5_INCLUDE_DIRS})
+endif()
 
 if(HDF5_FOUND)
 	message("Found HDF5 version ${HDF5_VERSION} and libraries ${HDF5_LINK_LIBS} with headers in ${HDF5_INCLUDE_DIR}")
-else()
-	message("HDF5 not found!")
 endif()
-#INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIRS} )
 
 # look for threading library
 set(THREADS_PREFER_PTHREAD_FLAG ON)
