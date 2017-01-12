@@ -66,7 +66,11 @@ IF(MSVC)
 ENDIF()
 
 # Warn all for better code
+if(MSVC)
+	ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "/W4")
+else()
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
+endif()
 
 SET ( DLL_SRC
 	./lib/libaps2.cpp
