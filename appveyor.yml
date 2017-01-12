@@ -27,8 +27,6 @@ platform:
 configuration:
   - Release
 
-
-
 # scripts that run after cloning repository
 install:
   # HDF5
@@ -41,7 +39,7 @@ build:
   project: c:\projects\libaps2\build\ALL_BUILD.vcxproj      # path to Visual Studio solution or project
 
   # MSBuild verbosity level
-  verbosity: quiet|minimal|normal|detailed
+  verbosity: minimal
 
 # scripts to run before build
 before_build:
