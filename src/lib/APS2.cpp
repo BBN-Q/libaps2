@@ -577,16 +577,16 @@ void APS2::set_trigger_source(const APS2_TRIGGER_SOURCE &triggerSource) {
   FILE_LOG(logDEBUG) << ipAddr_ << " setting trigger source to "
                      << triggerSource;
 
-  uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
+  uint32_t regVal = read_memory(CONTROL_REG_ADDR, 1)[0];
 
   // Set the trigger source bits
   regVal = (regVal & ~(3 << TRIGSRC_BIT)) |
            (static_cast<uint32_t>(triggerSource) << TRIGSRC_BIT);
-  write_memory(SEQ_CONTROL_ADDR, regVal);
+  write_memory(CONTROL_REG_ADDR, regVal);
 }
 
 APS2_TRIGGER_SOURCE APS2::get_trigger_source() {
-  uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
+  uint32_t regVal = read_memory(CONTROL_REG_ADDR, 1)[0];
   return APS2_TRIGGER_SOURCE((regVal & (3 << TRIGSRC_BIT)) >> TRIGSRC_BIT);
 }
 
@@ -598,41 +598,33 @@ void APS2::set_trigger_interval(const double &interval) {
     // SM clock is 1/4 of samplingRate so the trigger interval in SM clock
     // periods is
     clocks = round(interval * 0.25 * get_sampleRate() * 1e6);
-    FILE_LOG(logDEBUG1) << ipAddr_ << " setting trigger interval to "
-                        << interval << "s (" << clocks << " cycles)";
-
-    write_memory(TRIGGER_INTERVAL_ADDR, clocks);
     break;
   case TDM:
     // TDM operates on a fixed 100 MHz clock
-    clocks = (interval * 100e6);
-    FILE_LOG(logDEBUG1) << ipAddr_ << " setting trigger interval to "
-                        << interval << "s (" << clocks << " cycles)";
-
-    write_memory(TDM_TRIGGER_INTERVAL_ADDR, clocks);
+    clocks = round(interval * 100e6);
     break;
   }
+  FILE_LOG(logDEBUG1) << ipAddr_ << " setting trigger interval to "
+                      << interval << "s (" << clocks << " cycles)";
+
+  write_memory(TRIGGER_INTERVAL_ADDR, clocks);
+
 }
 
 double APS2::get_trigger_interval() {
   FILE_LOG(logDEBUG) << ipAddr_ << " APS2::get_trigger_interval";
   uint32_t clocks;
+  clocks = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
+  FILE_LOG(logDEBUG1) << ipAddr_ << " trigger intervals clocks = " << clocks;
+  // convert from clock cycles to time
   switch (host_type) {
   case APS:
     // SM clock is 1/4 of samplingRate so the trigger interval in SM clock
     // periods is
-    clocks = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
-    FILE_LOG(logDEBUG1) << ipAddr_ << " trigger intervals clocks = " << clocks;
-    // Convert from clock cycles to time
     return static_cast<double>(clocks) / (0.25 * get_sampleRate() * 1e6);
-    break;
   case TDM:
-    clocks = read_memory(TDM_TRIGGER_INTERVAL_ADDR, 1)[0];
-    FILE_LOG(logDEBUG1) << ipAddr_ << " trigger intervals clocks = " << clocks;
-    // Convert from clock cycles to time
     // TDM operates on a fixed 100 MHz clock
     return static_cast<double>(clocks) / (100e6);
-    break;
   }
   // Shoud never get here;
   throw APS2_UNKNOWN_ERROR;
@@ -641,34 +633,28 @@ double APS2::get_trigger_interval() {
 void APS2::trigger() {
   // Apply a software trigger by toggling the trigger line
   FILE_LOG(logDEBUG) << ipAddr_ << " APS2::trigger";
-  uint32_t regVal = read_memory(SEQ_CONTROL_ADDR, 1)[0];
+  uint32_t regVal = read_memory(CONTROL_REG_ADDR, 1)[0];
   FILE_LOG(logDEBUG3) << ipAddr_ << " SEQ_CONTROL register was "
                       << hexn<8> << regVal;
   regVal ^= (1 << SOFT_TRIG_BIT);
   FILE_LOG(logDEBUG3) << ipAddr_ << " setting SEQ_CONTROL register to "
                       << hexn<8> << regVal;
-  write_memory(SEQ_CONTROL_ADDR, regVal);
+  write_memory(CONTROL_REG_ADDR, regVal);
 }
 
 void APS2::run() {
   FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::run";
-  switch (host_type) {
-  case APS:
+  if (host_type == APS) {
     FILE_LOG(logDEBUG1) << ipAddr_ << " releasing the cache controller...";
     set_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     FILE_LOG(logDEBUG1) << ipAddr_
                         << " releasing pulse sequencer state machine...";
-    set_register_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT});
+    set_register_bit(CONTROL_REG_ADDR, {SM_ENABLE_BIT});
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    FILE_LOG(logDEBUG1) << ipAddr_ << " enabling trigger...";
-    set_register_bit(SEQ_CONTROL_ADDR, {TRIGGER_ENABLE_BIT});
-    break;
-  case TDM:
-    FILE_LOG(logDEBUG1) << ipAddr_ << " enabling TDM trigger";
-    clear_register_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
-    break;
   }
+  FILE_LOG(logDEBUG1) << ipAddr_ << " enabling trigger...";
+  set_register_bit(CONTROL_REG_ADDR, {TRIGGER_ENABLE_BIT});
 }
 
 void APS2::stop() {
@@ -676,12 +662,12 @@ void APS2::stop() {
   switch (host_type) {
   case APS:
     // Put the sequencer and trigger back in reset
-    clear_register_bit(SEQ_CONTROL_ADDR, {SM_ENABLE_BIT, TRIGGER_ENABLE_BIT});
+    clear_register_bit(CONTROL_REG_ADDR, {SM_ENABLE_BIT, TRIGGER_ENABLE_BIT});
     // hold the cache in reset
     clear_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
     break;
   case TDM:
-    set_register_bit(TDM_RESETS_ADDR, {TDM_TRIGGER_RESET_BIT});
+    clear_register_bit(CONTROL_REG_ADDR, {TRIGGER_ENABLE_BIT});
     break;
   }
 }
