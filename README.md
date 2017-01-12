@@ -1,6 +1,8 @@
 C/C++ Driver for the BBN APSv2
 ===============================
 
+[![Build status](https://ci.appveyor.com/api/projects/status/96bjuekewvan9xry?svg=true)](https://ci.appveyor.com/project/caryan/libaps2)
+
 This repository provides the C++ (with a C calling API) driver for controlling the second generation [BBN Arbitrary Pulse Sequencer](http://quantum.bbn.com/tools/aps).  In addition to the C driver we provide thin wrappers for Matlab and Julia.  
 
 Documentation
@@ -13,7 +15,9 @@ This code is licensed under the Apache v2 license.  See the LICENSE file for mor
 
 Building
 ------------
-For those wishing to develop or build the driver from source for use on Linux or OS X. Prebuilt binaries for Windows are available on the releases tab.
+Only necessary for those wishing to develop or build the driver from source.
+Prebuilt binaries for Windows are available on the releases tab or for Python
+from the [conda package manager](https://anaconda.org/BBN-Q/libaps2).
 
 ### Clone repository
 We get the [asio](http://think-async.com/Asio) dependency via a submodule we need the --recursive switch
@@ -26,10 +30,36 @@ We get the [asio](http://think-async.com/Asio) dependency via a submodule we nee
 
 * C++ compiler with good C++11 support. See below for OS specific compilers tested.
 * [cmake](http://www.cmake.org/): Cmake build tool version 2.8 or higher (http://www.cmake.org/)
-* [hdf5](http://www.hdfgroup.org/HDF5/): Currently built against 1.8.13.  Watch out for HDF5 version incompatibilities with other programs (such as Matlab) that ship with a bundled HDF5 library.  You may have to use the environment variable ``HDF5_DISABLE_VERSION_CHECK=1`` to avoid conflict.
+* [hdf5](http://www.hdfgroup.org/HDF5/): Currently built against 1.8.18.  Watch out for HDF5 version incompatibilities with other programs (such as Matlab) that ship with a bundled HDF5 library.  You may have to use the environment variable ``HDF5_DISABLE_VERSION_CHECK=1`` to avoid conflict.
 
 ### Windows
-Using gcc on Windows is a rapidly moving target.  Our setup has changed every couple of months but the latest and most painless way has been using [MSYS2](http://sourceforge.net/projects/msys2/) and the [MinGW-w64](http://mingw-w64.sourceforge.net/) gcc compiler stack.
+
+#### Visual Studio
+
+We have built libaps2 with Visual Studio 2015 against the HDF5 provided
+installed static libraries from
+[here](https://support.hdfgroup.org/HDF5/release/obtain518.html) using the
+"CMake VS 2015 C, C++, IVF 16" version. In PowerShell with git available create
+the `version.hpp` file: ``cat .\src\lib\version_template.hpp | % {$_ -replace
+"<TOKEN>", "$(git describe --dirty)"} | Set-Content .\src\lib\version.hpp``.
+Then in the "VS2015 x64 Native Tools" command prompt
+
+```cmd
+md build
+cd build
+set HDF5_DIR=C:/Program Files/HDF_Group/HDF5/1.8.18/cmake
+cmake -G "Visual Studio 14 2015 Win64" ..\src
+cmake --build . --config Release
+```
+
+Building Debug builds causes link errors because the shipped HDF5 libraries were
+built in Release mode.
+
+#### MSYS2 and MinGW-w64
+
+The most painless way to use gcc on Windows has been using
+[MSYS2](http://sourceforge.net/projects/msys2/) and the
+[MinGW-w64](http://mingw-w64.sourceforge.net/) gcc compiler stack.
 
 1. [Download](http://msys2.github.io/) the MSYS2 installer and follow the instructions to install and update in place.
 2. Use pacman package manager to install some additional tools and libraries:
@@ -51,14 +81,13 @@ Using gcc on Windows is a rapidly moving target.  Our setup has changed every co
   ```
 
 Tested on:
-* Windows 7 Professional with gcc 4.9.2
-* Windows 10 Professional with gcc 5.2.0
+* Windows 10 Professional with gcc 6.1.0
 
 ### Linux
 Use your distribution's package manager to install the dependencies and it should work out of the box.
 
 Tested on:
-* Linux Mint 17.3 with gcc 4.7, 4.8
+* Linux Mint 18.1 with 5.4.0
 
 ### OS X
 1. Install the command-line developer tools.
