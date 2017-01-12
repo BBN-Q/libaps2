@@ -62,17 +62,11 @@ build_script:
 #      artifacts configuration    #
 #---------------------------------#
 
-# artifacts:
-#
-#   # pushing a single file
-#   - path: test.zip
-#
-#   # pushing a single file with environment variable in path and "Deployment name" specified
-#   - path: MyProject\bin\$(configuration)
-#     name: myapp
-#
-#   # pushing entire folder as a zip archive
-#   - path: logs
+artifacts:
+
+  # pushing entire folder as a zip archive
+  - path: build\Release
+
 #
 #     # Deploy to GitHub Releases
 #   - provider: GitHub
@@ -83,15 +77,3 @@ build_script:
 #       branch: master                # release from master branch only
 #       appveyor_repo_tag: true       # deploy on tag push only
 #
-#
-# scripts to run before deployment
-before_deploy:
-
-# scripts to run after deployment
-after_deploy:
-
-# to run your custom scripts instead of provider deployments
-deploy_script:
-
-# to disable deployment
-#deploy: off
