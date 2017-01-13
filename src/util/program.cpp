@@ -240,6 +240,7 @@ int main(int argc, char *argv[]) {
 
       if (status != APS2_OK) {
         std::cerr << "APS2 failed to come back up after programming!" << endl;
+        cout << concol::RESET << endl;
         disconnect_APS(ip_addr.c_str());
         return -1;
       }
