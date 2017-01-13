@@ -366,6 +366,7 @@ class APS2(metaclass=Parser):
         try:
             self.ip_address = ip_address
             self.connect_APS()
+            self.init()
         except Exception as e:
             self.ip_address = ""
             raise e
