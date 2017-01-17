@@ -3,7 +3,7 @@ import platform
 import warnings
 import numpy as np
 import numpy.ctypeslib as npct
-from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char,
+from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, \
                    c_char_p, addressof, create_string_buffer, byref, POINTER, CDLL
 from ctypes.util import find_library
 import sys
@@ -53,10 +53,10 @@ libaps2.get_ip_addr.restype                  = c_int
 libaps2.set_ip_addr.argtypes                 = [c_char_p, c_char_p]
 libaps2.set_ip_addr.restype                  = c_int
 libaps2.get_mixer_correction_matrix.argtypes = [c_char_p,
-	npct.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS')]
+    npct.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS')]
 libaps2.get_mixer_correction_matrix.restype  = c_int
 libaps2.set_mixer_correction_matrix.argtypes = [c_char_p,
-	npct.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS')]
+    npct.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS')]
 libaps2.set_mixer_correction_matrix.restype  = c_int
 
 # APS2_TRIGGER_SOURCE
