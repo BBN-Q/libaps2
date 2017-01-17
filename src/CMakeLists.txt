@@ -101,7 +101,9 @@ add_dependencies( aps2 update_version )
 set_target_properties(aps2 PROPERTIES
 	VERSION ${APS2_VERSION_STRING}
 	SOVERSION ${APS2_VERSION_MAJOR}
-	MACOSX_RPATH 1)
+	PREFIX "lib" # force lib prefix even on Windows
+	MACOSX_RPATH 1
+)
 
 foreach(target enumerate play_waveform play_sequence)
 	add_executable(${target} ./C++/${target}.cpp)
