@@ -97,17 +97,9 @@ set_target_properties(aps2 PROPERTIES
 	SOVERSION ${APS2_VERSION_MAJOR}
 	MACOSX_RPATH 1)
 
-ADD_EXECUTABLE(enumerate
-	./C++/enumerate.cpp
-)
-
-ADD_EXECUTABLE(play_waveform
-	./C++/play_waveform.cpp
-)
-
-ADD_EXECUTABLE(play_sequence
-	./C++/play_sequence.cpp
-)
+foreach(target enumerate play_waveform play_sequence)
+	add_executable(${target} ./C++/${target}.cpp)
+endforeach()
 
 ADD_EXECUTABLE(run_tests
 	../test/run_tests.cpp
@@ -123,39 +115,15 @@ ADD_EXECUTABLE(run_tests
 )
 TARGET_LINK_LIBRARIES(run_tests aps2 Threads::Threads)
 
-ADD_EXECUTABLE(flash
-	./util/flash.cpp
-)
+foreach(target flash reset program dac_bist)
+		add_executable(${target} ./util/${target}.cpp)
+endforeach()
 
-ADD_EXECUTABLE(reset
-	./util/reset.cpp
-)
+SET(BIN_TARGETS enumerate play_waveform play_sequence flash reset program dac_bist run_tests)
 
-ADD_EXECUTABLE(program
-	./util/program.cpp
-)
-
-ADD_EXECUTABLE(dac_bist
-	./util/DAC_BIST.cpp
-)
-
-TARGET_LINK_LIBRARIES(enumerate aps2)
-TARGET_LINK_LIBRARIES(play_waveform aps2)
-TARGET_LINK_LIBRARIES(play_sequence aps2)
-TARGET_LINK_LIBRARIES(flash aps2)
-TARGET_LINK_LIBRARIES(reset aps2)
-TARGET_LINK_LIBRARIES(program aps2)
-TARGET_LINK_LIBRARIES(dac_bist aps2)
-
-set_target_properties(enumerate PROPERTIES OUTPUT_NAME aps2_enumerate)
-set_target_properties(play_waveform PROPERTIES OUTPUT_NAME aps2_play_waveform)
-set_target_properties(play_sequence PROPERTIES OUTPUT_NAME aps2_play_sequence)
-set_target_properties(flash PROPERTIES OUTPUT_NAME aps2_flash)
-set_target_properties(reset PROPERTIES OUTPUT_NAME aps2_reset)
-set_target_properties(program PROPERTIES OUTPUT_NAME aps2_program)
-set_target_properties(dac_bist PROPERTIES OUTPUT_NAME aps2_dac_bist)
-
-SET(bin_targets enumerate play_waveform play_sequence flash reset program dac_bist run_tests)
+foreach(target ${BIN_TARGETS})
+	set_target_properties(${target} PROPERTIES LINK_LIBRARIES aps2 OUTPUT_NAME aps2_${target})
+endforeach()
 
 if(WIN32)
 TARGET_LINK_LIBRARIES(aps2 ${HDF5_LINK_LIBS} ws2_32 iphlpapi Threads::Threads)
@@ -164,7 +132,7 @@ TARGET_LINK_LIBRARIES(aps2 ${HDF5_LINK_LIBS} Threads::Threads)
 endif()
 
 # installation section
-INSTALL(TARGETS ${bin_targets} aps2
+INSTALL(TARGETS ${BIN_TARGETS} aps2
 			LIBRARY DESTINATION lib
 			RUNTIME DESTINATION bin)
 
@@ -216,10 +184,10 @@ IF(NOT ${CONDA_BUILD})
 ENDIF()
 
 if(APPLE)
-	# set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH "@loader_path/../lib")
+	# set_target_properties(${BIN_TARGETS} PROPERTIES INSTALL_RPATH "@loader_path/../lib")
 	set_target_properties(aps2 PROPERTIES INSTALL_RPATH "@loader_path")
 elseif(UNIX)
-	# set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
+	# set_target_properties(${BIN_TARGETS} PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
 	set_target_properties(aps2 PROPERTIES INSTALL_RPATH "\$ORIGIN")
 endif()
 
