@@ -55,10 +55,11 @@ INCLUDE_DIRECTORIES("../deps/Catch/include")
 
 # mingw64 defaults to WindowsXP SP03 which doesn't support the network calls we want
 # https://github.com/Alexpux/mingw-w64/blob/e960f8fffb399036079cef960a44e86a9abebc71/mingw-w64-headers/include/sdkddkver.h#L145
-# define windows 7 instead
+# and asio needs the Windows version defined
+# define windows 7
 if(WIN32)
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-D_WIN32_WINNT=0x0601")
-endif(WIN32)
+endif()
 
 # don't let windows.h clobber std::min and std::max
 IF(MSVC)
@@ -150,9 +151,9 @@ SET(bin_targets enumerate play_waveform play_sequence flash reset program dac_bi
 
 if(WIN32)
 TARGET_LINK_LIBRARIES(aps2 ${HDF5_LINK_LIBS} ws2_32 iphlpapi Threads::Threads)
-else(WIN32)
+else()
 TARGET_LINK_LIBRARIES(aps2 ${HDF5_LINK_LIBS} Threads::Threads)
-endif(WIN32)
+endif()
 
 # installation section
 
@@ -188,7 +189,7 @@ IF(UNIX AND NOT APPLE)
 ENDIF()
 
 # We need to ship libraries on windows, too, with slightly tweaked file names
-IF(WIN32)
+IF(WIN32 AND NOT MSVC)
 	GET_FILENAME_COMPONENT(GCC_PATH ${CMAKE_CXX_COMPILER} DIRECTORY)
 	FIND_LIBRARY(LIBGCC NAMES libgcc_s_seh-1.dll HINTS ${GCC_PATH})
 	FIND_LIBRARY(STDCPP NAMES libstdc++-6.dll HINTS ${GCC_PATH})
