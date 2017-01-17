@@ -193,10 +193,10 @@ if(NOT ${CONDA_BUILD})
 endif()
 
 if(APPLE)
-    # set_target_properties(${BIN_TARGETS} PROPERTIES INSTALL_RPATH "@loader_path/../lib")
+    set_target_properties(${BIN_TARGETS} PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
     set_target_properties(aps2 PROPERTIES INSTALL_RPATH "@loader_path")
 elseif(UNIX)
-    # set_target_properties(${BIN_TARGETS} PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
+    set_target_properties(${BIN_TARGETS} PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
     set_target_properties(aps2 PROPERTIES INSTALL_RPATH "\$ORIGIN")
 endif()
 
