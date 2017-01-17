@@ -18,7 +18,10 @@ np_uint16_1D = npct.ndpointer(dtype=np.uint16, ndim=1, flags='CONTIGUOUS')
 np_uint8_1D  = npct.ndpointer(dtype=np.uint8, ndim=1, flags='CONTIGUOUS')
 
 # load the shared library
-libpath = find_library("libaps2")
+# try with and without "lib" prefix
+libpath = find_library("aps2")
+if libpath is None:
+    libpath = find_library("libaps2")
 # if we still can't find it, then look in python prefix (where conda stores binaries)
 if libpath is None:
     libpath = sys.prefix + '/lib'
