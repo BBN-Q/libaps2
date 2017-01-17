@@ -3,7 +3,8 @@ import platform
 import warnings
 import numpy as np
 import numpy.ctypeslib as npct
-from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, c_char_p, addressof, create_string_buffer, byref, POINTER
+from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char,
+                   c_char_p, addressof, create_string_buffer, byref, POINTER, CDLL
 from ctypes.util import find_library
 import sys
 
