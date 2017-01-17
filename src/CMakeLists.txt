@@ -66,9 +66,15 @@ IF(MSVC)
     add_definitions(-DNOMINMAX)
 ENDIF()
 
-# Warn all for better code
+# Warn all for better code but disable some Visual Studio ones for now
+# warning C4127: conditional expression is constant - shows up in all logging statements
+# warning C4201: nonstandard extension used: nameless struct/union
+# warning C4244: 'initializing': conversion from 'unsigned int' to 'unsigned short', possible loss of data
+# warning C4267: 'argument': conversion from 'size_t' to 'uint32_t', possible loss of data
+# warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead.
+#     however can't use "_s" safe versions with glibc
 if(MSVC)
-	add_definitions(${CMAKE_CXX_FLAGS} "/W4")
+	add_definitions(${CMAKE_CXX_FLAGS} "/W3 /wd4127 /wd4201 /wd4244 /wd4267 /wd4996")
 else()
 add_definitions(${CMAKE_CXX_FLAGS} "-Wall")
 endif()
