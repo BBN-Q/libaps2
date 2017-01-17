@@ -147,6 +147,14 @@ TARGET_LINK_LIBRARIES(reset aps2)
 TARGET_LINK_LIBRARIES(program aps2)
 TARGET_LINK_LIBRARIES(dac_bist aps2)
 
+set_target_properties(enumerate PROPERTIES OUTPUT_NAME aps2_enumerate)
+set_target_properties(play_waveform PROPERTIES OUTPUT_NAME aps2_play_waveform)
+set_target_properties(play_sequence PROPERTIES OUTPUT_NAME aps2_play_sequence)
+set_target_properties(flash PROPERTIES OUTPUT_NAME aps2_flash)
+set_target_properties(reset PROPERTIES OUTPUT_NAME aps2_reset)
+set_target_properties(program PROPERTIES OUTPUT_NAME aps2_program)
+set_target_properties(dac_bist PROPERTIES OUTPUT_NAME aps2_dac_bist)
+
 SET(bin_targets enumerate play_waveform play_sequence flash reset program dac_bist run_tests)
 
 if(WIN32)
@@ -156,15 +164,9 @@ TARGET_LINK_LIBRARIES(aps2 ${HDF5_LINK_LIBS} Threads::Threads)
 endif()
 
 # installation section
-
-# IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-# 	SET(CMAKE_INSTALL_PREFIX "${PROJECT_BINARY_DIR}/install"
-# 		CACHE PATH "default install path" FORCE)
-# ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-
 INSTALL(TARGETS ${bin_targets} aps2
 			LIBRARY DESTINATION lib
-			RUNTIME DESTINATION ${PROJECT_BINARY_DIR}/bin)
+			RUNTIME DESTINATION bin)
 
 INSTALL(FILES "${PROJECT_SOURCE_DIR}/lib/libaps2.h"
 			DESTINATION include)
