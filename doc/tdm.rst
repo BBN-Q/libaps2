@@ -1,5 +1,5 @@
 Trigger Distribution Module
-==========================
+===========================
 
 The trigger distribution module (TDM) provides a flexible mechanism for
 distributing triggers and pulse sequence steering information across an APS2
