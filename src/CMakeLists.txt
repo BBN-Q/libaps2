@@ -18,15 +18,18 @@ set(CMAKE_CXX_STANDARD 11)
 
 # build the library version string from git
 execute_process(
-  COMMAND git describe
+  COMMAND git describe --dirty
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   OUTPUT_VARIABLE GIT_DESCRIBE
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-string( REGEX MATCH "v(\d+)\.(\d+)-g.*$" VERSION_MAJOR VERSION_MINOR ${GIT_DESCRIBE} )
+string( REGEX MATCH "^v([0-9]+)\.([0-9]+)" VERSION_STRING ${GIT_DESCRIBE} )
 
-set(APS2_VERSION_MAJOR 1)
-set(APS2_VERSION_MINOR 3)
+if (NOT VERSION_STRING)
+  message(WARNING "Failed to extract version string from 'git describe'")
+endif()
+set(APS2_VERSION_MAJOR ${CMAKE_MATCH_1})
+set(APS2_VERSION_MINOR ${CMAKE_MATCH_2})
 set(APS2_VERSION_PATCH 0)
 set(APS2_VERSION_STRING ${APS2_VERSION_MAJOR}.${APS2_VERSION_MINOR}.${APS2_VERSION_PATCH})
 
