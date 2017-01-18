@@ -4,7 +4,7 @@
 #include <string>
 using std::string;
 
-const string LIBAPS2_VERSION = "<TOKEN>";
+const string LIBAPS2_VERSION = "@GIT_DESCRIBE@";
 string get_driver_version() {
 	return LIBAPS2_VERSION;
 }

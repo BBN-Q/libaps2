@@ -16,8 +16,20 @@ project( libaps2 )
 # Make sure we have C++11 support
 set(CMAKE_CXX_STANDARD 11)
 
-set(APS2_VERSION_MAJOR 1)
-set(APS2_VERSION_MINOR 3)
+# build the library version string from git
+execute_process(
+  COMMAND git describe --dirty
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_DESCRIBE
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+string( REGEX MATCH "^v([0-9]+)\.([0-9]+)" VERSION_STRING ${GIT_DESCRIBE} )
+
+if (NOT VERSION_STRING)
+  message(WARNING "Failed to extract version string from 'git describe'")
+endif()
+set(APS2_VERSION_MAJOR ${CMAKE_MATCH_1})
+set(APS2_VERSION_MINOR ${CMAKE_MATCH_2})
 set(APS2_VERSION_PATCH 0)
 set(APS2_VERSION_STRING ${APS2_VERSION_MAJOR}.${APS2_VERSION_MINOR}.${APS2_VERSION_PATCH})
 
@@ -91,9 +103,14 @@ set ( DLL_SRC
 
 set_source_files_properties( ${DLL_SRC} PROPERTIES LANGUAGE CXX )
 
-add_custom_target( update_version
-    COMMAND ${PROJECT_SOURCE_DIR}/make_version.sh
+# create or update the version header file with the latest git describe
+# see https://cmake.org/pipermail/cmake/2010-July/038015.html
+add_custom_target(update_version
+    ${CMAKE_COMMAND} -D SRC=${CMAKE_SOURCE_DIR}/lib/version_template.hpp
+                     -D DST=${CMAKE_BINARY_DIR}/generated/version.hpp
+                     -P ${CMAKE_SOURCE_DIR}/lib/version.cmake
 )
+include_directories(${CMAKE_BINARY_DIR}/generated)
 
 add_library( aps2 SHARED ${DLL_SRC} )
 add_dependencies( aps2 update_version )
