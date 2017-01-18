@@ -43,8 +43,6 @@ after_build:
 
 # to run your custom scripts instead of automatic MSBuild
 build_script:
-  # create version.hpp
-  - ps: cat .\src\lib\version_template.hpp | % {$_ -replace "<TOKEN>", "$(git describe --dirty)"} | Set-Content .\src\lib\version.hpp
   # create build directory and call cmake
   - md build
   - cd build
