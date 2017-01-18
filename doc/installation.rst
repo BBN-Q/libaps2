@@ -52,14 +52,14 @@ snapshot of the source repository. Git users may instead clone the repo with::
 	git clone https://github.com/BBN-Q/libaps2.git
 
 Using git has the advantage that users may easily upgrade to future libaps2
-releases with `git pull`. Description of the source repository files is
+releases with ``git pull``. Description of the source repository files is
 available in the :ref:`file-list` section.
 
 Installation via conda
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Users of the Anaconda python distribution can install libaps2 via
-`conda`::
+``conda``::
 
 	conda install -c bbn-q libaps2
 
@@ -69,7 +69,7 @@ C:\\Users\\%USERNAME%\\Anaconda3\\Library on windows) such that it can be easily
 loaded by other programs. To verify that it worked, launch an ipython REPL and
 try::
 
-	In [1]: import libpaps2
+	In [1]: import aps2
 
 If that command runs without errors, the install completed successfully. If you
 encounter errors, verify that the Anaconda library folder is on your PATH.
@@ -79,7 +79,7 @@ Installation from source
 
 Users that need ultimate control over the libaps2 dependencies will want to
 build the shared library from source. Follow the instructions in the README to
-build the binaries. Our cmake scripts include an `install` target which will
+build the binaries. Our cmake scripts include an ``install`` target which will
 install the binaries in appropriate locations on your system with::
 
 	make install
@@ -98,10 +98,10 @@ Manual installation
 A third option is to download pre-built binaries from the "Releases" tab on
 GitHub (http://github.com/BBN-Q/libaps2/releases). Download the archive
 corresponding to your operating system and extract the files. On posix-systems,
-copy the contents of the archive to corresponding locations in `/usr/local`
-(i.e. copy files from `lib/` to `/usr/local/lib` and `include/` to
-`/usr/local/include`). On windows, add the `bin` folder to the PATH variable, or
-copy `libaps2.dll` to `C:\\windows\system32`.
+copy the contents of the archive to corresponding locations in ``/usr/local``
+(i.e. copy files from ``lib/`` to ``/usr/local/lib`` and ``include/`` to
+``/usr/local/include``). On windows, add the ``bin`` folder to the PATH
+variable, or copy ``libaps2.dll`` to ``C:\\windows\system32``.
 
 .. _file-list:
 
@@ -169,11 +169,11 @@ each module. By default, the APS2 modules will have addresses on the 192.168.2.X
 subnet (e.g. the leftmost module in the system will have the address
 192.168.2.2, and increase sequentially left-to-right). The ``enumerate()``
 method in libaps2 may be used to find APS2 modules on your current subnet.
-Another method, ``set_ip_addr()`` or the ``flash`` utility may be used to
+Another method, ``set_ip_addr()`` or the ``aps2_flash`` utility may be used to
 program new IP addresses. Since the APS2 modules will respond to any valid
 packet on its port, we recommend placing the APS2 system on a private network,
 or behind a firewall. The APS2 can also be setup to obtain a dynamically
-assigned IP address from a DHCP server.  The ``flash`` utility can be used to
+assigned IP address from a DHCP server.  The ``aps2_flash`` utility can be used to
 toggle between static and dynamic but the APS2 must be reset or power cycled for
 the setting to take effect. If the DHCP look-up fails the system will fall back
 to its static IP address.
@@ -230,7 +230,7 @@ can be loaded onto the APS2 modules using the ``aps2_program`` executable::
 
 	./aps2_program
 	BBN AP2 Firmware Programming Executable
-	USAGE: program [options]
+	USAGE: aps2_program [options]
 
 	Options:
 	  --help      Print usage and exit.
