@@ -26,7 +26,7 @@ install:
   # get dependencies
   - git submodule update --init --recursive
   # install HDF5
-  - ps: if not exist hdf5.zip Invoke-WebRequest "https://support.hdfgroup.org/ftp/HDF5/current18/bin/windows/extra/hdf5-1.8.18-win64-vs2015-shared.zip" -OutFile hdf5.zip
+  - ps: if (-not (Test-Path hdf5.zip)) {Invoke-WebRequest "https://support.hdfgroup.org/ftp/HDF5/current18/bin/windows/extra/hdf5-1.8.18-win64-vs2015-shared.zip" -OutFile hdf5.zip}
   - 7z x hdf5.zip -y
   - ps: Start-Process -FilePath msiexec -ArgumentList '/I "hdf5\HDF5-1.8.18-win64.msi" /quiet' -Wait
 
