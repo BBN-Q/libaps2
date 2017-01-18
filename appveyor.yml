@@ -50,10 +50,11 @@ build_script:
   - cmake -G "Visual Studio 14 2015 Win64" ..\src
   - cmake --build . --config %configuration%
 
-#---------------------------------#
-#      artifacts configuration    #
-#---------------------------------#
+cache:
+# cache dependency downloads to avoid network unreliability
+  - hdf5.zip -> appveyor.yml
 
+# artifacts configuration
 artifacts:
 
   # pushing entire folder as a zip archive
