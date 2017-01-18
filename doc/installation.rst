@@ -64,8 +64,8 @@ Users of the Anaconda python distribution can install libaps2 via
 	conda install -c bbn-q libaps2
 
 This command will install the libaps2 shared library and libaps2 python wrapper
-into your Anaconda path (~/anaconda3/lib on posix-systems, or
-C:\\Users\\%USERNAME%\\Anaconda3\\Library on windows) such that it can be easily
+into your Anaconda path (``~/anaconda3/lib`` on posix-systems, or
+``C:\Users\%USERNAME%\Anaconda3\Library`` on windows) such that it can be easily
 loaded by other programs. To verify that it worked, launch an ipython REPL and
 try::
 
@@ -101,7 +101,7 @@ corresponding to your operating system and extract the files. On posix-systems,
 copy the contents of the archive to corresponding locations in ``/usr/local``
 (i.e. copy files from ``lib/`` to ``/usr/local/lib`` and ``include/`` to
 ``/usr/local/include``). On windows, add the ``bin`` folder to the PATH
-variable, or copy ``libaps2.dll`` to ``C:\\windows\system32``.
+variable, or copy ``libaps2.dll`` to ``C:\windows\system32``.
 
 .. _file-list:
 
