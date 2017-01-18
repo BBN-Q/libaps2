@@ -3,7 +3,9 @@ import platform
 import warnings
 import numpy as np
 import numpy.ctypeslib as npct
-from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, c_char_p, addressof, create_string_buffer, byref, POINTER
+from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, \
+                   c_char_p, addressof, create_string_buffer, byref, POINTER, CDLL
+from ctypes.util import find_library
 import sys
 
 np_double_1D = npct.ndpointer(dtype=np.double, ndim=1, flags='CONTIGUOUS')
@@ -16,12 +18,16 @@ np_uint16_1D = npct.ndpointer(dtype=np.uint16, ndim=1, flags='CONTIGUOUS')
 np_uint8_1D  = npct.ndpointer(dtype=np.uint8, ndim=1, flags='CONTIGUOUS')
 
 # load the shared library
-build_path = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "..", "..", "build"))
-#On Windows add build path to system path to pick up DLL mingw dependencies
-if "Windows" in platform.platform():
-    os.environ["PATH"] += ";" + build_path
-libaps2 = npct.load_library("libaps2", build_path)
+# try with and without "lib" prefix
+libpath = find_library("aps2")
+if libpath is None:
+    libpath = find_library("libaps2")
+# if we still can't find it, then look in python prefix (where conda stores binaries)
+if libpath is None:
+    libpath = sys.prefix + '/lib'
+    libaps2 = npct.load_library("libaps2", libpath)
+else:
+    libaps2 = CDLL(libpath)
 
 libaps2.get_device_IPs.argtypes              = [POINTER(c_char_p)]
 libaps2.get_device_IPs.restype               = c_int
@@ -47,10 +53,10 @@ libaps2.get_ip_addr.restype                  = c_int
 libaps2.set_ip_addr.argtypes                 = [c_char_p, c_char_p]
 libaps2.set_ip_addr.restype                  = c_int
 libaps2.get_mixer_correction_matrix.argtypes = [c_char_p,
-	npct.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS')]
+    npct.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS')]
 libaps2.get_mixer_correction_matrix.restype  = c_int
 libaps2.set_mixer_correction_matrix.argtypes = [c_char_p,
-	npct.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS')]
+    npct.ndpointer(dtype=np.float32, ndim=2, flags='C_CONTIGUOUS')]
 libaps2.set_mixer_correction_matrix.restype  = c_int
 
 # APS2_TRIGGER_SOURCE
@@ -367,6 +373,7 @@ class APS2(metaclass=Parser):
         try:
             self.ip_address = ip_address
             self.connect_APS()
+            self.init()
         except Exception as e:
             self.ip_address = ""
             raise e

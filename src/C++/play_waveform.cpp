@@ -3,6 +3,7 @@
 #include <iterator>
 #include <signal.h>
 #include <vector>
+#include <algorithm> // std::max
 
 #include "concol.h"
 #include "helpers.h"

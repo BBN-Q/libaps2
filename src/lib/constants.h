@@ -232,7 +232,7 @@ const uint32_t WFA_OFFSET_ADDR = CSR_AXI_OFFSET + 5 * 4;
 const uint32_t WFB_OFFSET_ADDR = CSR_AXI_OFFSET + 6 * 4;
 const uint32_t SEQ_OFFSET_ADDR = CSR_AXI_OFFSET + 7 * 4;
 const uint32_t RESETS_ADDR = CSR_AXI_OFFSET + 8 * 4;
-const uint32_t SEQ_CONTROL_ADDR = CSR_AXI_OFFSET + 9 * 4;
+const uint32_t CONTROL_REG_ADDR = CSR_AXI_OFFSET + 9 * 4;
 const uint32_t CHANNEL_OFFSET_ADDR = CSR_AXI_OFFSET + 10 * 4;
 const uint32_t TRIGGER_WORD_ADDR = CSR_AXI_OFFSET + 11 * 4;
 const uint32_t TRIGGER_INTERVAL_ADDR = CSR_AXI_OFFSET + 12 * 4;
@@ -261,11 +261,8 @@ const uint32_t WF_SSB_FREQ_ADDR = CSR_AXI_OFFSET + 34 * 4;
 const uint32_t BITSLIP_A_ADDR = CSR_AXI_OFFSET + 35 * 4;
 const uint32_t BITSLIP_B_ADDR = CSR_AXI_OFFSET + 36 * 4;
 
-// TDM registers
-const uint32_t TDM_RESETS_ADDR = CSR_AXI_OFFSET + 0 * 4;
-const uint32_t TDM_TRIGGER_WORD = CSR_AXI_OFFSET + 1 * 4;
-const uint32_t TDM_TRIGGER_INTERVAL_ADDR = CSR_AXI_OFFSET + 2 * 4;
-const uint32_t TDM_TRIGGER_CONTROL_ADDR = CSR_AXI_OFFSET + 3 * 4;
+// TDM specific registers
+// .. none yet
 
 // APS2 memory map
 const uint32_t MEMORY_ADDR = 0x00000000u;
@@ -305,7 +302,7 @@ const unsigned AXI_RESET_BIT = 21;
 const unsigned AXI_RESETN_BIT = 20;
 
 // TDM reset control bits
-const int TDM_TRIGGER_RESET_BIT = 0;
+const unsigned TDM_TRIGGER_RESET_BIT = 0;
 
 // DAC SPI Addresses
 const uint8_t DAC_SYNC_ADDR = 0x0;

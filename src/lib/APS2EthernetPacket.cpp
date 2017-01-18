@@ -4,6 +4,9 @@
 #include <arpa/inet.h>
 #endif
 
+#include <iterator> // std::back_inserter
+#include <algorithm> // std::max
+
 #include "APS2EthernetPacket.h"
 #include "constants.h"
 

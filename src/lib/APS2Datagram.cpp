@@ -10,6 +10,7 @@
 #include "APS2Datagram.h"
 
 #include <iostream>
+#include <iterator>
 
 #include "APS2_errno.h"
 #include "constants.h"
