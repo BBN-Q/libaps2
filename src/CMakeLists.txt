@@ -103,9 +103,14 @@ set ( DLL_SRC
 
 set_source_files_properties( ${DLL_SRC} PROPERTIES LANGUAGE CXX )
 
-add_custom_target( update_version
-    COMMAND ${PROJECT_SOURCE_DIR}/make_version.sh
+# create or update the version header file with the latest git describe
+# see https://cmake.org/pipermail/cmake/2010-July/038015.html
+add_custom_target(update_version
+    ${CMAKE_COMMAND} -D SRC=${CMAKE_SOURCE_DIR}/lib/version_template.hpp
+                     -D DST=${CMAKE_BINARY_DIR}/generated/version.hpp
+                     -P ${CMAKE_SOURCE_DIR}/lib/version.cmake
 )
+include_directories(${CMAKE_BINARY_DIR}/generated)
 
 add_library( aps2 SHARED ${DLL_SRC} )
 add_dependencies( aps2 update_version )
