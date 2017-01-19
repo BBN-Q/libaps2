@@ -4,6 +4,13 @@ Installation Guide
 Hardware
 --------
 
+**IMPORTANT NOTE**: The APS2 enclosure has mounting brackets on the sides for
+securing the box to a standard 19" rack. However, these brackets *cannot*
+support the weight of the entire APS2 system. Therefore, you must mount the APS2
+on a shelf. Furthermore, the top-rear section of the APS2 enclosure has a screen
+which serves as the air intake for the cooling system. Never stack equipment on
+top of the APS2 in a way which blocks this air intake.
+
 The BBN APS2 system contains one or more analog output modules and an trigger
 distribution module in an enclosure that supplies power to each module. Up to 9
 analog modules may be installed in a single 19" 8U enclosure, providing 18
