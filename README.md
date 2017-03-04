@@ -107,6 +107,6 @@ Tested on:
 This software was funded in part by the Office of the Director of National
 Intelligence (ODNI), Intelligence Advanced Research Projects Activity (IARPA),
 through the Army Research Office contract No. W911NF-10-1-0324 and No.
-W911NF-14-1-0124. All statements of fact, opinion or conclusions contained
+W911NF-14-1-0114. All statements of fact, opinion or conclusions contained
 herein are those of the authors and should not be construed as representing the
 official views or policies of IARPA, the ODNI, or the US Government.
