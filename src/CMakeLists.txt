@@ -163,6 +163,8 @@ install(TARGETS ${BIN_TARGETS} aps2
     RUNTIME DESTINATION bin)
 
 install(FILES "${PROJECT_SOURCE_DIR}/lib/libaps2.h"
+              "${PROJECT_SOURCE_DIR}/lib/APS2_enums.h"
+              "${PROJECT_SOURCE_DIR}/lib/APS2_errno.h"
     DESTINATION include)
 
 # On linux we need to ship the system libraries
