@@ -648,11 +648,12 @@ void APS2::run() {
     FILE_LOG(logDEBUG1) << ipAddr_ << " releasing the cache controller...";
     set_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    FILE_LOG(logDEBUG1) << ipAddr_
-                        << " releasing pulse sequencer state machine...";
-    set_register_bit(CONTROL_REG_ADDR, {SM_ENABLE_BIT});
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
+  FILE_LOG(logDEBUG1) << ipAddr_
+                      << " releasing pulse sequencer state machine...";
+  set_register_bit(CONTROL_REG_ADDR, {SM_ENABLE_BIT});
+  std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
   FILE_LOG(logDEBUG1) << ipAddr_ << " enabling trigger...";
   set_register_bit(CONTROL_REG_ADDR, {TRIGGER_ENABLE_BIT});
 }
@@ -661,15 +662,14 @@ void APS2::stop() {
   FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::stop";
   switch (host_type) {
   case APS:
-    // Put the sequencer and trigger back in reset
-    clear_register_bit(CONTROL_REG_ADDR, {SM_ENABLE_BIT, TRIGGER_ENABLE_BIT});
     // hold the cache in reset
     clear_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
     break;
   case TDM:
-    clear_register_bit(CONTROL_REG_ADDR, {TRIGGER_ENABLE_BIT});
     break;
   }
+  // Put the sequencer and trigger back in reset
+  clear_register_bit(CONTROL_REG_ADDR, {SM_ENABLE_BIT, TRIGGER_ENABLE_BIT});
 }
 
 APS2_RUN_STATE APS2::get_runState() { return runState; }
@@ -1948,18 +1948,22 @@ bool APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
 void APS2::set_register_bit(const uint32_t &addr,
                             std::initializer_list<size_t> bits) {
   std::bitset<32> reg_val(read_memory(addr, 1).front());
+  FILE_LOG(logDEBUG) << "Updating 0x" << std::hex << addr << " From 0x" << reg_val.to_ulong();
   for (auto bit : bits) {
     reg_val.set(bit);
   }
+  FILE_LOG(logDEBUG) << "Updating 0x" << std::hex << addr << " To 0x" << reg_val.to_ulong() ;
   write_memory(addr, reg_val.to_ulong());
 }
 
 void APS2::clear_register_bit(const uint32_t &addr,
                               std::initializer_list<size_t> bits) {
   std::bitset<32> reg_val(read_memory(addr, 1).front());
+  FILE_LOG(logDEBUG) << "Updating 0x" << std::hex << addr << " From 0x" << reg_val.to_ulong();
   for (auto bit : bits) {
     reg_val.reset(bit);
   }
+  FILE_LOG(logDEBUG) << "Updating 0x" << std::hex << addr << " To 0x" << reg_val.to_ulong() << std::dec;
   write_memory(addr, reg_val.to_ulong());
 }
 
@@ -1988,6 +1992,7 @@ void APS2::write_waveform(const int &ch, const vector<int16_t> &wf) {
                         << std::dec << pad_words << " words";
     packed_data.resize(packed_data.size() + pad_words, 0xffffffff);
   }
+
 
   write_memory(startAddr, packed_data);
 
@@ -2020,12 +2025,31 @@ void APS2::write_sequence(const vector<uint64_t> &data) {
   }
 
   // disable/reset cache
-  clear_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
+  if (host_type == APS) {
+    clear_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
+  }
+
+  int addr = 0;
+  for ( auto d : packed_instructions) {
+    FILE_LOG(logDEBUG) << "W Sequence[" << addr++ <<"] = 0x" << std::hex << d;
+  }
 
   write_memory(MEMORY_ADDR + SEQ_OFFSET, packed_instructions);
 
+  //read_sequence(MEMORY_ADDR + SEQ_OFFSET, packed_instructions.size());
+
   // enable cache
-  set_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
+  if (host_type == APS) {
+    set_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
+  }
+}
+
+void APS2::read_sequence(const uint32_t addr, uint32_t num_words) {
+  auto data = read_memory(addr, num_words);
+  int laddr = 0;
+  for ( auto d : data) {
+    FILE_LOG(logDEBUG) << "R Sequence[" << laddr++ <<"] = 0x" << std::hex << d;
+  }
 }
 
 int APS2::write_memory_map(const uint32_t &wfA, const uint32_t &wfB,

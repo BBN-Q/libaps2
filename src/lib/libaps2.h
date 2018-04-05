@@ -86,7 +86,6 @@ EXPORT APS2_STATUS set_waveform_frequency(const char *, float);
 EXPORT APS2_STATUS get_waveform_frequency(const char *, float *);
 
 EXPORT APS2_STATUS load_sequence_file(const char *, const char *);
-
 EXPORT APS2_STATUS clear_channel_data(const char *);
 
 EXPORT APS2_STATUS run(const char *);

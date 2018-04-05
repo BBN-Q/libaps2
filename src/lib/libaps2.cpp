@@ -329,6 +329,7 @@ APS2_STATUS load_sequence_file(const char *deviceSerial, const char *seqFile) {
   return aps2_call(deviceSerial, &APS2::load_sequence_file, string(seqFile));
 }
 
+
 APS2_STATUS clear_channel_data(const char *deviceSerial) {
   return aps2_call(deviceSerial, &APS2::clear_channel_data);
 }
