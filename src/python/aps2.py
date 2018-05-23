@@ -17,11 +17,13 @@ np_uint32_1D = npct.ndpointer(dtype=np.uint32, ndim=1, flags='CONTIGUOUS')
 np_uint16_1D = npct.ndpointer(dtype=np.uint16, ndim=1, flags='CONTIGUOUS')
 np_uint8_1D  = npct.ndpointer(dtype=np.uint8, ndim=1, flags='CONTIGUOUS')
 
+libaps2 = None
+
 # determine OS
 if os.name == 'nt': # windows
     suffix = '\\Library\\bin'
 elif os.name == 'posix':
-    suffix = '/lib'
+    libaps2 = CDLL(find_library("aps2"))
 else:
     suffix = ''
 
@@ -34,7 +36,7 @@ if libpath is None:
 if libpath is None:
     libpath = sys.prefix + suffix
     libaps2 = npct.load_library("libaps2", libpath)
-else:
+elif libaps2 is None:
     libpath = sys.prefix + suffix
     libaps2 = CDLL(libpath)
 
