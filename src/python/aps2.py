@@ -32,6 +32,7 @@ else:
 libpath = find_library("aps2")
 if libpath is None:
     libpath = find_library("libaps2")
+    libaps2 = CDLL(libpath)
 # if we still can't find it, then look in python prefix (where conda stores binaries)
 if libpath is None:
     libpath = sys.prefix + suffix
