@@ -27,25 +27,16 @@ else:
 
 # load the shared library
 # try with and without "lib" prefix
-# libpath = find_library("aps2")
-# if libpath is None:
-    # libpath = find_library("libaps2")
-# # if we still can't find it, then look in python prefix (where conda stores binaries)
-# if libpath is None:
-    # libpath = sys.prefix + suffix
-    # libaps2 = npct.load_library("libaps2", libpath)
-# else:
-    # libpath = sys.prefix + suffix
-    # libaps2 = CDLL(libpath)
-
-pathToDll = r'C:\Users\sfallek\Documents\libaps2\build'
-# if not os.path.exists(pathToDll):
-    # #Give up if none of the above succeeded:
-    # raise Exception('Could not locate ' + pathToDll)
-curr_dir_before = os.getcwd()
-os.chdir(pathToDll)
-libaps2 = CDLL('libaps2.dll')
-os.chdir(curr_dir_before)
+libpath = find_library("aps2")
+if libpath is None:
+    libpath = find_library("libaps2")
+# if we still can't find it, then look in python prefix (where conda stores binaries)
+if libpath is None:
+    libpath = sys.prefix + suffix
+    libaps2 = npct.load_library("libaps2", libpath)
+else:
+    libpath = sys.prefix + suffix
+    libaps2 = CDLL(libpath)
 
 libaps2.get_device_IPs.argtypes              = [POINTER(c_char_p)]
 libaps2.get_device_IPs.restype               = c_int
