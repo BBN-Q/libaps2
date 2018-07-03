@@ -95,6 +95,7 @@ public:
   void clear_channel_data();
 
   void load_sequence_file(const string &);
+  void read_sequence(const uint32_t addr, uint32_t num_words);
 
   void run();
   void stop();
