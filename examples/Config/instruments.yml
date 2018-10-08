@@ -1,0 +1,141 @@
+BBNAPS1:
+  type: APS2
+  master: true
+  enabled: true
+  slave_trig: 12m1
+  address: 192.168.2.4
+  seq_file:
+  trigger_interval: 200e-6 
+  trigger_source: Internal
+  tx_channels:
+    '12':
+      phase_skew: 0.15021
+      amp_factor: 1
+      delay: 150e-9
+      '1':
+        enabled: true
+        offset: -0.02916
+        amplitude: 0.4
+      '2':
+        enabled: true
+        offset: 0.03763 
+        amplitude: 0.4
+  markers:
+    12m1:
+      delay: 0.0
+      length: 80e-9
+    12m2:
+      delay: 150.0e-9
+      length: 200e-9
+    12m3:
+      delay: 0.0
+    12m4:
+      delay: 0.0
+
+  name: BBNAPS1
+BBNAPS2:
+  type: APS2
+  enabled: true
+  master: false
+  slave_trig: 12m4
+  address: 192.168.2.2
+  seq_file:
+  trigger_interval: 200.0e-06
+  trigger_source: External
+  tx_channels:
+    '12':
+      phase_skew: -0.0047124
+      amp_factor: 1
+      '1':
+        enabled: true
+        offset: 0
+        amplitude: 0.2
+      '2':
+        enabled: true
+        offset: 0
+        amplitude: 0.2
+  markers:
+    12m1:
+      delay: 0.0
+    12m2:
+      delay: 0.0
+    12m3:
+      delay: 0.0
+    12m4:
+      delay: 0.0
+
+  name: BBNAPS2
+
+#Digitizers
+X6:
+  enabled: true
+  type: X6
+  address: 0
+  acquire_mode: digitizer
+  gen_fake_data: false
+  reference: external
+  record_length: 2048
+  nbr_segments: 1
+  nbr_round_robins: 1024
+  nbr_waveforms: 1
+  rx_channels:
+    '1':
+    '2':
+  streams: [raw, result1, result2]
+
+#Microwave sources
+AutodyneM1:
+  enabled: true
+  type: Labbrick
+  address: 1691
+  output: true
+  power: 10
+  frequency: 7.162e9 
+  reference: external
+
+  name: AutodyneM1
+q1source:
+  enabled: true
+  type: AgilentN5183A
+  address: 192.168.5.105
+  output: true
+  power: 13.0
+  frequency: 5458305238.0 
+  reference: 10MHz
+
+  name: q1source
+
+# AutodyneM2:
+# enabled: true
+# type: HolzworthHS9000
+# address: HS-9004A-492-4
+# output: true
+# power: 13.0
+# frequency: 6458305238.0 
+# reference: 10MHz
+# name: AutodyneM2
+  
+#TDM:
+  # enabled: true
+  # type: TDM
+  # master: true
+  # address: 192.168.2.201 
+  # seq_file:
+  # trigger_interval: 0.0001
+  # trigger_source: Internal   
+  
+# SALO:
+  # enabled: false
+  # type: Labbrick
+  # address: 1698
+  # output: true
+  # power: 1
+  # frequency: 7e9
+  # name: SALO
+  # reference: external
+# SA:
+  # enabled: false
+  # address: COM8
+  # type: SpectrumAnalyzer
+  # LO: SALO
+  # name: SA

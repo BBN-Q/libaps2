@@ -1,0 +1,141 @@
+#
+q1-demod-plot:
+  type: Plotter
+  enabled: false
+  source: Averager-Demod1 partial_average
+
+  plot_dims: 1
+  plot_mode: amp/phase
+q1-averaged:
+  type: Averager
+  enabled: true
+  source: q1-integrator
+  axis: round_robins
+
+q1-partialavg-plot:
+  type: Plotter
+  enabled: true
+  source: q1-averaged partial_average
+
+  plot_dims: 1
+  plot_mode: real/imag
+
+q1-finalavg-plot:
+  type: Plotter
+  enabled: true
+  source: q1-averaged final_average
+  plot_dims: 0
+  plot_mode: quad
+
+q1-integrator:
+  simple_kernel: true
+  frequency: 0.0
+  box_car_start: 7e-07  #2e-08
+  box_car_stop: 2.75e-06
+  source: q1-DemodSS
+  enabled: true
+  type: KernelIntegrator
+
+q1-RawSS:
+  source: X6
+  enabled: true
+  type: X6StreamSelector
+  channel: 1
+  dsp_channel: 1
+  stream_type: Raw
+  threshold: -0.165473
+q1-DemodSS:
+  channel: 1
+  dsp_channel: 1
+  if_freq: 10e6
+  stream_type: Demodulated
+  source: X6
+  enabled: true
+  type: X6StreamSelector
+  threshold: 2.752632
+WriteToHDF5-1:
+  filename: 
+  groupname: main
+  add_date: true
+  save_settings: true
+  source: q1-averaged final_average
+  enabled: true
+  type: WriteToHDF5
+DataBuffer-1:
+  source: SingleShotMeasurement-1 fidelity
+  enabled: true
+  type: DataBuffer
+SingleShotMeasurement-1:
+  save_kernel: true
+  optimal_integration_time: false
+  zero_mean: false
+  set_threshold: true
+  logistic_regression: false
+  source: q1-RawSS
+  enabled: true
+  type: SingleShotMeasurement
+q1-KernelFinalPlot:
+  plot_dims: 0
+  plot_mode: quad
+  source: q1-IntAverage final_average
+  enabled: false
+  type: Plotter
+q1-IntAverage:
+  axis: round_robins
+  source: q1-KernelSS
+  enabled: false
+  type: Averager
+q1-KernelPartialPlot:
+  plot_dims: 0
+  plot_mode: real/imag
+  source: q1-IntAverage partial_average
+  enabled: false
+  type: Plotter
+
+q1-KernelSS:
+  kernel: SingleShotMeasurement-1_kernel
+  channel: 1
+  dsp_channel: 1
+  stream_type: Integrated
+  source: X6
+  enabled: false
+  type: X6StreamSelector
+  threshold: -0.576648
+q1buff:
+  source: q1-averaged final_average
+  enabled: false
+  type: DataBuffer
+q1-Raw:
+  plot_dims: 1
+  plot_mode: amp/phase
+  source: Averager-1 partial_average
+  enabled: true
+  type: Plotter
+Averager-1:
+  axis: round_robins
+  source: q1-RawSS
+  enabled: true
+  type: Averager
+Plotter-1:
+  plot_dims: 0
+  plot_mode: real/imag
+  source: SingleShotMeasurement-1 fidelity
+  enabled: true
+  type: Plotter
+q1-demod-plot2D:
+  plot_dims: 0
+  plot_mode: real/imag
+  source: ''
+  enabled: false
+  type: Plotter
+q1-DemodAverage:
+  plot_dims: 0
+  plot_mode: amp/phase
+  source: Averager-Demod1 final_average
+  enabled: false
+  type: Plotter
+Averager-Demod1:
+  source: q1-DemodSS
+  enabled: true
+  type: Averager
+  axis: round_robins
