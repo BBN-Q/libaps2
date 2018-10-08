@@ -16,6 +16,7 @@ Contents:
    instruction-set
    formats
    api-reference
+   experimentsetup
 
 
 Indices and tables
