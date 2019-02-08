@@ -30,15 +30,12 @@ We get the [asio](http://think-async.com/Asio) dependency via a submodule we nee
 
 * C++ compiler with good C++11 support. See below for OS specific compilers tested.
 * [cmake](http://www.cmake.org/): Cmake build tool version 2.8 or higher (http://www.cmake.org/)
-* [hdf5](http://www.hdfgroup.org/HDF5/): Currently built against 1.8.18.  Watch out for HDF5 version incompatibilities with other programs (such as Matlab) that ship with a bundled HDF5 library.  You may have to use the environment variable ``HDF5_DISABLE_VERSION_CHECK=1`` to avoid conflict.
 
 ### Windows
 
 #### Visual Studio
 
-We have built libaps2 with Visual Studio 2015 against the HDF5 provided
-installed static libraries from
-[here](https://support.hdfgroup.org/HDF5/release/obtain518.html) using the
+We have built libaps2 with Visual Studio 2015 using the
 "CMake VS 2015 C, C++, IVF 16" version. In PowerShell with git available create
 the `version.hpp` file: ``cat .\src\lib\version_template.hpp | % {$_ -replace
 "<TOKEN>", "$(git describe --dirty)"} | Set-Content .\src\lib\version.hpp``.
@@ -47,13 +44,9 @@ Then in the "VS2015 x64 Native Tools" command prompt
 ```cmd
 md build
 cd build
-set HDF5_DIR=C:/Program Files/HDF_Group/HDF5/1.8.18/cmake
 cmake -G "Visual Studio 14 2015 Win64" ..\src
 cmake --build . --config Release
 ```
-
-Building Debug builds causes link errors because the shipped HDF5 libraries were
-built in Release mode.
 
 #### MSYS2 and MinGW-w64
 
@@ -69,7 +62,6 @@ The most painless way to use gcc on Windows has been using
   pacman -S mingw64/mingw-w64-x86_64-cmake
   pacman -S mingw64/mingw-w64-x86_64-gcc
   pacman -S mingw64/mingw-w64-x86_64-gdb
-  pacman -S mingw64/mingw-w64-x86_64-hdf5
   ```
 3. Finally build in the libaps2 folder
 
@@ -91,12 +83,7 @@ Tested on:
 
 ### OS X
 1. Install the command-line developer tools.
-2. Use [Homebrew](http://brew.sh/) to install hdf5 and cmake. For HDF5 you'll need to tap the science formulae and build the C++ bindings:
-
-    ```bash
-    brew tap homebrew/science
-    brew install hdf5 --enable-cxx
-    ```
+2. Use [Homebrew](http://brew.sh/) to install cmake. 
 3. Then a standard ``cmake ../src`` and ``make`` should build.
 
 Tested on:

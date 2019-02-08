@@ -217,7 +217,7 @@ classdef APS2 < handle
             %           chan_x.amplitude
             %           chan_x.offset
             %           chan_x.enabled
-            %  settings.seqFile - hdf5 sequence file
+            %  settings.seqFile - auspex sequence file
             %  settings.seqForce - force reload of file
 
             % Setup some defaults
