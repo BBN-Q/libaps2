@@ -2,7 +2,6 @@
 
 #include <iomanip>
 
-#include "H5Cpp.h"
 #include "logger.h"
 
 // N-wide hex output with 0x
