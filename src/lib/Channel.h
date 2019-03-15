@@ -14,7 +14,7 @@ using std::vector;
 #include <cstdint> //fixed width integers
 #include <string>
 using std::string;
-#include "H5Cpp.h"
+// #include "H5Cpp.h"
 #include <algorithm> //max_element
 #include <math.h>    //ceil
 
@@ -39,8 +39,8 @@ public:
 
   int clear_data();
 
-  int write_state_to_hdf5(H5::H5File &, const string &);
-  int read_state_from_hdf5(H5::H5File &, const string &);
+  // int write_state_to_hdf5(H5::H5File &, const string &);
+  // int read_state_from_hdf5(H5::H5File &, const string &);
 
   friend class APS2;
   friend class BankBouncerThread;

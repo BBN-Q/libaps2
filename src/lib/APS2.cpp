@@ -368,34 +368,41 @@ void APS2::clear_channel_data() {
 
 void APS2::load_sequence_file(const string &seqFile) {
   /*
-   * Load a sequence file from an H5 file
+   * Load a sequence file from a binary file
    */
-
-  // First open the file
   try {
     FILE_LOG(logINFO) << ipAddr_ << " opening sequence file: " << seqFile;
-    H5::H5File H5SeqFile(seqFile, H5F_ACC_RDONLY);
 
-    const vector<string> chanStrs = {"chan_1", "chan_2"};
-    // For now assume 2 channel data, TODO: check the channelDataFor attribute
+    // Read the header information
+    char junk[100];
+    uint64_t buff_length;
+    uint16_t num_chans;
+
+    std::fstream file(seqFile, std::ios::binary | std::ios::in);
+    if( !file ) throw APS2_SEQFILE_FAIL; 
+
+    file.read(junk, 12); // Don't need this info
+    file.read(reinterpret_cast<char *> (&num_chans), sizeof(uint16_t));
+
+    // Start anew
     clear_channel_data();
-    for (int chanct = 0; chanct < 2; chanct++) {
-      // Load the waveform library first
-      string chanStr = chanStrs[chanct];
-      vector<short> waveform = h5array2vector<short>(
-          &H5SeqFile, chanStr + "/waveforms", H5::PredType::NATIVE_INT16);
-      set_waveform(chanct, waveform);
 
-      if (chanct % 2 == 0) {
-        // load instruction data
-        vector<uint64_t> instructions = h5array2vector<uint64_t>(
-            &H5SeqFile, chanStr + "/instructions", H5::PredType::NATIVE_UINT64);
-        write_sequence(instructions);
-      }
+    // Read the instructions
+    file.read(reinterpret_cast<char *> (&buff_length), sizeof(uint64_t));
+    vector<uint64_t> instructions;
+    instructions.resize(buff_length);
+    file.read(reinterpret_cast<char *> (instructions.data()), buff_length*sizeof(uint64_t));
+    write_sequence(instructions);
+
+    // Read the waveforms
+    vector<int16_t> waveform;
+    for (int chanct = 0; chanct < num_chans; chanct++) {
+      file.read(reinterpret_cast<char *> (&buff_length), sizeof(uint64_t));
+      waveform.resize(buff_length);
+      file.read(reinterpret_cast<char *> (waveform.data()), buff_length*sizeof(int16_t));
+      set_waveform(chanct, waveform);
     }
-    // Close the file
-    H5SeqFile.close();
-  } catch (H5::FileIException &e) {
+  } catch (...) {
     throw APS2_SEQFILE_FAIL;
   }
 }

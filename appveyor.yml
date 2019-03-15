@@ -25,10 +25,6 @@ configuration:
 install:
   # get dependencies
   - git submodule update --init --recursive
-  # install HDF5
-  - ps: if (-not (Test-Path hdf5.zip)) {Invoke-WebRequest "https://support.hdfgroup.org/ftp/HDF5/current18/bin/windows/extra/hdf5-1.8.18-win64-vs2015-shared.zip" -OutFile hdf5.zip}
-  - 7z x hdf5.zip -y
-  - ps: Start-Process -FilePath msiexec -ArgumentList '/I "hdf5\HDF5-1.8.18-win64.msi" /quiet' -Wait
 
 build: off
 
@@ -46,13 +42,9 @@ build_script:
   # create build directory and call cmake
   - md build
   - cd build
-  - set HDF5_DIR=C:/Program Files/HDF_Group/HDF5/1.8.18/cmake
   - cmake -G "Visual Studio 14 2015 Win64" ..\src
   - cmake --build . --config %configuration%
 
-cache:
-# cache dependency downloads to avoid network unreliability
-  - hdf5.zip -> appveyor.yml
 
 # artifacts configuration
 artifacts:
