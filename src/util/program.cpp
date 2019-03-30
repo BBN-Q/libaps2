@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <iostream>
 #include <thread>
+#include <plog/Log.h>
 
 #include "constants.h"
 #include "libaps2.h"
@@ -115,11 +116,13 @@ int main(int argc, char *argv[]) {
   }
 
   // Logging level
-  TLogLevel logLevel = logDEBUG1;
+  plog::Severity logLevel = plog::debug;
   if (options[LOG_LEVEL]) {
-    logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
+    //TODO: Input validation??
+    logLevel =  static_cast<plog::Severity>(atoi(options[LOG_LEVEL].arg));
   }
-  set_logging_level(logLevel);
+  set_file_logging_level(logLevel);
+  set_console_logging_level(logLevel);
 
   vector<string> ip_addrs;
   if (options[IP_ADDR]) {

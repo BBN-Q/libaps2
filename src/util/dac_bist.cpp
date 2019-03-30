@@ -9,6 +9,7 @@ SYNC: on output clock on DAC
 #include <functional>
 #include <iostream>
 #include <random>
+#include <plog/Log.h>
 
 #include "../C++/helpers.h"
 #include "concol.h"
@@ -57,7 +58,8 @@ int main(int argc, char const *argv[]) {
     return 0;
   }
 
-  set_logging_level(logDEBUG1);
+  set_file_logging_level(plog::debug);
+  set_console_logging_level(plog::debug);
 
   connect_APS(deviceSerial.c_str());
   stop(deviceSerial.c_str());
