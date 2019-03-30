@@ -10,7 +10,8 @@
 
 #include "APS2_enums.h"
 #include "APS2_errno.h"
-#include "logger.h"
+#include <plog/Log.h>
+#include <plog/Appenders/ColorConsoleAppender.h>
 
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)

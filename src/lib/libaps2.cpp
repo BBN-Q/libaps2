@@ -21,26 +21,26 @@ map<string, std::unique_ptr<APS2>> APSs; // map to hold on to the APS instances
 set<string>
     deviceSerials; // set of APSs that responded to an enumerate broadcast
 
-// stub class to close the logger file handle when the driver goes out of scope
+// stub class to open loggers
 class InitAndCleanUp {
 public:
   InitAndCleanUp();
-  ~InitAndCleanUp();
 };
 
 InitAndCleanUp::InitAndCleanUp() {
-  // Open the default log file
-  FILE *pFile = fopen("libaps2.log", "a");
-  Output2FILE::Stream() = pFile;
-  FILE_LOG(logINFO) << "libaps2 version: " << get_driver_version();
+  //TODO: change log file path
+  if (!plog::get()) {
+    static plog::RollingFileAppender<plog::TxtFormatter> fileAppender("libaps2.log", 1000000, 3);
+    plog::init<1>(plog::info, @fileAppender)
+    static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
+    plog::init<2>(plog::warning, &consoleAppender);
+
+    plog::init(plog::verbose).addAppender(plog::get<1>()).addAppender(plog::get<2>());
+  }
+  LOG(plog::info) << "libaps2 driver version: " << get_driver_version();
 }
 
-InitAndCleanUp::~InitAndCleanUp() {
-  if (Output2FILE::Stream()) {
-    fclose(Output2FILE::Stream());
-  }
-}
-InitAndCleanUp initandcleanup_;
+static InitAndCleanUp initandcleanup_;
 
 // Return the shared_ptr to the Ethernet interface
 shared_ptr<APS2Ethernet> get_interface() {
@@ -51,10 +51,10 @@ shared_ptr<APS2Ethernet> get_interface() {
     try {
       myEthernetRM = std::make_shared<APS2Ethernet>();
     } catch (APS2_STATUS e) {
-      FILE_LOG(logERROR) << "Failed to create ethernet interface.";
+      LOG(plog::error) << "Failed to create ethernet interface.";
       throw;
     } catch (std::system_error e) {
-      FILE_LOG(logERROR) << "Unexpected error creating ethernet interface. Msg: " << e.what();
+      LOG(plog::error) << "Unexpected error creating ethernet interface. Msg: " << e.what();
       throw APS2_UNKNOWN_ERROR;
     }
     ethernetRM = myEthernetRM;
