@@ -343,7 +343,7 @@ void APS2Ethernet::connect(string ip_addr_str) {
     try {
       tcp_connect(ip_addr_str, sock);
     } catch (APS2_STATUS status) {
-      FILE_LOG(logWARNING) << "Failed to connect. Resetting APS2 TCP and retrying";
+      LOG(plog::warning) << "Failed to connect. Resetting APS2 TCP and retrying";
       reset_tcp(ip_addr_str);
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
       tcp_connect(ip_addr_str, sock);
