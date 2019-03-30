@@ -6,7 +6,28 @@ import numpy.ctypeslib as npct
 from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, \
                    c_char_p, addressof, create_string_buffer, byref, POINTER, CDLL
 from ctypes.util import find_library
+from enum import IntEnum
 import sys
+
+#ctypes compatible Enum class to set logger severity according to plog values
+#https://www.chriskrycho.com/2015/ctypes-structures-and-dll-exports.html
+
+class PlogSeverity(IntEnum):
+    none = 0
+    fatal = 1
+    error = 2
+    warning = 3
+    info = 4
+    debug = 5
+    verbose = 6
+
+    def __init__(self, value):
+        self._as_parameter = int(value)
+
+    @classmethod
+    def from_param(cls, obj):
+        return int(obj)
+
 
 np_double_1D = npct.ndpointer(dtype=np.double, ndim=1, flags='CONTIGUOUS')
 np_float_1D  = npct.ndpointer(dtype=np.float32, ndim=1, flags='CONTIGUOUS')
@@ -58,8 +79,10 @@ libaps2.load_sequence_file.argtypes          = [c_char_p, c_char_p]
 libaps2.load_sequence_file.restype           = c_int
 libaps2.set_log.argtypes                     = [c_char_p]
 libaps2.set_log.restype                      = c_int
-libaps2.set_logging_level.argtypes           = [c_int]
-libaps2.set_logging_level.restype            = c_int
+libaps2.set_file_logging_level.argtypes      = [PlogSeverity]
+libaps2.set_file_logging_level.restype       = c_int
+libaps2.set_console_logging_level.argtypes   = [PlogSeverity]
+libaps2.set_console_logging_level.restype    = c_int
 libaps2.get_ip_addr.argtypes                 = [c_char_p, POINTER(c_char)]
 libaps2.get_ip_addr.restype                  = c_int
 libaps2.set_ip_addr.argtypes                 = [c_char_p, c_char_p]
@@ -192,9 +215,11 @@ def set_log(filename):
     check(libaps2.set_log(filename.encode('utf-8')))
 
 
-def set_logging_level(level):
-    check(libaps2.set_logging_level(level))
+def set_file_logging_level(level):
+    check(libaps2.set_file_logging_level(level))
 
+def set_console_logging_level(level):
+    check(libaps2.set_file_logging_level(level))
 
 class APS2_Getter():
     def __init__(self, arg_type, return_type=None):
