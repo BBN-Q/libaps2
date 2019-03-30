@@ -93,8 +93,8 @@ EXPORT APS2_STATUS stop(const char *);
 EXPORT APS2_STATUS get_runState(const char *, APS2_RUN_STATE *);
 
 EXPORT APS2_STATUS set_log(const char *);
-EXPORT APS2_STATUS set_file_logging_level(int);
-EXPORT APS2_STATUS set_console_logging_level(int);
+EXPORT APS2_STATUS set_file_logging_level(plog::Severity);
+EXPORT APS2_STATUS set_console_logging_level(plog::Severity);
 
 EXPORT APS2_STATUS get_ip_addr(const char *, char *);
 EXPORT APS2_STATUS set_ip_addr(const char *, const char *);

@@ -383,13 +383,13 @@ APS2_STATUS set_log(const char *fileNameArr) {
   // }
 }
 
-APS2_STATUS set_file_logging_level(int severity) {
-  plog::get<FILE_LOG>()->setMaxSeverity(static_cast<plog::Severity>(severity));
+APS2_STATUS set_file_logging_level(plog::Severity severity) {
+  plog::get<FILE_LOG>()->setMaxSeverity(severity);
   return APS2_OK;
 }
 
-APS2_STATUS set_console_logging_level(int severity) {
-  plog::get<CONSOLE_LOG>()->setMaxSeverity(static_cast<plog::Severity>(severity));
+APS2_STATUS set_console_logging_level(plog::Severity severity) {
+  plog::get<CONSOLE_LOG>()->setMaxSeverity(severity);
   return APS2_OK;
 }
 
