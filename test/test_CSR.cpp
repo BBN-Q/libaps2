@@ -7,6 +7,8 @@
 #include <string>
 using std::string;
 
+#include <plog/Log.h>
+
 #include "catch.hpp"
 #include "constants.h"
 #include "libaps2.h"
@@ -17,7 +19,8 @@ extern string ip_addr; // ip address from run_tests
 
 TEST_CASE("CSR", "CSR") {
 
-  set_logging_level(logDEBUG1);
+  set_file_logging_level(plog::debug);
+  set_console_logging_level(plog::debug);
   APS2Connector connection(ip_addr);
   APS2_STATUS status;
 
