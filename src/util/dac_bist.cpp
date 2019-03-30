@@ -59,7 +59,7 @@ int main(int argc, char const *argv[]) {
   }
 
   set_file_logging_level(plog::debug);
-  set_console_logging_level(plog::debug);
+  set_console_logging_level(plog::info);
 
   connect_APS(deviceSerial.c_str());
   stop(deviceSerial.c_str());

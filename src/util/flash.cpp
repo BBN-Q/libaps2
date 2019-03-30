@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
     logLevel =  static_cast<plog::Severity>(atoi(options[LOG_LEVEL].arg));
   }
   set_file_logging_level(logLevel);
-  set_console_logging_level(logLevel);
+  set_console_logging_level(plog::info);
 
   string deviceSerial = get_device_id();
   if ( deviceSerial.empty() ) {
