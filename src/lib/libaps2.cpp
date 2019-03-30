@@ -15,6 +15,9 @@ using std::map;
 #include "libaps2.h"
 #include "version.hpp"
 
+#define FILE_LOG 1
+#define CONSOLE_LOG 2
+
 weak_ptr<APS2Ethernet>
     ethernetRM; // resource manager for the asio ethernet interface
 map<string, std::unique_ptr<APS2>> APSs; // map to hold on to the APS instances
@@ -31,12 +34,18 @@ InitAndCleanUp::InitAndCleanUp() {
   //TODO: change log file path
   if (!plog::get()) {
     static plog::RollingFileAppender<plog::TxtFormatter> fileAppender("libaps2.log", 1000000, 3);
-    plog::init<1>(plog::info, @fileAppender)
+    plog::init<FILE_LOG>(plog::info, &fileAppender);
     static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
-    plog::init<2>(plog::warning, &consoleAppender);
-
-    plog::init(plog::verbose).addAppender(plog::get<1>()).addAppender(plog::get<2>());
+    plog::init<CONSOLE_LOG>(plog::warning, &consoleAppender);
+    plog::init(plog::verbose).addAppender(plog::get<FILE_LOG>()).addAppender(plog::get<CONSOLE_LOG>());
   }
+
+  //make sure it was created correctly
+  if (!plog::get()){
+    std::cout << "Was unable to create a logger for libaps2! Exiting..." << std::endl;
+    throw APS2_FILELOG_ERROR; 
+  }
+
   LOG(plog::info) << "libaps2 driver version: " << get_driver_version();
 }
 
@@ -348,30 +357,39 @@ APS2_STATUS get_runState(const char *deviceSerial, APS2_RUN_STATE *state) {
 
 // Expects a null-terminated character array
 APS2_STATUS set_log(const char *fileNameArr) {
+  //TODO: Fixme?
+  
+  LOG(plog::warning) << "The plog logger cannot change the log file name.";
+  return APS2_OK;
 
-  // Close the current file
-  if (Output2FILE::Stream())
-    fclose(Output2FILE::Stream());
+  // // Close the current file
+  // if (Output2FILE::Stream())
+  //   fclose(Output2FILE::Stream());
 
-  string fileName(fileNameArr);
-  if (fileName.compare("stdout") == 0) {
-    Output2FILE::Stream() = stdout;
-    return APS2_OK;
-  } else if (fileName.compare("stderr") == 0) {
-    Output2FILE::Stream() = stdout;
-    return APS2_OK;
-  } else {
-    FILE *pFile = fopen(fileName.c_str(), "a");
-    if (!pFile) {
-      return APS2_FILELOG_ERROR;
-    }
-    Output2FILE::Stream() = pFile;
-    return APS2_OK;
-  }
+  // string fileName(fileNameArr);
+  // if (fileName.compare("stdout") == 0) {
+  //   Output2FILE::Stream() = stdout;
+  //   return APS2_OK;
+  // } else if (fileName.compare("stderr") == 0) {
+  //   Output2FILE::Stream() = stdout;
+  //   return APS2_OK;
+  // } else {
+  //   FILE *pFile = fopen(fileName.c_str(), "a");
+  //   if (!pFile) {
+  //     return APS2_FILELOG_ERROR;
+  //   }
+  //   Output2FILE::Stream() = pFile;
+  //   return APS2_OK;
+  // }
 }
 
-APS2_STATUS set_logging_level(TLogLevel logLevel) {
-  FILELog::ReportingLevel() = TLogLevel(logLevel);
+APS2_STATUS set_file_logging_level(int severity) {
+  plog::get<FILE_LOG>()->setMaxSeverity(static_cast<plog::Severity>(severity));
+  return APS2_OK;
+}
+
+APS2_STATUS set_console_logging_level(int severity) {
+  plog::get<CONSOLE_LOG>()->setMaxSeverity(static_cast<plog::Severity>(severity));
   return APS2_OK;
 }
 
