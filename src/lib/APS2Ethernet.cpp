@@ -58,6 +58,10 @@ APS2Ethernet::APS2Ethernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
 
 APS2Ethernet::~APS2Ethernet() {
   LOG(plog::debug) << "Cleaning up ethernet interface";
+  udp_socket_.cancel();
+  udp_socket_.close();
+  udp_socket_old_.cancel();
+  udp_socket_old_.close();
   ios_.stop();
   receiveThread_.join();
 }
