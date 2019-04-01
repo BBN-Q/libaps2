@@ -219,7 +219,7 @@ def set_file_logging_level(level):
     check(libaps2.set_file_logging_level(level))
 
 def set_console_logging_level(level):
-    check(libaps2.set_file_logging_level(level))
+    check(libaps2.set_console_logging_level(level))
 
 class APS2_Getter():
     def __init__(self, arg_type, return_type=None):
