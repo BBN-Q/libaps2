@@ -10,7 +10,7 @@ using std::vector;
 #include <chrono>
 #include <cstdlib> //size_t
 
-#include "logger.h"
+#include <plog/Log.h>
 
 #ifndef CONSTANTS_H_
 #define CONSTANTS_H_

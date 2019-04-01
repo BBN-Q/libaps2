@@ -10,7 +10,8 @@
 
 #include "APS2_enums.h"
 #include "APS2_errno.h"
-#include "logger.h"
+#include <plog/Log.h>
+#include <plog/Appenders/ColorConsoleAppender.h>
 
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
@@ -29,7 +30,6 @@ typedef enum APS2_STATUS APS2_STATUS;
 typedef enum APS2_TRIGGER_SOURCE APS2_TRIGGER_SOURCE;
 typedef enum APS2_RUN_MODE APS2_RUN_MODE;
 typedef enum APS2_RUN_STATE APS2_RUN_STATE;
-typedef enum TLogLevel TLogLevel;
 typedef enum APS2_BITFILE_STORAGE_MEDIA APS2_BITFILE_STORAGE_MEDIA;
 typedef enum APS2_BITFILE_WRITING_TASK APS2_BITFILE_WRITING_TASK;
 typedef enum APS2_RESET_MODE APS2_RESET_MODE;
@@ -93,7 +93,8 @@ EXPORT APS2_STATUS stop(const char *);
 EXPORT APS2_STATUS get_runState(const char *, APS2_RUN_STATE *);
 
 EXPORT APS2_STATUS set_log(const char *);
-EXPORT APS2_STATUS set_logging_level(TLogLevel);
+EXPORT APS2_STATUS set_file_logging_level(plog::Severity);
+EXPORT APS2_STATUS set_console_logging_level(plog::Severity);
 
 EXPORT APS2_STATUS get_ip_addr(const char *, char *);
 EXPORT APS2_STATUS set_ip_addr(const char *, const char *);

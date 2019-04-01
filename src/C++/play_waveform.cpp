@@ -76,10 +76,13 @@ int main(int argc, char *argv[]) {
     cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
   // Logging level
-  TLogLevel logLevel = logINFO;
+  plog::Severity logLevel = plog::info;
   if (options[LOG_LEVEL]) {
-    logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
+    //TODO: Input validation??
+    logLevel =  static_cast<plog::Severity>(atoi(options[LOG_LEVEL].arg));
   }
+  set_file_logging_level(logLevel);
+  set_console_logging_level(logLevel);
 
   // Trigger source -- default of internal
   APS2_TRIGGER_SOURCE triggerSource = INTERNAL;
@@ -92,8 +95,6 @@ int main(int argc, char *argv[]) {
   if (options[TRIG_INTERVAL]) {
     trigInterval = atof(options[TRIG_INTERVAL].arg);
   }
-  set_logging_level(logLevel);
-  set_log("stdout");
 
   // Load the waveform files
   vector<int16_t> wfA, wfB;

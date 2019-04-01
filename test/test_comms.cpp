@@ -5,6 +5,8 @@ using std::string;
 using std::cout;
 using std::endl;
 
+#include <plog/Log.h>
+
 #include "asio.hpp"
 #include "catch.hpp"
 
@@ -91,7 +93,8 @@ TEST_CASE("enumeration", "[enumerate]") {
 
 TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 
-  set_logging_level(logDEBUG1);
+  set_file_logging_level(plog::debug);
+  set_console_logging_level(plog::debug);
   APS2Connector connection(ip_addr);
 
   SECTION("variable write sizes") {
@@ -140,7 +143,8 @@ TEST_CASE("memory writing and reading", "[read_memory,write_memory]") {
 
 TEST_CASE("sequencer SDRAM write/read", "[sequencer SDRAM]") {
 
-  set_logging_level(logDEBUG1);
+  set_file_logging_level(plog::debug);
+  set_console_logging_level(plog::debug);
   APS2Connector connection(ip_addr);
 
   SECTION("basic write/read") {
@@ -214,7 +218,8 @@ TEST_CASE("configuration SDRAM writing and reading", "[configuration SDRAM]") {
 
 TEST_CASE("eprom read/write", "[eprom]") {
 
-  set_logging_level(logDEBUG1);
+  set_file_logging_level(plog::debug);
+  set_console_logging_level(plog::debug);
   APS2Connector connection(ip_addr);
 
   SECTION("basic write/read") {
@@ -257,7 +262,8 @@ TEST_CASE("eprom read/write", "[eprom]") {
 
 TEST_CASE("SPI", "[SPI]") {
 
-  set_logging_level(logDEBUG1);
+  set_file_logging_level(plog::debug);
+  set_console_logging_level(plog::debug);
   APS2Connector connection(ip_addr);
 
   SECTION("get_sampleRate") {

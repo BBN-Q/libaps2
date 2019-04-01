@@ -46,6 +46,9 @@ add_definitions(-DASIO_STANDALONE)
 # Catch unit-testing
 include_directories("../deps/Catch/include")
 
+#Plog logger
+include_directories("../deps/plog/include")
+
 # mingw64 defaults to WindowsXP SP03 which doesn't support the network calls we want
 # https://github.com/Alexpux/mingw-w64/blob/e960f8fffb399036079cef960a44e86a9abebc71/mingw-w64-headers/include/sdkddkver.h#L145
 # and asio needs the Windows version defined
