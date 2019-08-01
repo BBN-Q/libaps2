@@ -1,11 +1,56 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
+import sys
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+
+class bdist_wheel(_bdist_wheel):
+
+    def finalize_options(self):
+        _bdist_wheel.finalize_options(self)
+        # Mark us as not a pure python package
+        self.root_is_pure = False
+
+    def get_tag(self):
+        python, abi, plat = _bdist_wheel.get_tag(self)
+        # We don't contain any python source
+        python, abi = 'py3', 'none'
+        return python, abi, plat
+
+from sys import platform
+if "linux" in platform:
+    # linux
+    lib = 'libaps2.so'
+elif platform == "darwin":
+    # OS X
+    lib = 'libaps2.dylib'
+elif platform == "win32":
+    # Windows...
+    lib = 'libaps2.dll'
 
 setup(
     name='libaps2',
-    version="1.3",
+    version='2019.1',
+    author='BBN-Q Developers',
+    cmdclass={'bdist_wheel': bdist_wheel},
     url='https://github.com/BBN-Q/libaps2',
+    download_url='https://github.com/BBN-Q/auspex',
+    license="Apache 2.0 License",
+    description='BBN APS2 instrument control library.',
+    long_description=open('../../README.md').read(),
+    long_description_content_type='text/markdown',
     py_modules=["aps2"],
-    install_requires=[
-        'numpy>=1.18'
-    ]
+    data_files=[('lib', [lib])],
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: MacOS",
+        "Operating System :: POSIX",
+        "Operating System :: Microsoft :: Windows :: Windows 10",
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Topic :: Scientific/Engineering",
+    ],
+    python_requires='>=3.6',
+    keywords="quantum qubit arbitrary waveform instrument hardware"
 )
