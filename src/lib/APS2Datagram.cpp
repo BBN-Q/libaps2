@@ -63,7 +63,7 @@ vector<uint32_t> APS2Datagram::data() const {
 void APS2Datagram::check_ack(const APS2Datagram &ack,
                              bool legacy_firmware) const {
 
-  FILE_LOG(logDEBUG2) << "Checking APS2 acknowledge datagram: "
+  LOG(plog::debug) << "Checking APS2 acknowledge datagram: "
                       << hexn<8> << ack.cmd.packed << " "
                       << hexn<8> << ack.addr;
 
@@ -72,7 +72,7 @@ void APS2Datagram::check_ack(const APS2Datagram &ack,
     // TODO: generalize to tag
     uint32_t expected_mode_stat = legacy_firmware ? 0x80 : 0x81;
     if ((ack.cmd.mode_stat != expected_mode_stat)) {
-      FILE_LOG(logERROR) << "APS2 datamover reported error/tag code: "
+      LOG(plog::error) << "APS2 datamover reported error/tag code: "
                          << hexn<2> << ack.cmd.mode_stat;
       throw APS2_COMMS_ERROR;
     }
@@ -80,7 +80,7 @@ void APS2Datagram::check_ack(const APS2Datagram &ack,
     // legacy firmware does not report address
     uint32_t expected_addr = legacy_firmware ? 0 : addr;
     if ((ack.addr != expected_addr)) {
-      FILE_LOG(logERROR)
+      LOG(plog::error)
           << "acknowledge datagram has unexpected address: expected "
           << hexn<8> << expected_addr << " got " << ack.addr;
       throw APS2_COMMS_ERROR;
@@ -91,7 +91,7 @@ void APS2Datagram::check_ack(const APS2Datagram &ack,
   if ((cmd.r_w == 0) &&
       (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::FPGACONFIG_ACK)) {
     if (ack.cmd.mode_stat != 0x00) {
-      FILE_LOG(logERROR) << "APS2 CPLD reported error mode/stat "
+      LOG(plog::error) << "APS2 CPLD reported error mode/stat "
                          << hexn<2> << ack.cmd.mode_stat;
       throw APS2_COMMS_ERROR;
     }
@@ -100,7 +100,7 @@ void APS2Datagram::check_ack(const APS2Datagram &ack,
   // EPROM erases and writes
   if ((cmd.r_w == 0) && (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::EPROMIO)) {
     if (ack.cmd.mode_stat != EPROM_SUCCESS) {
-      FILE_LOG(logERROR) << "APS2 CPLD reported error in EPROMIO mode/stat = "
+      LOG(plog::error) << "APS2 CPLD reported error in EPROMIO mode/stat = "
                          << hexn<2> << ack.cmd.mode_stat;
       if (cmd.mode_stat == 0x01) {
         throw APS2_ERPOM_ERASE_FAILURE;
@@ -112,7 +112,7 @@ void APS2Datagram::check_ack(const APS2Datagram &ack,
   // chip config SPI writes
   if ((cmd.r_w == 0) && (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::CHIPCONFIGIO)) {
     if (ack.cmd.mode_stat != CHIPCONFIG_SUCCESS) {
-      FILE_LOG(logERROR)
+      LOG(plog::error)
           << "APS2 CPLD reported error in CHIPCONFIGIO.	mode/stat = "
           << hexn<2> << ack.cmd.mode_stat;
       throw APS2_COMMS_ERROR;
@@ -123,7 +123,7 @@ void APS2Datagram::check_ack(const APS2Datagram &ack,
   if ((cmd.r_w == 0) &&
       (APS_COMMANDS(cmd.cmd) == APS_COMMANDS::RUNCHIPCONFIG)) {
     if (ack.cmd.mode_stat != RUNCHIPCONFIG_SUCCESS) {
-      FILE_LOG(logERROR) << "APS2 CPLD reported error in RUNCHIPCONFIG.	"
+      LOG(plog::error) << "APS2 CPLD reported error in RUNCHIPCONFIG.	"
                             "mode/stat =	"
                          << hexn<2> << ack.cmd.mode_stat;
       throw APS2_COMMS_ERROR;

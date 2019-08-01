@@ -2,7 +2,7 @@
 
 #include <iomanip>
 
-#include "logger.h"
+#include <plog/Log.h>
 
 // N-wide hex output with 0x
 template <unsigned int N> std::ostream &hexn(std::ostream &out) {

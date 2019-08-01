@@ -1,6 +1,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <plog/Log.h>
 
 #include "../C++/helpers.h"
 #include "../C++/optionparser.h"
@@ -141,12 +142,13 @@ int main(int argc, char *argv[]) {
     std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
   // Logging level
-  TLogLevel logLevel = logINFO;
+  plog::Severity logLevel = plog::info;
   if (options[LOG_LEVEL]) {
-    logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
+    //TODO: Input validation??
+    logLevel =  static_cast<plog::Severity>(atoi(options[LOG_LEVEL].arg));
   }
-  set_log("stdout");
-  set_logging_level(logLevel);
+  set_file_logging_level(logLevel);
+  set_console_logging_level(plog::info);
 
   string deviceSerial = get_device_id();
   if ( deviceSerial.empty() ) {

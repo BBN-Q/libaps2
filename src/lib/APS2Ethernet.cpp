@@ -11,7 +11,7 @@ using std::queue;
 #include "APS2Ethernet.h"
 #include "constants.h"
 #include "helpers.h"
-#include "logger.h"
+#include <plog/Log.h>
 
 #ifdef _WIN32
 // need to include wincrypt to get definitions for CERT_NAME_BLOB and CRYPT_HASH_BLOB
@@ -23,7 +23,7 @@ using std::queue;
 #endif
 
 APS2Ethernet::APS2Ethernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
-  FILE_LOG(logDEBUG) << "APS2Ethernet::APS2Ethernet";
+  LOG(plog::debug) << "APS2Ethernet::APS2Ethernet";
 
   // Bind the old UDP socket at local port bb4e
   try {
@@ -57,7 +57,11 @@ APS2Ethernet::APS2Ethernet() : udp_socket_old_(ios_), udp_socket_(ios_) {
 }
 
 APS2Ethernet::~APS2Ethernet() {
-  FILE_LOG(logDEBUG) << "Cleaning up ethernet interface";
+  LOG(plog::debug) << "Cleaning up ethernet interface";
+  udp_socket_.cancel();
+  udp_socket_.close();
+  udp_socket_old_.cancel();
+  udp_socket_old_.close();
   ios_.stop();
   receiveThread_.join();
 }
@@ -101,7 +105,7 @@ void APS2Ethernet::sort_packet(const vector<uint8_t> &packetData,
       devInfo_[senderIP].macAddr = packet.header.src;
       APSStatusBank_t statusRegs;
       std::copy(packet.payload.begin(), packet.payload.end(), statusRegs.array);
-      FILE_LOG(logDEBUG1) << "Adding device info for IP " << senderIP
+      LOG(plog::debug) << "Adding device info for IP " << senderIP
                           << " ; MAC addresss "
                           << devInfo_[senderIP].macAddr.to_string()
                           << " ; firmware version "
@@ -110,15 +114,15 @@ void APS2Ethernet::sort_packet(const vector<uint8_t> &packetData,
     // New UDP port sends "I am an APS2"
     else if ((sender.port() == 0xbb4f) && (packetData.size() == 12)) {
       string response = string(packetData.begin(), packetData.end());
-      FILE_LOG(logDEBUG2) << "Enumerate response string " << response;
+      LOG(plog::debug) << "Enumerate response string " << response;
       if (response.compare("I am an APS2") == 0) {
         devInfo_[senderIP].supports_tcp = true;
-        FILE_LOG(logDEBUG1) << "Adding device info for IP " << senderIP;
+        LOG(plog::debug) << "Adding device info for IP " << senderIP;
       }
     }
   } else {
     // Turn the byte array into an APS2EthernetPacket
-    FILE_LOG(logDEBUG4) << "Recevied UDP packet to be sorted from IP "
+    LOG(plog::verbose) << "Recevied UDP packet to be sorted from IP "
                         << senderIP;
     APS2EthernetPacket packet = APS2EthernetPacket(packetData);
     // Grab a lock and push the packet into the message queue
@@ -134,7 +138,7 @@ void APS2Ethernet::init() { reset_maps(); }
 
 vector<std::pair<string, string>> APS2Ethernet::get_local_IPs() {
 
-  FILE_LOG(logDEBUG) << "APS2Ethernet::get_local_IPs";
+  LOG(plog::debug) << "APS2Ethernet::get_local_IPs";
 
   vector<std::pair<string, string>> IPs;
 
@@ -155,18 +159,18 @@ vector<std::pair<string, string>> APS2Ethernet::get_local_IPs() {
   if (dwRetVal == NO_ERROR) {
     for (pCurAddresses = pAddresses; pCurAddresses != nullptr;
          pCurAddresses = pCurAddresses->Next) {
-      FILE_LOG(logDEBUG1) << "Found IPv4 interface.";
-      FILE_LOG(logDEBUG3) << "IfIndex (IPv4 interface): "
+      LOG(plog::debug) << "Found IPv4 interface.";
+      LOG(plog::verbose) << "IfIndex (IPv4 interface): "
                           << pCurAddresses->IfIndex;
-      FILE_LOG(logDEBUG2) << "Adapter name: " << pCurAddresses->AdapterName;
-      FILE_LOG(logDEBUG2)
+      LOG(plog::debug) << "Adapter name: " << pCurAddresses->AdapterName;
+      LOG(plog::debug)
           << "Friendly adapter name: "
           << pCurAddresses->FriendlyName; // TODO figure out unicode printing
 
       // TODO: since we only support 1GigE should check that here
-      FILE_LOG(logDEBUG2) << "Transmit link speed: "
+      LOG(plog::debug) << "Transmit link speed: "
                           << pCurAddresses->TransmitLinkSpeed;
-      FILE_LOG(logDEBUG2) << "Receive link speed: "
+      LOG(plog::debug) << "Receive link speed: "
                           << pCurAddresses->ReceiveLinkSpeed;
 
       for (pUnicast = pCurAddresses->FirstUnicastAddress; pUnicast != nullptr;
@@ -180,7 +184,7 @@ vector<std::pair<string, string>> APS2Ethernet::get_local_IPs() {
                                  IPV4Addr, &addrSize);
         if (val != 0) {
           val = WSAGetLastError();
-          FILE_LOG(logERROR) << "WSAAddressToString error code: " << val;
+          LOG(plog::error) << "WSAAddressToString error code: " << val;
           continue;
         }
         // Create a sock_addr for the netmask string prefix to string conversion
@@ -192,7 +196,7 @@ vector<std::pair<string, string>> APS2Ethernet::get_local_IPs() {
 
         IPs.push_back(
             std::pair<string, string>(IPV4Addr, inet_ntoa(sin.sin_addr)));
-        FILE_LOG(logDEBUG1)
+        LOG(plog::debug)
             << "IPv4 address: " << IPs.back().first
             << "; Prefix length: " << (unsigned)pUnicast->OnLinkPrefixLength
             << "; Netmask: " << IPs.back().second;
@@ -201,7 +205,7 @@ vector<std::pair<string, string>> APS2Ethernet::get_local_IPs() {
     free(pAddresses);
     pAddresses = nullptr;
   } else {
-    FILE_LOG(logERROR) << "Call to GetAdaptersAddresses failed.";
+    LOG(plog::error) << "Call to GetAdaptersAddresses failed.";
     free(pAddresses);
     pAddresses = nullptr;
   }
@@ -225,7 +229,7 @@ vector<std::pair<string, string>> APS2Ethernet::get_local_IPs() {
         netmask = string(inet_ntoa(sa->sin_addr));
       }
       IPs.push_back(std::pair<string, string>(addr, netmask));
-      FILE_LOG(logDEBUG1) << "Found network interface: " << ifa->ifa_name
+      LOG(plog::debug) << "Found network interface: " << ifa->ifa_name
                           << "; Address: " << IPs.back().first
                           << "; Netmask: " << IPs.back().second;
     }
@@ -241,7 +245,7 @@ set<string> APS2Ethernet::enumerate() {
    * Look for all APS units that respond to the broadcast packet
    */
 
-  FILE_LOG(logDEBUG) << "APS2Ethernet::enumerate";
+  LOG(plog::debug) << "APS2Ethernet::enumerate";
 
   reset_maps();
 
@@ -257,7 +261,7 @@ set<string> APS2Ethernet::enumerate() {
     asio::error_code ec;
     addrv4::from_string(IP.first, ec);
     if (ec) {
-      FILE_LOG(logERROR) << "Invalid IP address: " << ec.message();
+      LOG(plog::error) << "Invalid IP address: " << ec.message();
       continue;
     }
     // Put together the broadcast status request
@@ -265,7 +269,7 @@ set<string> APS2Ethernet::enumerate() {
         APS2EthernetPacket::create_broadcast_packet();
     addrv4 broadcastAddr = addrv4::broadcast(addrv4::from_string(IP.first),
                                              addrv4::from_string(IP.second));
-    FILE_LOG(logDEBUG1) << "Sending enumerate broadcasts out on: "
+    LOG(plog::debug) << "Sending enumerate broadcasts out on: "
                         << broadcastAddr.to_string();
     // Try the old port
     udp::endpoint broadCastEndPoint(broadcastAddr, UDP_PORT_OLD);
@@ -282,7 +286,7 @@ set<string> APS2Ethernet::enumerate() {
 
   set<string> deviceSerials;
   for (auto kv : devInfo_) {
-    FILE_LOG(logINFO) << "Found device: " << kv.first << " with"
+    LOG(plog::info) << "Found device: " << kv.first << " with"
                       << (kv.second.supports_tcp ? "" : "out")
                       << " TCP support";
     deviceSerials.insert(kv.first);
@@ -296,11 +300,11 @@ void APS2Ethernet::reset_maps() {
 }
 
 void APS2Ethernet::connect(string ip_addr_str) {
-  FILE_LOG(logDEBUG) << ip_addr_str << " APS2Ethernet::connect";
+  LOG(plog::debug) << ip_addr_str << " APS2Ethernet::connect";
 
   // Check whether we have device info and if not send a ping
   if (devInfo_.find(ip_addr_str) == devInfo_.end()) {
-    FILE_LOG(logDEBUG) << "No device info for " << ip_addr_str
+    LOG(plog::debug) << "No device info for " << ip_addr_str
                        << " ; sending enumerate request";
 
     // Make sure it is a valid IP
@@ -308,7 +312,7 @@ void APS2Ethernet::connect(string ip_addr_str) {
     asio::error_code ec;
     addrv4 ip_addr = addrv4::from_string(ip_addr_str, ec);
     if (ec) {
-      FILE_LOG(logERROR) << "Invalid IP address: " << ec.message();
+      LOG(plog::error) << "Invalid IP address: " << ec.message();
       throw APS2_INVALID_IP_ADDR;
     }
     // Try the old port
@@ -328,7 +332,7 @@ void APS2Ethernet::connect(string ip_addr_str) {
 
     // Check again
     if (devInfo_.find(ip_addr_str) == devInfo_.end()) {
-      FILE_LOG(logERROR) << "APS2 failed to respond at " << ip_addr_str;
+      LOG(plog::error) << "APS2 failed to respond at " << ip_addr_str;
       throw APS2_NO_DEVICE_FOUND;
     }
   }
@@ -338,12 +342,12 @@ void APS2Ethernet::connect(string ip_addr_str) {
     // tcp_sockets_.insert(ip_addr_str, std::make_shared<tcp::socket>(ios_));
     // lowly C++11
     std::shared_ptr<tcp::socket> sock(new tcp::socket(ios_));
-    FILE_LOG(logDEBUG1) << ip_addr_str << " trying to connect to TCP port";
+    LOG(plog::debug) << ip_addr_str << " trying to connect to TCP port";
 
     try {
       tcp_connect(ip_addr_str, sock);
     } catch (APS2_STATUS status) {
-      FILE_LOG(logWARNING) << "Failed to connect. Resetting APS2 TCP and retrying";
+      LOG(plog::warning) << "Failed to connect. Resetting APS2 TCP and retrying";
       reset_tcp(ip_addr_str);
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
       tcp_connect(ip_addr_str, sock);
@@ -362,23 +366,23 @@ void APS2Ethernet::tcp_connect(string ip_addr_str, std::shared_ptr<tcp::socket> 
     tcp::endpoint(asio::ip::address_v4::from_string(ip_addr_str), TCP_PORT),
     asio::use_future);
   if (connect_result.wait_for(COMMS_TIMEOUT) == std::future_status::timeout) {
-    FILE_LOG(logERROR) << "Timed out trying to connect to " << ip_addr_str;
+    LOG(plog::error) << "Timed out trying to connect to " << ip_addr_str;
     throw APS2_FAILED_TO_CONNECT;
   }
   try {
     connect_result.get();
   } catch (std::system_error e) {
-    FILE_LOG(logERROR) << "Failed to connect to " << ip_addr_str
+    LOG(plog::error) << "Failed to connect to " << ip_addr_str
                        << " with error: " << e.what();
     throw APS2_FAILED_TO_CONNECT;
   }
 }
 
 void APS2Ethernet::disconnect(string ip_addr_str) {
-  FILE_LOG(logDEBUG) << ip_addr_str << " APS2Ethernet::disconnect";
+  LOG(plog::debug) << ip_addr_str << " APS2Ethernet::disconnect";
   if (devInfo_[ip_addr_str].supports_tcp) {
     if (tcp_sockets_.find(ip_addr_str) != tcp_sockets_.end()) {
-      FILE_LOG(logDEBUG1) << ip_addr_str << " cancelling and closing socket";
+      LOG(plog::debug) << ip_addr_str << " cancelling and closing socket";
       tcp_sockets_[ip_addr_str]->cancel();
       tcp_sockets_[ip_addr_str]->close();
       tcp_sockets_.erase(ip_addr_str);
@@ -396,7 +400,7 @@ void APS2Ethernet::reset_tcp(const string &ip_addr_str) {
   asio::error_code ec;
   addrv4 ip_addr = addrv4::from_string(ip_addr_str, ec);
   if (ec) {
-    FILE_LOG(logERROR) << "Invalid IP address: " << ec.message();
+    LOG(plog::error) << "Invalid IP address: " << ec.message();
     throw APS2_INVALID_IP_ADDR;
   }
 
@@ -406,9 +410,9 @@ void APS2Ethernet::reset_tcp(const string &ip_addr_str) {
 }
 
 void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> &datagrams) {
-  FILE_LOG(logDEBUG2) << "APS2Ethernet::send";
+  LOG(plog::debug) << "APS2Ethernet::send";
   if (devInfo_[ipAddr].supports_tcp) {
-    FILE_LOG(logDEBUG2) << "Sending " << datagrams.size() << " datagram"
+    LOG(plog::debug) << "Sending " << datagrams.size() << " datagram"
                         << (datagrams.size() > 1 ? "s" : "") << " over TCP";
 
     size_t ct = 0;
@@ -419,7 +423,7 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> &datagrams) {
         val = htonl(val);
       }
       ct++;
-      FILE_LOG(logDEBUG3) << ipAddr << " sending datagram " << ct << " of "
+      LOG(plog::verbose) << ipAddr << " sending datagram " << ct << " of "
                           << datagrams.size() << " with command word "
                           << hexn<8> << dg.cmd.packed << " to address "
                           << hexn<8> << dg.addr << " with payload size "
@@ -431,16 +435,16 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> &datagrams) {
 
       // Make sure the write was successful
       if (write_result.wait_for(COMMS_TIMEOUT) == std::future_status::timeout) {
-        FILE_LOG(logERROR) << ipAddr << " write timed out";
+        LOG(plog::error) << ipAddr << " write timed out";
         throw APS2_COMMS_ERROR;
       }
       try {
         size_t bytes_written = write_result.get();
-        FILE_LOG(logDEBUG3) << ipAddr << " wrote " << bytes_written
+        LOG(plog::verbose) << ipAddr << " wrote " << bytes_written
                             << " bytes for datagram " << ct << " of "
                             << datagrams.size();
       } catch (std::system_error e) {
-        FILE_LOG(logERROR) << ipAddr
+        LOG(plog::error) << ipAddr
                            << " write errored with message: " << e.what();
         throw APS2_COMMS_ERROR;
       }
@@ -453,7 +457,7 @@ void APS2Ethernet::send(string ipAddr, const vector<APS2Datagram> &datagrams) {
     }
 
   } else {
-    FILE_LOG(logDEBUG2) << "Sending " << datagrams.size() << " datagram"
+    LOG(plog::debug) << "Sending " << datagrams.size() << " datagram"
                         << (datagrams.size() > 1 ? "s" : "") << " over UDP";
     // Without TCP convert to APS2EthernetPacket packets and send
     for (auto dg : datagrams) {
@@ -485,8 +489,8 @@ int APS2Ethernet::send(string serial, APS2EthernetPacket msg,
 
 int APS2Ethernet::send(string serial, vector<APS2EthernetPacket> msg,
                        unsigned ackEvery /* see header for default */) {
-  FILE_LOG(logDEBUG2) << "APS2Ethernet::send";
-  FILE_LOG(logDEBUG3) << "Sending " << msg.size() << " packets to " << serial;
+  LOG(plog::debug) << "APS2Ethernet::send";
+  LOG(plog::verbose) << "Sending " << msg.size() << " packets to " << serial;
   auto iter = msg.begin();
   bool noACK = false;
   if (ackEvery == 0) {
@@ -527,7 +531,7 @@ int APS2Ethernet::send(string serial, vector<APS2EthernetPacket> msg,
     std::advance(iter, chunkSize);
 
     if (verbose && (std::distance(msg.begin(), iter) % 1000 == 0)) {
-      FILE_LOG(logDEBUG) << "Write "
+      LOG(plog::debug) << "Write "
                          << 100 * std::distance(msg.begin(), iter) / msg.size()
                          << "% complete";
     }
@@ -537,7 +541,7 @@ int APS2Ethernet::send(string serial, vector<APS2EthernetPacket> msg,
 
 void APS2Ethernet::send_chunk(string serial, vector<APS2EthernetPacket> chunk,
                               bool noACK) {
-  FILE_LOG(logDEBUG2) << "APS2Ethernet::send_chunk";
+  LOG(plog::debug) << "APS2Ethernet::send_chunk";
 
   unsigned seqNum{0};
 
@@ -545,7 +549,7 @@ void APS2Ethernet::send_chunk(string serial, vector<APS2EthernetPacket> chunk,
   for (auto packet : chunk) {
     packet.header.seqNum = seqNum;
     seqNum++;
-    FILE_LOG(logDEBUG4) << "Packet command: "
+    LOG(plog::verbose) << "Packet command: "
                         << packet.header.command.to_string();
     udp_socket_old_.send_to(asio::buffer(packet.serialize()),
                             devInfo_[serial].endpoint);
@@ -566,7 +570,7 @@ void APS2Ethernet::send_chunk(string serial, vector<APS2EthernetPacket> chunk,
 
 APS2Datagram APS2Ethernet::read(string ipAddr,
                                 std::chrono::milliseconds timeout) {
-  FILE_LOG(logDEBUG2) << "APS2Ethernet::read";
+  LOG(plog::debug) << "APS2Ethernet::read";
   if (devInfo_[ipAddr].supports_tcp) {
     // Read datagram from socket
     vector<uint32_t> buf;
@@ -575,14 +579,14 @@ APS2Datagram APS2Ethernet::read(string ipAddr,
       std::future<size_t> read_result = tcp_sockets_[ipAddr]->async_receive(
           asio::buffer(buf), asio::use_future);
       if (read_result.wait_for(timeout) == std::future_status::timeout) {
-        FILE_LOG(logERROR) << "TCP receive timed out!";
+        LOG(plog::error) << "TCP receive timed out!";
         throw APS2_RECEIVE_TIMEOUT;
       }
       try {
         size_t bytes_read = read_result.get();
-        FILE_LOG(logDEBUG3) << ipAddr << " read " << bytes_read << " bytes from stream";
+        LOG(plog::verbose) << ipAddr << " read " << bytes_read << " bytes from stream";
       } catch (std::system_error e) {
-        FILE_LOG(logERROR) << ipAddr
+        LOG(plog::error) << ipAddr
                            << " read errored with message: " << e.what();
         throw APS2_COMMS_ERROR;
       }
@@ -619,7 +623,7 @@ APS2Datagram APS2Ethernet::read(string ipAddr,
         val = ntohl(val);
       }
     }
-    FILE_LOG(logDEBUG3) << "Read APS2Datagram " << hexn<8> << cmd.packed << " "
+    LOG(plog::verbose) << "Read APS2Datagram " << hexn<8> << cmd.packed << " "
                         << hexn<8> << addr << " and payload length " << std::dec
                         << buf.size();
     return {cmd, addr, buf};
@@ -630,7 +634,7 @@ APS2Datagram APS2Ethernet::read(string ipAddr,
     // strip off the ethernet header
     APS2Command cmd;
     cmd.packed = pkt.header.command.packed;
-    FILE_LOG(logDEBUG3) << "Read APS2Datagram " << hexn<8> << cmd.packed << " "
+    LOG(plog::verbose) << "Read APS2Datagram " << hexn<8> << cmd.packed << " "
                         << hexn<8> << pkt.header.addr << " and payload length "
                         << std::dec << pkt.payload.size();
     return {cmd, pkt.header.addr, pkt.payload};
@@ -642,7 +646,7 @@ APS2Ethernet::receive(string serial, size_t numPackets, size_t timeoutMS) {
   // Read the packets coming back in up to the timeout
   // Defaults: receive(string serial, size_t numPackets = 1, size_t timeoutMS =
   // 1000);
-  FILE_LOG(logDEBUG2) << "APS2Ethernet::receive";
+  LOG(plog::debug) << "APS2Ethernet::receive";
   std::chrono::time_point<std::chrono::steady_clock> start, end;
 
   start = std::chrono::steady_clock::now();
@@ -656,10 +660,10 @@ APS2Ethernet::receive(string serial, size_t numPackets, size_t timeoutMS) {
       outVec.push_back(msgQueues_[serial].front());
       msgQueues_[serial].pop();
       msgQueue_lock_.unlock();
-      FILE_LOG(logDEBUG4) << "Received packet command: "
+      LOG(plog::verbose) << "Received packet command: "
                           << outVec.back().header.command.to_string();
       if (outVec.size() == numPackets) {
-        FILE_LOG(logDEBUG3) << "Received " << numPackets << " packets from "
+        LOG(plog::verbose) << "Received " << numPackets << " packets from "
                             << serial;
         return outVec;
       }

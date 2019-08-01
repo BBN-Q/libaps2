@@ -28,7 +28,7 @@ size_t Channel::get_length() const { return waveform_.size(); }
 void Channel::set_waveform(const vector<float> &data) {
   // Check whether we need to resize the waveform vector
   if (data.size() > size_t(MAX_WF_LENGTH)) {
-    FILE_LOG(logINFO)
+    LOG(plog::info)
         << "Warning: waveform too large to fit into memory. Waveform length: "
         << data.size();
   }
@@ -43,7 +43,7 @@ void Channel::set_waveform(const vector<float> &data) {
 
 void Channel::set_waveform(const vector<int16_t> &data) {
   if (data.size() > size_t(MAX_WF_LENGTH)) {
-    FILE_LOG(logINFO)
+    LOG(plog::info)
         << "Warning: waveform too large to fit into memory. Waveform length: "
         << data.size();
   }
@@ -61,7 +61,7 @@ void Channel::set_waveform(const vector<int16_t> &data) {
 
 int Channel::set_markers(const vector<uint8_t> &data) {
   if (data.size() > markers_.size()) {
-    FILE_LOG(logDEBUG) << "Marker data length does not match previously "
+    LOG(plog::debug) << "Marker data length does not match previously "
                           "uploaded waveform data: "
                        << data.size();
     markers_.resize(size_t(WF_MODULUS * ceil(float(data.size()) / WF_MODULUS)),
@@ -83,7 +83,7 @@ vector<int16_t> Channel::prep_waveform() const {
   // Signed integer data is asymmetric: can go to -8192 but only up to 8191.
   if ((prepVec.size() > 0) &&
       (*max_element(prepVec.begin(), prepVec.end()) > MAX_WF_AMP)) {
-    FILE_LOG(logWARNING) << "Waveform element too positive. Clipping to max.";
+    LOG(plog::warning) << "Waveform element too positive. Clipping to max.";
     for (int16_t &tmpVal : prepVec) {
       if (tmpVal > MAX_WF_AMP)
         tmpVal = MAX_WF_AMP;
@@ -91,7 +91,7 @@ vector<int16_t> Channel::prep_waveform() const {
   }
   if ((prepVec.size() > 0) &&
       (*min_element(prepVec.begin(), prepVec.end()) < -(MAX_WF_AMP + 1))) {
-    FILE_LOG(logWARNING) << "Waveform element too negative. Clipping to min.";
+    LOG(plog::warning) << "Waveform element too negative. Clipping to min.";
     for (int16_t &tmpVal : prepVec) {
       if (tmpVal < -MAX_WF_AMP)
         tmpVal = -MAX_WF_AMP;
@@ -114,7 +114,7 @@ int Channel::clear_data() {
 //                                  const string &rootStr) {
 
 //   // write waveform data
-//   FILE_LOG(logDEBUG) << "Writing Waveform: " << rootStr + "/waveformLib";
+//   LOG(plog::debug) << "Writing Waveform: " << rootStr + "/waveformLib";
 //   vector2h5array<float>(waveform_, &H5StateFile, rootStr + "/waveformLib",
 //                         rootStr + "/waveformLib", H5::PredType::NATIVE_FLOAT);
 
@@ -135,7 +135,7 @@ int Channel::clear_data() {
 //   //	numBanks = banks_.size();//get number of banks from channel
 //   //
 //   //	// set attribute
-//   //	FILE_LOG(logDEBUG) << "Creating Group: " << rootStr + "/linkListData";
+//   //	LOG(plog::debug) << "Creating Group: " << rootStr + "/linkListData";
 //   //	tmpGroup = H5StateFile.createGroup(rootStr + "/linkListData");
 //   //	element2h5attribute<USHORT>("numBanks",	numBanks,
 //   //&tmpGroup,H5::PredType::NATIVE_UINT16);
@@ -146,7 +146,7 @@ int Channel::clear_data() {
 //   //	for (USHORT bankct=0; bankct<numBanks; bankct++) {
 //   //		tmpStream.str("");
 //   //		tmpStream << rootStr << "/linkListData/bank" << bankct+1 ;
-//   //		FILE_LOG(logDEBUG) << "Writing State Bank: " << bankct+1 << "
+//   //		LOG(plog::debug) << "Writing State Bank: " << bankct+1 << "
 //   //from
 //   // hdf5";
 //   //		banks_[bankct].write_state_to_hdf5(H5StateFile, tmpStream.str()

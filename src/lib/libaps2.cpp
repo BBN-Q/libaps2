@@ -15,32 +15,41 @@ using std::map;
 #include "libaps2.h"
 #include "version.hpp"
 
+#define FILE_LOG 1
+#define CONSOLE_LOG 2
+
 weak_ptr<APS2Ethernet>
     ethernetRM; // resource manager for the asio ethernet interface
 map<string, std::unique_ptr<APS2>> APSs; // map to hold on to the APS instances
 set<string>
     deviceSerials; // set of APSs that responded to an enumerate broadcast
 
-// stub class to close the logger file handle when the driver goes out of scope
+// stub class to open loggers
 class InitAndCleanUp {
 public:
   InitAndCleanUp();
-  ~InitAndCleanUp();
 };
 
 InitAndCleanUp::InitAndCleanUp() {
-  // Open the default log file
-  FILE *pFile = fopen("libaps2.log", "a");
-  Output2FILE::Stream() = pFile;
-  FILE_LOG(logINFO) << "libaps2 version: " << get_driver_version();
+  //TODO: change log file path
+  if (!plog::get()) {
+    static plog::RollingFileAppender<plog::TxtFormatter> fileAppender("libaps2.log", 1000000, 3);
+    plog::init<FILE_LOG>(plog::info, &fileAppender);
+    static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
+    plog::init<CONSOLE_LOG>(plog::warning, &consoleAppender);
+    plog::init(plog::verbose).addAppender(plog::get<FILE_LOG>()).addAppender(plog::get<CONSOLE_LOG>());
+  }
+
+  //make sure it was created correctly
+  if (!plog::get()){
+    std::cout << "Was unable to create a logger for libaps2! Exiting..." << std::endl;
+    throw APS2_FILELOG_ERROR; 
+  }
+
+  LOG(plog::info) << "libaps2 driver version: " << get_driver_version();
 }
 
-InitAndCleanUp::~InitAndCleanUp() {
-  if (Output2FILE::Stream()) {
-    fclose(Output2FILE::Stream());
-  }
-}
-InitAndCleanUp initandcleanup_;
+static InitAndCleanUp initandcleanup_;
 
 // Return the shared_ptr to the Ethernet interface
 shared_ptr<APS2Ethernet> get_interface() {
@@ -51,10 +60,10 @@ shared_ptr<APS2Ethernet> get_interface() {
     try {
       myEthernetRM = std::make_shared<APS2Ethernet>();
     } catch (APS2_STATUS e) {
-      FILE_LOG(logERROR) << "Failed to create ethernet interface.";
+      LOG(plog::error) << "Failed to create ethernet interface.";
       throw;
     } catch (std::system_error e) {
-      FILE_LOG(logERROR) << "Unexpected error creating ethernet interface. Msg: " << e.what();
+      LOG(plog::error) << "Unexpected error creating ethernet interface. Msg: " << e.what();
       throw APS2_UNKNOWN_ERROR;
     }
     ethernetRM = myEthernetRM;
@@ -348,30 +357,39 @@ APS2_STATUS get_runState(const char *deviceSerial, APS2_RUN_STATE *state) {
 
 // Expects a null-terminated character array
 APS2_STATUS set_log(const char *fileNameArr) {
+  //TODO: Fixme?
+  
+  LOG(plog::warning) << "The plog logger cannot change the log file name.";
+  return APS2_OK;
 
-  // Close the current file
-  if (Output2FILE::Stream())
-    fclose(Output2FILE::Stream());
+  // // Close the current file
+  // if (Output2FILE::Stream())
+  //   fclose(Output2FILE::Stream());
 
-  string fileName(fileNameArr);
-  if (fileName.compare("stdout") == 0) {
-    Output2FILE::Stream() = stdout;
-    return APS2_OK;
-  } else if (fileName.compare("stderr") == 0) {
-    Output2FILE::Stream() = stdout;
-    return APS2_OK;
-  } else {
-    FILE *pFile = fopen(fileName.c_str(), "a");
-    if (!pFile) {
-      return APS2_FILELOG_ERROR;
-    }
-    Output2FILE::Stream() = pFile;
-    return APS2_OK;
-  }
+  // string fileName(fileNameArr);
+  // if (fileName.compare("stdout") == 0) {
+  //   Output2FILE::Stream() = stdout;
+  //   return APS2_OK;
+  // } else if (fileName.compare("stderr") == 0) {
+  //   Output2FILE::Stream() = stdout;
+  //   return APS2_OK;
+  // } else {
+  //   FILE *pFile = fopen(fileName.c_str(), "a");
+  //   if (!pFile) {
+  //     return APS2_FILELOG_ERROR;
+  //   }
+  //   Output2FILE::Stream() = pFile;
+  //   return APS2_OK;
+  // }
 }
 
-APS2_STATUS set_logging_level(TLogLevel logLevel) {
-  FILELog::ReportingLevel() = TLogLevel(logLevel);
+APS2_STATUS set_file_logging_level(plog::Severity severity) {
+  plog::get<FILE_LOG>()->setMaxSeverity(severity);
+  return APS2_OK;
+}
+
+APS2_STATUS set_console_logging_level(plog::Severity severity) {
+  plog::get<CONSOLE_LOG>()->setMaxSeverity(severity);
   return APS2_OK;
 }
 

@@ -2,7 +2,7 @@
 
 #include "EthernetControl.h"
 #include "constants.h"
-#include "logger.h"
+#include <plog/Log.h>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -406,7 +406,7 @@ size_t DummyAPS::chip_config(uint32_t *frameData, size_t &length) {
     break;
   default:
     dh->command.mode_stat = CHIPCONFIG_INVALID_TARGET;
-    FILE_LOG(logERROR) << "Invalid Chip Config Target";
+    LOG(plog::error) << "Invalid Chip Config Target";
   }
 
   return sizeof(struct APSEthernetHeader) + sizeof(uint32_t);

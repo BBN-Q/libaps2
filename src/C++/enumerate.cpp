@@ -9,6 +9,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <plog/Log.h>
 
 #include <chrono>
 
@@ -16,7 +17,8 @@ int main(int argc, char *argv[]) {
 
   print_title("BBN APS2 Enumerate Utility");
 
-  set_logging_level(logDEBUG1);
+  set_file_logging_level(plog::debug);
+  set_console_logging_level(plog::info);
 
   // First get the number of devices we can see
   unsigned numDevices = 0;

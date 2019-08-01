@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iterator>
 #include <signal.h>
+#include <plog/Log.h>
 
 #include "concol.h"
 #include "helpers.h"
@@ -66,18 +67,19 @@ int main(int argc, char *argv[]) {
     std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
   // Logging level
-  TLogLevel logLevel = logINFO;
+  plog::Severity logLevel = plog::info;
   if (options[LOG_LEVEL]) {
-    logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
+    //TODO: Input validation??
+    logLevel =  static_cast<plog::Severity>(atoi(options[LOG_LEVEL].arg));
   }
+  set_file_logging_level(logLevel);
+  set_console_logging_level(logLevel);
 
   // Trigger source -- default of internal
   APS2_TRIGGER_SOURCE triggerSource = INTERNAL;
   if (options[TRIG_MODE]) {
     triggerSource = APS2_TRIGGER_SOURCE(atoi(options[TRIG_MODE].arg));
   }
-  set_logging_level(logLevel);
-  set_log("stdout");
 
   // Trigger interval -- default of 10ms
   double trigInterval = 10e-3;
