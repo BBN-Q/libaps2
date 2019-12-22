@@ -222,6 +222,44 @@ interfaces using the `ip` command::
 A more permanent solution would involve editing the network interfaces file,
 e.g. ``/etc/network/interfaces``.
 
+In centOS this location is ``/etc/sysconfig/network-scripts`` with files named 
+ifcfg-<interface name>.  For example, a file might be called ifcfg-enp8s0 and 
+have something like::
+
+	TYPE=Ethernet
+	PROXY_METHOD=none
+	BROWSER_ONLY=no
+	BOOTPROTO=dhcp
+	DEFROUTE=yes
+	IPV4_FAILURE_FATAL=no
+	IPV6INIT=no
+	IPV6_AUTOCONF=yes
+	IPV6_DEFROUTE=yes
+	IPV6_FAILURE_FATAL=no
+	IPV6_ADDR_GEN_MODE=stable-privacy
+	NAME=your_host.whatever.com
+	UUID=8e....
+	DEVICE=enp8s0
+	ONBOOT=yes
+	HWADDR=FF:FF:FF:FF:FF:FF
+	
+To add an additional interfaces on CentOS just create new files called 
+ifcfg-enp8s0:0 with a minimum of::
+
+	NAME="dot 4 subnet"
+	DEVICE=enp8s0:0
+	ONBOOT=yes
+	IPADDR=192.168.4.125
+	NETMASK=255.255.255.0
+	
+and so on with enp8s0:1::
+
+	NAME="dot 5 subnet"
+	DEVICE=enp8s0:1
+	ONBOOT=yes
+	IPADDR=192.168.5.125
+	NETMASK=255.255.255.0
+
 OS X
 ~~~~~~~~~~~~
 
