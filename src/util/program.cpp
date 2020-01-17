@@ -83,7 +83,7 @@ void progress_bar(string label, double percent) {
 
 int main(int argc, char *argv[]) {
 
-  print_title("BBN AP2 Firmware Programming Utility");
+  print_title("BBN APS2 Firmware Programming Utility");
 
   argc -= (argc > 0);
   argv += (argc > 0); // skip program name argv[0] if present
