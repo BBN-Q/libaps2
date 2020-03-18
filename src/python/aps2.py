@@ -38,29 +38,51 @@ np_uint32_1D = npct.ndpointer(dtype=np.uint32, ndim=1, flags='CONTIGUOUS')
 np_uint16_1D = npct.ndpointer(dtype=np.uint16, ndim=1, flags='CONTIGUOUS')
 np_uint8_1D  = npct.ndpointer(dtype=np.uint8, ndim=1, flags='CONTIGUOUS')
 
+# load the library
 libaps2 = None
+try:
+    # first, try the obvious place
 
-# determine OS
-if os.name == 'nt': # windows
-    suffix = '\\Library\\bin'
-elif os.name == 'posix':
-    libaps2 = CDLL(find_library("aps2"))
-else:
-    suffix = ''
+    # determine OS
+    if sys.platform == 'windows':
+        suffix = '\\Library\\bin'
+        libpath = sys.prefix + suffix
+        libaps2 = CDLL(libpath)
+    elif sys.platform == 'linux':
+        libpath = '../../build/libaps2.so'
+        libaps2 = CDLL(libpath)
+        suffix = ''
+    elif sys.platform == 'darwin':
+        libpath = '../../build/libaps2.dylib'
+        libaps2 = CDLL(libpath)
+        suffix = ''
+    else:
+        suffix = ''
 
-# load the shared library
-# try with and without "lib" prefix
-libpath = find_library("aps2")
-if libpath is None:
-    libpath = find_library("libaps2")
-    libaps2 = CDLL(libpath)
-# if we still can't find it, then look in python prefix (where conda stores binaries)
-if libpath is None:
-    libpath = sys.prefix + suffix
-    libaps2 = npct.load_library("libaps2", libpath)
-elif libaps2 is None:
-    libpath = sys.prefix + suffix
-    libaps2 = CDLL(libpath)
+except:
+    print("Could not find the library in the obvious place.")
+    print("Looking in other places.")
+
+    # load the shared library
+    # try with and without "lib" prefix
+    libpath = find_library("aps2")
+    if libpath is None:
+        libpath = find_library("libaps2")
+        libaps2 = CDLL(libpath)
+    # if we still can't find it, then look in python prefix (where conda stores binaries)
+    if libpath is None:
+        libpath = sys.prefix + suffix
+        try:
+            libaps2 = npct.load_library("libaps2", libpath)
+        except:
+            raise Exception("Could not find libaps2 shared library!")
+
+    elif libaps2 is None:
+        libpath = sys.prefix + suffix
+        try:
+            libaps2 = CDLL(libpath)
+        except:
+            raise Exception("Could not find libaps2 shared library!")
 
 libaps2.get_device_IPs.argtypes              = [POINTER(c_char_p)]
 libaps2.get_device_IPs.restype               = c_int
