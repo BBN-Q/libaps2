@@ -159,15 +159,9 @@ if(UNIX AND NOT APPLE)
     file(GLOB LIBGCC_ALL ${LIBGCC_DIR}/libgcc*.so.1)
     find_library(STDCPP NAMES libstdc++.so.6 HINTS ${GCC_PATH}/../lib64)
     file(GLOB STDCPP_ALL ${STDCPP}*)
-    file(GLOB HDF5LIB_ALL ${HDF5_C_LIBRARIES}*)
-    # the CPP lib seems to be the first library listed in HDF5_CXX_LIBRARIES
-    list(GET HDF5_CXX_LIBRARIES 0 HDF5CPPLIB)
-    file(GLOB HDF5CPPLIB_ALL ${HDF5CPPLIB}*)
     set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS
     ${LIBGCC_ALL}
-    ${STDCPP_ALL}
-    ${HDF5LIB_ALL}
-    ${HDF5CPPLIB_ALL})
+    ${STDCPP_ALL})
 endif()
 
 # We need to ship libraries on windows, too, with slightly tweaked file names
@@ -175,16 +169,12 @@ if(WIN32 AND NOT MSVC)
     GET_FILENAME_COMPONENT(GCC_PATH ${CMAKE_CXX_COMPILER} DIRECTORY)
     FIND_LIBRARY(LIBGCC NAMES libgcc_s_seh-1.dll HINTS ${GCC_PATH})
     FIND_LIBRARY(STDCPP NAMES libstdc++-6.dll HINTS ${GCC_PATH})
-    FIND_LIBRARY(HDF5LIB NAMES libhdf5-0.dll HINTS ${GCC_PATH})
-    FIND_LIBRARY(HDF5CPPLIB NAMES libhdf5_cpp-0.dll HINTS ${GCC_PATH})
     FIND_LIBRARY(LIBSZIP NAMES libszip-0.dll HINTS ${GCC_PATH})
     FIND_LIBRARY(ZLIB NAMES zlib1.dll HINTS ${GCC_PATH})
     FIND_LIBRARY(LIPWINPTHREAD NAMES libwinpthread-1.dll HINTS ${GCC_PATH})
     SET(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS
     ${LIBGCC}
     ${STDCPP}
-    ${HDF5LIB}
-    ${HDF5CPPLIB}
     ${LIBSZIP}
     ${ZLIB}
     ${LIPWINPTHREAD}
