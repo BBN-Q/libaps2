@@ -4,3 +4,6 @@
 [submodule "deps/Catch"]
 	path = deps/Catch
 	url = https://github.com/philsquared/Catch.git
+[submodule "deps/plog"]
+	path = deps/plog
+	url = https://github.com/SergiusTheBest/plog.git

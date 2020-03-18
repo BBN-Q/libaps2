@@ -22,7 +22,7 @@ APS2::APS2(string deviceSerial)
 APS2::~APS2() = default;
 
 void APS2::connect(shared_ptr<APS2Ethernet> &&ethernetRM) {
-  FILE_LOG(logDEBUG) << ipAddr_ << " APS2::connect";
+  LOG(plog::debug) << ipAddr_ << " APS2::connect";
   // Hold on to APS2Ethernet class to keep socket alive
   ethernetRM_ = ethernetRM;
   if (!connected_) {
@@ -47,18 +47,18 @@ void APS2::connect(shared_ptr<APS2Ethernet> &&ethernetRM) {
       host_type = APS;
     }
 
-    FILE_LOG(logINFO) << ipAddr_ << " opened connection to device";
+    LOG(plog::info) << ipAddr_ << " opened connection to device";
 
     // TODO: restore state information from file
   }
 }
 
 void APS2::disconnect() {
-  FILE_LOG(logDEBUG) << ipAddr_ << " APS2::disconnect";
+  LOG(plog::debug) << ipAddr_ << " APS2::disconnect";
   if (connected_) {
     ethernetRM_->disconnect(ipAddr_);
     connected_ = false;
-    FILE_LOG(logINFO) << ipAddr_ << " closed connection to device";
+    LOG(plog::info) << ipAddr_ << " closed connection to device";
 
     // Release reference to ethernet RM
     ethernetRM_.reset();
@@ -67,7 +67,7 @@ void APS2::disconnect() {
 }
 
 void APS2::reset(APS2_RESET_MODE mode) {
-  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::reset";
+  LOG(plog::debug) << ipAddr_ << " APS2::reset";
 
   APS2Command cmd;
   cmd.sel = 1;
@@ -107,7 +107,7 @@ APS2_STATUS APS2::init(const bool &forceReload, const int &bitFileNum) {
   bool initialized = (initReg & 0x1) == 0x1;
 
   if (!initialized || forceReload) {
-    FILE_LOG(logINFO) << ipAddr_ << " initializing APS2";
+    LOG(plog::info) << ipAddr_ << " initializing APS2";
 
     // toggle the OSERDES reset for firmware < v4.3
     set_register_bit(RESETS_ADDR, {IO_CHA_RST_BIT, IO_CHB_RST_BIT});
@@ -137,7 +137,7 @@ void APS2::setup_DACs() {
 }
 
 APSStatusBank_t APS2::read_status_registers() {
-  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::read_status_registers";
+  LOG(plog::debug) << ipAddr_ << " APS2::read_status_registers";
   // Query with the status request command
   APS2Command cmd;
   cmd.cmd = static_cast<uint32_t>(APS_COMMANDS::STATUS);
@@ -154,7 +154,7 @@ APSStatusBank_t APS2::read_status_registers() {
   // Copy the data back into the status type
   APSStatusBank_t statusRegs;
   std::copy(resp_dg.payload.begin(), resp_dg.payload.end(), statusRegs.array);
-  FILE_LOG(logDEBUG1) << ipAddr_ << print_status_bank(statusRegs);
+  LOG(plog::debug) << ipAddr_ << print_status_bank(statusRegs);
   return statusRegs;
 }
 
@@ -170,7 +170,7 @@ uint32_t APS2::get_firmware_version() {
     version = read_memory(FIRMWARE_VERSION_ADDR, 1)[0];
   }
 
-  FILE_LOG(logDEBUG) << ipAddr_ << " FPGA firmware version "
+  LOG(plog::debug) << ipAddr_ << " FPGA firmware version "
                      << print_firmware_version(version);
 
   return version;
@@ -190,7 +190,7 @@ double APS2::get_uptime() {
   /*
   * Return the board uptime in seconds.
   */
-  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::get_uptime";
+  LOG(plog::debug) << ipAddr_ << " APS2::get_uptime";
   uint32_t uptime_seconds, uptime_nanoseconds;
   if (legacy_firmware) {
     // Read the status registers
@@ -243,7 +243,7 @@ void APS2::write_bitfile(const string &bitFile, uint32_t start_addr,
                          APS2_BITFILE_STORAGE_MEDIA media) {
   // Write a bitfile to either configuration DRAM or ERPOM starting at specified
   // address
-  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::write_bitfile";
+  LOG(plog::debug) << ipAddr_ << " APS2::write_bitfile";
 
   // byte alignment of storage media
   uint32_t alignment;
@@ -259,19 +259,19 @@ void APS2::write_bitfile(const string &bitFile, uint32_t start_addr,
   // Get the file size in bytes
   std::ifstream FID(bitFile, std::ios::in | std::ios::binary);
   if (!FID.is_open()) {
-    FILE_LOG(logERROR) << ipAddr_ << " unable to open bitfile: " << bitFile;
+    LOG(plog::error) << ipAddr_ << " unable to open bitfile: " << bitFile;
     throw APS2_NO_SUCH_BITFILE;
   }
 
   FID.seekg(0, std::ios::end);
   size_t file_size = FID.tellg();
-  FILE_LOG(logDEBUG) << ipAddr_ << " opened bitfile: " << bitFile << " with "
+  LOG(plog::debug) << ipAddr_ << " opened bitfile: " << bitFile << " with "
                      << file_size << " bytes";
   FID.seekg(0, std::ios::beg);
 
   // Figure out padding size for alignment
   size_t padding_bytes = (alignment - (file_size % alignment)) % alignment;
-  FILE_LOG(logDEBUG1) << ipAddr_ << " padding bitfile byte vector with "
+  LOG(plog::debug) << ipAddr_ << " padding bitfile byte vector with "
                       << padding_bytes << " bytes.";
   // Copy the file data to a 32bit word vector
   vector<uint32_t> bitfile_words((file_size + padding_bytes) / 4, 0xffffffff);
@@ -330,8 +330,8 @@ void APS2::write_bitfile(const string &bitFile, uint32_t start_addr,
 void APS2::program_bitfile(uint32_t addr) {
   // Program the bitfile from configuration SDRAM at the specified address
   // FPGA will reset so connection will be dropped
-  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::program_bitfile";
-  FILE_LOG(logINFO) << ipAddr_ << " programming bitfile starting at address "
+  LOG(plog::debug) << ipAddr_ << " APS2::program_bitfile";
+  LOG(plog::info) << ipAddr_ << " programming bitfile starting at address "
                     << hexn<8> << addr;
 
   APS2Command cmd;
@@ -353,13 +353,13 @@ void APS2::set_sampleRate(const unsigned int &freq) {
 }
 
 unsigned int APS2::get_sampleRate() {
-  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::get_sampleRate";
+  LOG(plog::debug) << ipAddr_ << " APS2::get_sampleRate";
   samplingRate_ = get_PLL_freq();
   return samplingRate_;
 }
 
 void APS2::clear_channel_data() {
-  FILE_LOG(logINFO) << ipAddr_ << " clearing all channel data for APS2 "
+  LOG(plog::info) << ipAddr_ << " clearing all channel data for APS2 "
                     << ipAddr_;
   for (auto &ch : channels_) {
     ch.clear_data();
@@ -368,41 +368,48 @@ void APS2::clear_channel_data() {
 
 void APS2::load_sequence_file(const string &seqFile) {
   /*
-   * Load a sequence file from an H5 file
+   * Load a sequence file from a binary file
    */
-
-  // First open the file
   try {
-    FILE_LOG(logINFO) << ipAddr_ << " opening sequence file: " << seqFile;
-    H5::H5File H5SeqFile(seqFile, H5F_ACC_RDONLY);
+    LOG(plog::info) << ipAddr_ << " opening sequence file: " << seqFile;
 
-    const vector<string> chanStrs = {"chan_1", "chan_2"};
-    // For now assume 2 channel data, TODO: check the channelDataFor attribute
+    // Read the header information
+    char junk[100];
+    uint64_t buff_length;
+    uint16_t num_chans;
+
+    std::fstream file(seqFile, std::ios::binary | std::ios::in);
+    if( !file ) throw APS2_SEQFILE_FAIL; 
+
+    file.read(junk, 12); // Don't need this info
+    file.read(reinterpret_cast<char *> (&num_chans), sizeof(uint16_t));
+
+    // Start anew
     clear_channel_data();
-    for (int chanct = 0; chanct < 2; chanct++) {
-      // Load the waveform library first
-      string chanStr = chanStrs[chanct];
-      vector<short> waveform = h5array2vector<short>(
-          &H5SeqFile, chanStr + "/waveforms", H5::PredType::NATIVE_INT16);
-      set_waveform(chanct, waveform);
 
-      if (chanct % 2 == 0) {
-        // load instruction data
-        vector<uint64_t> instructions = h5array2vector<uint64_t>(
-            &H5SeqFile, chanStr + "/instructions", H5::PredType::NATIVE_UINT64);
-        write_sequence(instructions);
-      }
+    // Read the instructions
+    file.read(reinterpret_cast<char *> (&buff_length), sizeof(uint64_t));
+    vector<uint64_t> instructions;
+    instructions.resize(buff_length);
+    file.read(reinterpret_cast<char *> (instructions.data()), buff_length*sizeof(uint64_t));
+    write_sequence(instructions);
+
+    // Read the waveforms
+    vector<int16_t> waveform;
+    for (int chanct = 0; chanct < num_chans; chanct++) {
+      file.read(reinterpret_cast<char *> (&buff_length), sizeof(uint64_t));
+      waveform.resize(buff_length);
+      file.read(reinterpret_cast<char *> (waveform.data()), buff_length*sizeof(int16_t));
+      set_waveform(chanct, waveform);
     }
-    // Close the file
-    H5SeqFile.close();
-  } catch (H5::FileIException &e) {
+  } catch (...) {
     throw APS2_SEQFILE_FAIL;
   }
 }
 
 void APS2::check_channel_num(int chan) const {
   if (chan < 0 || chan >= NUM_ANALOG_CHANNELS) {
-    FILE_LOG(logERROR) << ipAddr_ << " invalid DAC " << chan;
+    LOG(plog::error) << ipAddr_ << " invalid DAC " << chan;
     throw APS2_INVALID_DAC;
   }
 }
@@ -500,7 +507,7 @@ float APS2::get_mixer_phase_skew() {
 }
 
 void APS2::set_mixer_correction_matrix(const vector<float> &mat) {
-  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::set_mixer_correction_matrix";
+  LOG(plog::debug) << ipAddr_ << " APS2::set_mixer_correction_matrix";
   // convert to Q2.13 fixed point
   vector<int32_t> correction_matrix;
   for (auto &val : mat) {
@@ -516,7 +523,7 @@ void APS2::set_mixer_correction_matrix(const vector<float> &mat) {
 }
 
 vector<float> APS2::get_mixer_correction_matrix() {
-  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::get_mixer_correction_matrix";
+  LOG(plog::debug) << ipAddr_ << " APS2::get_mixer_correction_matrix";
   // read packed registers
   uint32_t row0, row1;
   row0 = read_memory(CORRECTION_MATRIX_ROW0_ADDR, 1)[0];
@@ -574,7 +581,7 @@ void APS2::set_markers(const int &dac, const vector<uint8_t> &data) {
 }
 
 void APS2::set_trigger_source(const APS2_TRIGGER_SOURCE &triggerSource) {
-  FILE_LOG(logDEBUG) << ipAddr_ << " setting trigger source to "
+  LOG(plog::debug) << ipAddr_ << " setting trigger source to "
                      << triggerSource;
 
   uint32_t regVal = read_memory(CONTROL_REG_ADDR, 1)[0];
@@ -591,7 +598,7 @@ APS2_TRIGGER_SOURCE APS2::get_trigger_source() {
 }
 
 void APS2::set_trigger_interval(const double &interval) {
-  FILE_LOG(logDEBUG) << ipAddr_ << " APS2::set_trigger_interval";
+  LOG(plog::debug) << ipAddr_ << " APS2::set_trigger_interval";
   uint32_t clocks;
   switch (host_type) {
   case APS:
@@ -604,7 +611,7 @@ void APS2::set_trigger_interval(const double &interval) {
     clocks = round(interval * 100e6);
     break;
   }
-  FILE_LOG(logDEBUG1) << ipAddr_ << " setting trigger interval to "
+  LOG(plog::debug) << ipAddr_ << " setting trigger interval to "
                       << interval << "s (" << clocks << " cycles)";
 
   write_memory(TRIGGER_INTERVAL_ADDR, clocks);
@@ -612,10 +619,10 @@ void APS2::set_trigger_interval(const double &interval) {
 }
 
 double APS2::get_trigger_interval() {
-  FILE_LOG(logDEBUG) << ipAddr_ << " APS2::get_trigger_interval";
+  LOG(plog::debug) << ipAddr_ << " APS2::get_trigger_interval";
   uint32_t clocks;
   clocks = read_memory(TRIGGER_INTERVAL_ADDR, 1)[0];
-  FILE_LOG(logDEBUG1) << ipAddr_ << " trigger intervals clocks = " << clocks;
+  LOG(plog::debug) << ipAddr_ << " trigger intervals clocks = " << clocks;
   // convert from clock cycles to time
   switch (host_type) {
   case APS:
@@ -632,34 +639,34 @@ double APS2::get_trigger_interval() {
 
 void APS2::trigger() {
   // Apply a software trigger by toggling the trigger line
-  FILE_LOG(logDEBUG) << ipAddr_ << " APS2::trigger";
+  LOG(plog::debug) << ipAddr_ << " APS2::trigger";
   uint32_t regVal = read_memory(CONTROL_REG_ADDR, 1)[0];
-  FILE_LOG(logDEBUG3) << ipAddr_ << " SEQ_CONTROL register was "
+  LOG(plog::verbose) << ipAddr_ << " SEQ_CONTROL register was "
                       << hexn<8> << regVal;
   regVal ^= (1 << SOFT_TRIG_BIT);
-  FILE_LOG(logDEBUG3) << ipAddr_ << " setting SEQ_CONTROL register to "
+  LOG(plog::verbose) << ipAddr_ << " setting SEQ_CONTROL register to "
                       << hexn<8> << regVal;
   write_memory(CONTROL_REG_ADDR, regVal);
 }
 
 void APS2::run() {
-  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::run";
+  LOG(plog::debug) << ipAddr_ << " APS2::run";
   if (host_type == APS) {
-    FILE_LOG(logDEBUG1) << ipAddr_ << " releasing the cache controller...";
+    LOG(plog::debug) << ipAddr_ << " releasing the cache controller...";
     set_register_bit(CACHE_CONTROL_ADDR, {CACHE_ENABLE_BIT});
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
-  FILE_LOG(logDEBUG1) << ipAddr_
+  LOG(plog::debug) << ipAddr_
                       << " releasing pulse sequencer state machine...";
   set_register_bit(CONTROL_REG_ADDR, {SM_ENABLE_BIT});
   std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-  FILE_LOG(logDEBUG1) << ipAddr_ << " enabling trigger...";
+  LOG(plog::debug) << ipAddr_ << " enabling trigger...";
   set_register_bit(CONTROL_REG_ADDR, {TRIGGER_ENABLE_BIT});
 }
 
 void APS2::stop() {
-  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::stop";
+  LOG(plog::debug) << ipAddr_ << " APS2::stop";
   switch (host_type) {
   case APS:
     // hold the cache in reset
@@ -675,7 +682,7 @@ void APS2::stop() {
 APS2_RUN_STATE APS2::get_runState() { return runState; }
 
 void APS2::set_run_mode(const APS2_RUN_MODE &mode) {
-  FILE_LOG(logDEBUG) << ipAddr_ << " setting run mode to " << mode;
+  LOG(plog::debug) << ipAddr_ << " setting run mode to " << mode;
 
   // If necessary pull the correct instruction sequence scaffold
   vector<uint64_t> instructions;
@@ -740,9 +747,9 @@ void APS2::set_run_mode(const APS2_RUN_MODE &mode) {
                         0x0900000000000000L | ((wf_length_b / 4 - 1) << 24));
   }
 
-  FILE_LOG(logDEBUG2) << ipAddr_ << " writing waveform mode sequence:";
+  LOG(plog::debug) << ipAddr_ << " writing waveform mode sequence:";
   for (auto instr : instructions) {
-    FILE_LOG(logDEBUG2) << "\t" << hexn<16> << instr;
+    LOG(plog::debug) << "\t" << hexn<16> << instr;
   }
   write_sequence(instructions);
 }
@@ -755,7 +762,7 @@ void APS2::set_waveform_frequency(float freq) {
   }
   uint32_t freq_increment =
       freq > 0 ? (freq / 300e6) * (1 << 28) : (freq / 300e6 + 4) * (1 << 28);
-  FILE_LOG(logDEBUG2) << ipAddr_ << " writing waveform frequency increment: "
+  LOG(plog::debug) << ipAddr_ << " writing waveform frequency increment: "
                       << freq_increment;
   write_memory(WF_SSB_FREQ_ADDR, freq_increment);
 }
@@ -787,13 +794,13 @@ void APS2::write_memory(const uint32_t &addr, const vector<uint32_t> &data) {
   // of 16 bytes (4 words)
   if (addr < MEMORY_ADDR + 0x40000000) {
     if ((addr & 0xf) != 0) {
-      FILE_LOG(logERROR) << ipAddr_ << " attempted to write "
+      LOG(plog::error) << ipAddr_ << " attempted to write "
                                        "waveform/instruction SDRAM at an "
                                        "address not aligned to 16 bytes";
       throw APS2_UNALIGNED_MEMORY_ACCESS;
     }
     if ((data.size() % 4) != 0) {
-      FILE_LOG(logERROR) << ipAddr_ << " attempted to write "
+      LOG(plog::error) << ipAddr_ << " attempted to write "
                                        "waveform/instruction SDRAM with data "
                                        "not a multiple of 16 bytes";
       throw APS2_UNALIGNED_MEMORY_ACCESS;
@@ -831,17 +838,17 @@ vector<uint32_t> APS2::read_memory(uint32_t addr, uint32_t numWords) const {
 
 void APS2::write_configuration_SDRAM(uint32_t addr,
                                      const vector<uint32_t> &data) {
-  FILE_LOG(logDEBUG2) << ipAddr_ << " APS2::write_configuration_SDRAM";
+  LOG(plog::debug) << ipAddr_ << " APS2::write_configuration_SDRAM";
   // Write data to configuratoin SDRAM
 
   // SDRAM writes must be 8 byte aligned
   if ((addr & 0x7) != 0) {
-    FILE_LOG(logERROR) << ipAddr_ << " attempted to write configuration SDRAM "
+    LOG(plog::error) << ipAddr_ << " attempted to write configuration SDRAM "
                                      "at an address not aligned to 8 bytes";
     throw APS2_UNALIGNED_MEMORY_ACCESS;
   }
   if ((data.size() % 2) != 0) {
-    FILE_LOG(logERROR) << ipAddr_ << " attempted to write configuration SDRAM "
+    LOG(plog::error) << ipAddr_ << " attempted to write configuration SDRAM "
                                      "with data not a multiple of 8 bytes";
     throw APS2_UNALIGNED_MEMORY_ACCESS;
   }
@@ -867,7 +874,7 @@ void APS2::write_configuration_SDRAM(uint32_t addr,
 
 vector<uint32_t> APS2::read_configuration_SDRAM(uint32_t addr,
                                                 uint32_t num_words) {
-  FILE_LOG(logDEBUG2) << ipAddr_ << " APS2::read_configuration_SDRAM";
+  LOG(plog::debug) << ipAddr_ << " APS2::read_configuration_SDRAM";
   // Send the read request
   APS2Command cmd;
   cmd.r_w = 1;
@@ -885,7 +892,7 @@ vector<uint32_t> APS2::read_configuration_SDRAM(uint32_t addr,
 
 // SPI read/write
 void APS2::write_SPI(vector<uint32_t> &msg) {
-  FILE_LOG(logDEBUG2) << ipAddr_ << " APS2::write_SPI";
+  LOG(plog::debug) << ipAddr_ << " APS2::write_SPI";
 
   // push on "end of message"
   APSChipConfigCommand_t cmd;
@@ -906,7 +913,7 @@ void APS2::write_SPI(vector<uint32_t> &msg) {
 uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET &target,
                         const uint16_t &addr) {
   // reads a single byte from the target SPI device
-  FILE_LOG(logDEBUG2) << ipAddr_ << " APS2::read_SPI";
+  LOG(plog::debug) << ipAddr_ << " APS2::read_SPI";
 
   // build message
   APSChipConfigCommand_t cmd;
@@ -937,7 +944,7 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET &target,
     cmd.instr = pllinstr.packed;
     break;
   default:
-    FILE_LOG(logERROR) << ipAddr_ << " invalid read_SPI target "
+    LOG(plog::error) << ipAddr_ << " invalid read_SPI target "
                        << hexn<1> << target;
     return 0;
   }
@@ -962,13 +969,13 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET &target,
   // We expect a single datagram back with a single word
   auto result = ethernetRM_->read(ipAddr_, COMMS_TIMEOUT);
   if (result.cmd.mode_stat != 0x00) {
-    FILE_LOG(logERROR) << ipAddr_
+    LOG(plog::error) << ipAddr_
                        << " read_SPI response datagram reported error: "
                        << result.cmd.mode_stat;
     throw APS2_COMMS_ERROR;
   }
   if (result.payload.size() != 1) {
-    FILE_LOG(logERROR)
+    LOG(plog::error)
         << ipAddr_
         << " read_SPI response datagram unexpected size: expected 1, got "
         << result.payload.size();
@@ -978,16 +985,16 @@ uint32_t APS2::read_SPI(const CHIPCONFIG_IO_TARGET &target,
 
 // Flash read/write
 void APS2::write_flash(uint32_t addr, vector<uint32_t> &data) {
-  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::write_flash";
+  LOG(plog::debug) << ipAddr_ << " APS2::write_flash";
 
   // Flash writes must be 256 byte aligned and written in 256 byte chunks
   if ((addr & 0xff) != 0) {
-    FILE_LOG(logERROR) << ipAddr_ << " attempted to write configuration ERPOM "
+    LOG(plog::error) << ipAddr_ << " attempted to write configuration ERPOM "
                                      "at an address not aligned to 256 bytes";
     throw APS2_UNALIGNED_MEMORY_ACCESS;
   }
   int pad_words = (64 - (data.size() % 64)) % 64;
-  FILE_LOG(logDEBUG1) << ipAddr_ << " flash write: padding payload with "
+  LOG(plog::debug) << ipAddr_ << " flash write: padding payload with "
                       << pad_words << " words";
   data.resize(data.size() + pad_words, 0xffffffff);
 
@@ -1002,7 +1009,7 @@ void APS2::write_flash(uint32_t addr, vector<uint32_t> &data) {
   auto dgs = APS2Datagram::chunk(
       cmd, addr, data,
       0x0100); // max chunk_size is limited wrapping in Ethernet frames
-  FILE_LOG(logDEBUG1) << ipAddr_ << " flash write chunked into " << dgs.size()
+  LOG(plog::debug) << ipAddr_ << " flash write chunked into " << dgs.size()
                       << " datagrams.";
   bitfile_writing_task = WRITING;
   bitfile_writing_task_progress = 0;
@@ -1015,18 +1022,18 @@ void APS2::write_flash(uint32_t addr, vector<uint32_t> &data) {
 }
 
 void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
-  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::erase_flash";
+  LOG(plog::debug) << ipAddr_ << " APS2::erase_flash";
   bitfile_writing_task = ERASING;
   bitfile_writing_task_progress = 0;
 
   // each erase command erases 64 KB of data starting at addr
   if ((start_addr % (1 << 16)) != 0) {
-    FILE_LOG(logERROR)
+    LOG(plog::error)
         << ipAddr_ << " EPROM memory erase command addr was not 64KB aligned!";
     throw APS2_UNALIGNED_MEMORY_ACCESS;
   }
 
-  FILE_LOG(logDEBUG) << ipAddr_ << " erasing " << num_bytes / (1 < 10)
+  LOG(plog::debug) << ipAddr_ << " erasing " << num_bytes / (1 < 10)
                      << " kbytes starting at EPROM address "
                      << hexn<8> << start_addr;
 
@@ -1039,7 +1046,7 @@ void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
   uint32_t addr{start_addr};
   uint32_t end_addr{start_addr + num_bytes};
   do {
-    FILE_LOG(logDEBUG2) << ipAddr_ << " erasing 64kB page at EPROM addr "
+    LOG(plog::debug) << ipAddr_ << " erasing 64kB page at EPROM addr "
                         << hexn<8> << addr;
     // Have noticed we don't always get a response so try a few times to make
     // sure
@@ -1049,7 +1056,7 @@ void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
         ethernetRM_->send(ipAddr_, {{cmd, addr, {}}});
       } catch (APS2_STATUS status) {
         if (status == APS2_RECEIVE_TIMEOUT) {
-          FILE_LOG(logERROR) << ipAddr_
+          LOG(plog::error) << ipAddr_
                              << " flash erase timed out. Retrying...";
           tryct++;
         } else {
@@ -1061,7 +1068,7 @@ void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
       break;
     }
     if (tryct == 5) {
-      FILE_LOG(logERROR) << ipAddr_ << " flash erase failed with timeout.";
+      LOG(plog::error) << ipAddr_ << " flash erase failed with timeout.";
       throw APS2_RECEIVE_TIMEOUT;
     }
 
@@ -1144,7 +1151,7 @@ void APS2::set_dhcp_enable(const bool &dhcp_enable) {
 
 // Create/restore setup SPI sequence
 void APS2::write_SPI_setup() {
-  FILE_LOG(logINFO) << ipAddr_ << " writing SPI startup sequence";
+  LOG(plog::info) << ipAddr_ << " writing SPI startup sequence";
   vector<uint32_t> msg = build_VCXO_SPI_msg(VCXO_INIT);
   vector<uint32_t> pll_msg = build_PLL_SPI_msg(PLL_INIT);
   msg.insert(msg.end(), pll_msg.begin(), pll_msg.end());
@@ -1176,7 +1183,7 @@ APS2::build_DAC_SPI_msg(const CHIPCONFIG_IO_TARGET &target,
     cmd.target = CHIPCONFIG_IO_TARGET_DAC_1_SINGLE;
     break;
   default:
-    FILE_LOG(logERROR) << ipAddr_ << " unexpected CHIPCONFIG_IO_TARGET";
+    LOG(plog::error) << ipAddr_ << " unexpected CHIPCONFIG_IO_TARGET";
     throw std::runtime_error("Unexpected CHIPCONFIG_IO_TARGET");
   }
   for (auto ad : addrData) {
@@ -1208,7 +1215,7 @@ vector<uint32_t> APS2::build_VCXO_SPI_msg(const vector<uint8_t> &data) {
   cmd.spicnt_data = 0;
 
   if (data.size() % 4 != 0) {
-    FILE_LOG(logERROR) << ipAddr_ << " VCXO messages must be 4-byte aligned";
+    LOG(plog::error) << ipAddr_ << " VCXO messages must be 4-byte aligned";
     throw std::runtime_error("VCXO messages must be 4-byte aligned");
   }
 
@@ -1225,7 +1232,7 @@ vector<uint32_t> APS2::build_VCXO_SPI_msg(const vector<uint8_t> &data) {
 int APS2::setup_PLL() {
   // set the on-board PLL to its default state (two 1.2 GHz outputs to DAC's,
   // 300 MHz sys_clk to FPGA, and 400 MHz mem_clk to FPGA)
-  FILE_LOG(logINFO) << ipAddr_ << " running base-line setup of PLL";
+  LOG(plog::info) << ipAddr_ << " running base-line setup of PLL";
 
   vector<uint32_t> msg = build_PLL_SPI_msg(PLL_INIT);
   write_SPI(msg);
@@ -1246,7 +1253,7 @@ int APS2::set_PLL_freq(const int &freq) {
   uint32_t pllCyclesAddr, pllBypassAddr;
   uint8_t pllCyclesVal, pllBypassVal;
 
-  FILE_LOG(logDEBUG) << ipAddr_ << " setting PLL FPGA: Freq.: " << freq;
+  LOG(plog::debug) << ipAddr_ << " setting PLL FPGA: Freq.: " << freq;
 
   pllCyclesAddr = 0x190;
   pllBypassAddr = 0x191;
@@ -1279,10 +1286,10 @@ int APS2::set_PLL_freq(const int &freq) {
 
   // bypass divider if freq == 1200
   pllBypassVal = (freq == 1200) ? 0x80 : 0x00;
-  FILE_LOG(logDEBUG2) << ipAddr_ << " setting PLL cycles addr: "
+  LOG(plog::debug) << ipAddr_ << " setting PLL cycles addr: "
                       << hexn<2> << pllCyclesAddr
                       << " val: " << hexn<2> << int(pllCyclesVal);
-  FILE_LOG(logDEBUG2) << ipAddr_ << " setting PLL bypass addr: "
+  LOG(plog::debug) << ipAddr_ << " setting PLL bypass addr: "
                       << hexn<2> << pllBypassAddr
                       << " val: " << hexn<2> << int(pllBypassVal);
 
@@ -1325,14 +1332,14 @@ void APS2::check_clocks_status() {
    * Reads the locked status of the clock distribution PLL and the FPGA MMCM's
    * (SYS_CLK, CFG_CLK and MEM_CLK)
    */
-  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::check_clocks_status";
+  LOG(plog::debug) << ipAddr_ << " APS2::check_clocks_status";
 
   // PLL chips are reported through status registers
   APSStatusBank_t statusRegs = read_status_registers();
 
   // First check the clock distribution PLL (the bottom three bits should be
   // high)
-  FILE_LOG(logDEBUG1) << ipAddr_
+  LOG(plog::debug) << ipAddr_
                       << " PLL status: " << hexn<8> << statusRegs.pllStatus;
   if ((statusRegs.pllStatus & 0x3) != 0x3) {
     throw APS2_PLL_LOST_LOCK;
@@ -1358,7 +1365,7 @@ void APS2::check_clocks_status() {
 
 int APS2::get_PLL_freq() {
   // Poll APS2 PLL chip to determine current frequency in MHz
-  FILE_LOG(logDEBUG1) << ipAddr_ << " APS2::get_PLL_freq";
+  LOG(plog::debug) << ipAddr_ << " APS2::get_PLL_freq";
 
   int freq = 0;
   uint16_t pll_cycles_addr = 0x190;
@@ -1367,9 +1374,9 @@ int APS2::get_PLL_freq() {
   uint32_t pll_cycles_val = read_SPI(CHIPCONFIG_TARGET_PLL, pll_cycles_addr);
   uint32_t pll_bypass_val = read_SPI(CHIPCONFIG_TARGET_PLL, pll_bypass_addr);
 
-  FILE_LOG(logDEBUG3) << ipAddr_
+  LOG(plog::verbose) << ipAddr_
                       << " pll_cycles_val = " << hexn<2> << pll_cycles_val;
-  FILE_LOG(logDEBUG3) << ipAddr_
+  LOG(plog::verbose) << ipAddr_
                       << " pll_bypass_val = " << hexn<2> << pll_bypass_val;
 
   // select frequency based on pll cycles setting
@@ -1398,16 +1405,16 @@ int APS2::get_PLL_freq() {
       freq = 600;
       break;
     default:
-        FILE_LOG(logERROR) << "Unexpected PLL cycles value";
-        FILE_LOG(logERROR) << ipAddr_
+        LOG(plog::error) << "Unexpected PLL cycles value";
+        LOG(plog::error) << ipAddr_
                             << " pll_cycles_val = " << hexn<2> << pll_cycles_val;
-        FILE_LOG(logERROR) << ipAddr_
+        LOG(plog::error) << ipAddr_
                             << " pll_bypass_val = " << hexn<2> << pll_bypass_val;
       throw APS2_BAD_PLL_VALUE;
     }
   }
 
-  FILE_LOG(logDEBUG1) << ipAddr_ << " PLL frequency " << freq;
+  LOG(plog::debug) << ipAddr_ << " PLL frequency " << freq;
 
   return freq;
 }
@@ -1440,7 +1447,7 @@ void APS2::toggle_DAC_clock(const int dac) {
 void APS2::setup_VCXO() {
   // Write the standard VCXO setup
 
-  FILE_LOG(logINFO) << ipAddr_ << " setting up VCX0";
+  LOG(plog::info) << ipAddr_ << " setting up VCX0";
 
   // ensure the oscillator is disabled before programming
   // TODO: fix!
@@ -1464,7 +1471,7 @@ void APS2::align_DAC_clock(int dac) {
         static_cast<double>(read_memory(PHASE_COUNT_ADDR[dac], 1)[0] & 0xffff) /
         (0xffff);
 
-    FILE_LOG(logDEBUG1) << ipAddr_ << " measured DAC "
+    LOG(plog::debug) << ipAddr_ << " measured DAC "
                         << ((dac == 0) ? "A" : "B") << " clock phase of "
                         << dac_clk_phase;
 
@@ -1479,7 +1486,7 @@ void APS2::align_DAC_clock(int dac) {
     }
   }
   // if we got here then we never aligned
-  FILE_LOG(logERROR) << ipAddr_ << " failed to align DAC " << dac;
+  LOG(plog::error) << ipAddr_ << " failed to align DAC " << dac;
 }
 
 void APS2::align_DAC_LVDS_capture(int dac)
@@ -1496,14 +1503,14 @@ void APS2::align_DAC_LVDS_capture(int dac)
   uint8_t edgeMSD, edgeMHD;
 
   check_channel_num(dac);
-  FILE_LOG(logINFO) << ipAddr_ << " setting up DAC " << dac;
+  LOG(plog::info) << ipAddr_ << " setting up DAC " << dac;
 
   const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0,
                                                 CHIPCONFIG_TARGET_DAC_1};
 
   // Step 0: check control clock divider
   data = read_SPI(targets[dac], DAC_CONTROLLERCLOCK_ADDR);
-  FILE_LOG(logDEBUG1) << ipAddr_ << " DAC controller clock divider register = "
+  LOG(plog::debug) << ipAddr_ << " DAC controller clock divider register = "
                       << (data & 0xf);
   // Max freq is 1.2GS/s so dividing by 128 gets us below 10MHz for sure
   msg = build_DAC_SPI_msg(targets[dac], {{DAC_CONTROLLERCLOCK_ADDR, 5}});
@@ -1517,21 +1524,21 @@ void APS2::align_DAC_LVDS_capture(int dac)
 
   // TODO: remove int(... & 0x1F)
   data = read_SPI(targets[dac], DAC_INTERRUPT_ADDR);
-  FILE_LOG(logDEBUG2) << ipAddr_
+  LOG(plog::debug) << ipAddr_
                       << " reg: " << hexn<2> << int(DAC_INTERRUPT_ADDR & 0x1F)
                       << " Val: " << int(data & 0xFF);
   data = read_SPI(targets[dac], DAC_MSDMHD_ADDR);
-  FILE_LOG(logDEBUG2) << ipAddr_
+  LOG(plog::debug) << ipAddr_
                       << " reg: " << hexn<2> << int(DAC_MSDMHD_ADDR & 0x1F)
                       << " Val: " << int(data & 0xFF);
   data = read_SPI(targets[dac], DAC_SD_ADDR);
-  FILE_LOG(logDEBUG2) << ipAddr_
+  LOG(plog::debug) << ipAddr_
                       << " reg: " << hexn<2> << int(DAC_SD_ADDR & 0x1F)
                       << " Val: " << int(data & 0xFF);
 
   // Ensure that surveilance and auto modes are off
   data = read_SPI(targets[dac], DAC_CONTROLLER_ADDR);
-  FILE_LOG(logDEBUG2) << ipAddr_
+  LOG(plog::debug) << ipAddr_
                       << " reg: " << hexn<2> << int(DAC_CONTROLLER_ADDR & 0x1F)
                       << " Val: " << int(data & 0xFF);
   data = 0;
@@ -1546,46 +1553,46 @@ void APS2::align_DAC_LVDS_capture(int dac)
   set_DAC_SD(dac, SD);
 
   for (MSD = 0; MSD < 16; MSD++) {
-    FILE_LOG(logDEBUG2) << ipAddr_ << " setting MSD: " << int(MSD);
+    LOG(plog::debug) << ipAddr_ << " setting MSD: " << int(MSD);
 
     data = (MSD << 4) | MHD;
     msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
     write_SPI(msg);
-    FILE_LOG(logDEBUG2) << ipAddr_ << " write Reg: "
+    LOG(plog::debug) << ipAddr_ << " write Reg: "
                         << hexn<2> << int(DAC_MSDMHD_ADDR & 0x1F)
                         << " Val: " << int(data & 0xFF);
 
     data = read_SPI(targets[dac], DAC_SD_ADDR);
-    FILE_LOG(logDEBUG2) << ipAddr_
+    LOG(plog::debug) << ipAddr_
                         << " read Reg: " << hexn<2> << int(DAC_SD_ADDR & 0x1F)
                         << " Val: " << int(data & 0xFF);
 
     bool check = data & 1;
-    FILE_LOG(logDEBUG2) << ipAddr_ << " check: " << check;
+    LOG(plog::debug) << ipAddr_ << " check: " << check;
     if (!check)
       break;
   }
   edgeMSD = MSD;
-  FILE_LOG(logDEBUG) << ipAddr_ << " found MSD: " << int(edgeMSD);
+  LOG(plog::debug) << ipAddr_ << " found MSD: " << int(edgeMSD);
 
   // Clear the MSD, then slide right (with MHD)
   MSD = 0;
   for (MHD = 0; MHD < 16; MHD++) {
-    FILE_LOG(logDEBUG2) << ipAddr_ << " setting MHD: " << int(MHD);
+    LOG(plog::debug) << ipAddr_ << " setting MHD: " << int(MHD);
 
     data = (MSD << 4) | MHD;
     msg = build_DAC_SPI_msg(targets[dac], {{DAC_MSDMHD_ADDR, data}});
     write_SPI(msg);
 
     data = read_SPI(targets[dac], DAC_SD_ADDR);
-    FILE_LOG(logDEBUG2) << ipAddr_ << " read: " << hexn<2> << int(data & 0xFF);
+    LOG(plog::debug) << ipAddr_ << " read: " << hexn<2> << int(data & 0xFF);
     bool check = data & 1;
-    FILE_LOG(logDEBUG2) << ipAddr_ << " check: " << check;
+    LOG(plog::debug) << ipAddr_ << " check: " << check;
     if (!check)
       break;
   }
   edgeMHD = MHD;
-  FILE_LOG(logDEBUG) << ipAddr_ << " found MHD = " << int(edgeMHD);
+  LOG(plog::debug) << ipAddr_ << " found MHD = " << int(edgeMHD);
   SD = (edgeMHD - edgeMSD) / 2;
 
   // Clear MSD and MHD
@@ -1612,7 +1619,7 @@ void APS2::align_DAC_LVDS_capture(int dac)
 
 void APS2::set_DAC_SD(const int &dac, const uint8_t &sd) {
   // Sets the sample delay
-  FILE_LOG(logDEBUG) << ipAddr_ << " setting SD = " << int(sd);
+  LOG(plog::debug) << ipAddr_ << " setting SD = " << int(sd);
   const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0,
                                                 CHIPCONFIG_TARGET_DAC_1};
   auto msg =
@@ -1621,7 +1628,7 @@ void APS2::set_DAC_SD(const int &dac, const uint8_t &sd) {
 }
 
 void APS2::run_chip_config(uint32_t addr /* default = 0 */) {
-  FILE_LOG(logINFO) << ipAddr_ << " running chip config from address "
+  LOG(plog::info) << ipAddr_ << " running chip config from address "
                     << hexn<8> << addr;
   // construct the chip config command
   APS2Command cmd;
@@ -1636,12 +1643,12 @@ int APS2::get_DAC_FIFO_phase(const int dac) {
                                                 CHIPCONFIG_TARGET_DAC_1};
 
   auto data = read_SPI(targets[dac], DAC_FIFOSTAT_ADDR);
-  FILE_LOG(logDEBUG2) << ipAddr_ << " read: " << hexn<2> << int(data & 0xFF);
+  LOG(plog::debug) << ipAddr_ << " read: " << hexn<2> << int(data & 0xFF);
 
   uint8_t phase = (data & 0x70) >> 4;  // phase (FIFOPHASE) is in bits <6:4>
   uint8_t valid = (data >> 3) & 0x1;   // VALID is bit 3
   uint8_t status = (data  >> 7) & 0x1; // error STATUS is bit 7
-  FILE_LOG(logDEBUG) << ipAddr_ << " DAC " << dac
+  LOG(plog::debug) << ipAddr_ << " DAC " << dac
                      << " FIFO phase = " << int(phase)
                      << " (valid=" << int(valid)
                      << ", status=" << int(status) << ")";
@@ -1651,13 +1658,13 @@ int APS2::get_DAC_FIFO_phase(const int dac) {
 void APS2::enable_DAC_FIFO(const int &dac) {
 
   if (dac < 0 || dac >= NUM_ANALOG_CHANNELS) {
-    FILE_LOG(logERROR) << ipAddr_ << " APS2::enable_DAC_FIFO unknown DAC, "
+    LOG(plog::error) << ipAddr_ << " APS2::enable_DAC_FIFO unknown DAC, "
                        << dac;
     throw APS2_INVALID_DAC;
   }
 
   uint8_t data = 0;
-  FILE_LOG(logDEBUG) << ipAddr_ << " enabling DAC " << dac << " FIFO";
+  LOG(plog::debug) << ipAddr_ << " enabling DAC " << dac << " FIFO";
   const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0,
                                                 CHIPCONFIG_TARGET_DAC_1};
 
@@ -1682,7 +1689,7 @@ void APS2::enable_DAC_FIFO(const int &dac) {
   // reduce the problem to making 0, 1, 2, 3 move towards 2
   int8_t offset = ((phase + 1) / 2) % 4;
   offset = mymod(offset - 2, 4);
-  FILE_LOG(logDEBUG) << ipAddr_ << " setting FIFO offset = " << int(offset);
+  LOG(plog::debug) << ipAddr_ << " setting FIFO offset = " << int(offset);
 
   msg = build_DAC_SPI_msg(targets[dac], {{DAC_FIFOSTAT_ADDR, offset}});
   write_SPI(msg);
@@ -1696,7 +1703,7 @@ void APS2::disable_DAC_FIFO(const int &dac) {
   const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0,
                                                 CHIPCONFIG_TARGET_DAC_1};
 
-  FILE_LOG(logDEBUG1) << ipAddr_ << " disable DAC " << dac << " FIFO";
+  LOG(plog::debug) << ipAddr_ << " disable DAC " << dac << " FIFO";
   // clear sync bit
   data = read_SPI(targets[dac], DAC_SYNC_ADDR);
   mask = (0x1 << 2);
@@ -1726,7 +1733,7 @@ bool APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
                                                DAC_BIST_CHB_RST_BIT};
   uint8_t regVal;
 
-  FILE_LOG(logINFO) << ipAddr_ << " running DAC BIST for DAC " << dac;
+  LOG(plog::info) << ipAddr_ << " running DAC BIST for DAC " << dac;
 
   // A few helper lambdas
 
@@ -1744,10 +1751,10 @@ bool APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
     vector<uint32_t> bistVals;
     // Read the on-board values first
     bistVals.push_back(read_memory(FPGA_Reg_Phase1[dac], 1)[0]);
-    FILE_LOG(logDEBUG1) << ipAddr_ << " FPGA Phase 1 BIST "
+    LOG(plog::debug) << ipAddr_ << " FPGA Phase 1 BIST "
                         << hexn<8> << bistVals.back();
     bistVals.push_back(read_memory(FPGA_Reg_Phase2[dac], 1)[0]);
-    FILE_LOG(logDEBUG1) << ipAddr_ << " FPGA Phase 2 BIST "
+    LOG(plog::debug) << ipAddr_ << " FPGA Phase 2 BIST "
                         << hexn<8> << bistVals.back();
 
     // Now the DAC registers
@@ -1756,28 +1763,28 @@ bool APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
     write_reg(17, 0x26);
     bistVals.push_back((read_reg(18) << 24) | (read_reg(19) << 16) |
                        (read_reg(20) << 8) | read_reg(21));
-    FILE_LOG(logDEBUG1) << ipAddr_ << " LVDS Phase 1 BIST "
+    LOG(plog::debug) << ipAddr_ << " LVDS Phase 1 BIST "
                         << hexn<8> << bistVals.back();
 
     // LVDS Phase 2
     write_reg(17, 0x66);
     bistVals.push_back((read_reg(18) << 24) | (read_reg(19) << 16) |
                        (read_reg(20) << 8) | read_reg(21));
-    FILE_LOG(logDEBUG1) << ipAddr_ << " LVDS Phase 2 BIST "
+    LOG(plog::debug) << ipAddr_ << " LVDS Phase 2 BIST "
                         << hexn<8> << bistVals.back();
 
     // SYNC Phase 1
     write_reg(17, 0xA6);
     bistVals.push_back((read_reg(18) << 24) | (read_reg(19) << 16) |
                        (read_reg(20) << 8) | read_reg(21));
-    FILE_LOG(logDEBUG1) << ipAddr_ << " SYNC Phase 1 BIST "
+    LOG(plog::debug) << ipAddr_ << " SYNC Phase 1 BIST "
                         << hexn<8> << bistVals.back();
 
     // SYNC Phase 2
     write_reg(17, 0xE6);
     bistVals.push_back((read_reg(18) << 24) | (read_reg(19) << 16) |
                        (read_reg(20) << 8) | read_reg(21));
-    FILE_LOG(logDEBUG1) << ipAddr_ << " SYNC Phase 2 BIST "
+    LOG(plog::debug) << ipAddr_ << " SYNC Phase 2 BIST "
                         << hexn<8> << bistVals.back();
 
     return bistVals;
@@ -1814,9 +1821,9 @@ bool APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
   uint32_t phase1BIST = calc_bist(oddSamples);
   uint32_t phase2BIST = calc_bist(evenSamples);
 
-  FILE_LOG(logDEBUG) << ipAddr_ << " expected phase 1 BIST register "
+  LOG(plog::debug) << ipAddr_ << " expected phase 1 BIST register "
                      << hexn<8> << phase1BIST;
-  FILE_LOG(logDEBUG) << ipAddr_ << " expected phase 2 BIST register "
+  LOG(plog::debug) << ipAddr_ << " expected phase 2 BIST register "
                      << hexn<8> << phase2BIST;
 
   // Load the test vector and setup software triggered waveform mode
@@ -1932,7 +1939,7 @@ bool APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
   auto bitslip =
       read_memory(dac == 0 ? BITSLIP_A_ADDR : BITSLIP_B_ADDR, 1).front();
   if (bitslip % 2) {
-    FILE_LOG(logDEBUG)
+    LOG(plog::debug)
         << ipAddr_ << " DAC " << dac
         << " has odd bitslip so swapping LVDS and SYNC BIST vals";
     std::swap(results[4], results[5]);
@@ -1948,22 +1955,22 @@ bool APS2::run_DAC_BIST(const int &dac, const vector<int16_t> &testVec,
 void APS2::set_register_bit(const uint32_t &addr,
                             std::initializer_list<size_t> bits) {
   std::bitset<32> reg_val(read_memory(addr, 1).front());
-  FILE_LOG(logDEBUG) << "Updating 0x" << std::hex << addr << " From 0x" << reg_val.to_ulong();
+  LOG(plog::debug) << "Updating 0x" << std::hex << addr << " From 0x" << reg_val.to_ulong();
   for (auto bit : bits) {
     reg_val.set(bit);
   }
-  FILE_LOG(logDEBUG) << "Updating 0x" << std::hex << addr << " To 0x" << reg_val.to_ulong() ;
+  LOG(plog::debug) << "Updating 0x" << std::hex << addr << " To 0x" << reg_val.to_ulong() ;
   write_memory(addr, reg_val.to_ulong());
 }
 
 void APS2::clear_register_bit(const uint32_t &addr,
                               std::initializer_list<size_t> bits) {
   std::bitset<32> reg_val(read_memory(addr, 1).front());
-  FILE_LOG(logDEBUG) << "Updating 0x" << std::hex << addr << " From 0x" << reg_val.to_ulong();
+  LOG(plog::debug) << "Updating 0x" << std::hex << addr << " From 0x" << reg_val.to_ulong();
   for (auto bit : bits) {
     reg_val.reset(bit);
   }
-  FILE_LOG(logDEBUG) << "Updating 0x" << std::hex << addr << " To 0x" << reg_val.to_ulong() << std::dec;
+  LOG(plog::debug) << "Updating 0x" << std::hex << addr << " To 0x" << reg_val.to_ulong() << std::dec;
   write_memory(addr, reg_val.to_ulong());
 }
 
@@ -1978,7 +1985,7 @@ void APS2::write_waveform(const int &ch, const vector<int16_t> &wf) {
 
   uint32_t startAddr =
       (ch == 0) ? MEMORY_ADDR + WFA_OFFSET : MEMORY_ADDR + WFB_OFFSET;
-  FILE_LOG(logDEBUG2) << ipAddr_ << " loading waveform of length " << wf.size()
+  LOG(plog::debug) << ipAddr_ << " loading waveform of length " << wf.size()
                       << " at address " << hexn<8> << startAddr;
   vector<uint32_t> packed_data;
   for (size_t ct = 0; ct < wf.size(); ct += 2) {
@@ -1988,7 +1995,7 @@ void APS2::write_waveform(const int &ch, const vector<int16_t> &wf) {
   // SDRAM writes must be multiples of 16 bytes
   int pad_words = (4 - (packed_data.size() % 4)) % 4;
   if (pad_words) {
-    FILE_LOG(logDEBUG1) << ipAddr_ << " padding waveform write with "
+    LOG(plog::debug) << ipAddr_ << " padding waveform write with "
                         << std::dec << pad_words << " words";
     packed_data.resize(packed_data.size() + pad_words, 0xffffffff);
   }
@@ -2005,7 +2012,7 @@ void APS2::write_waveform(const int &ch, const vector<int16_t> &wf) {
 }
 
 void APS2::write_sequence(const vector<uint64_t> &data) {
-  FILE_LOG(logDEBUG2) << ipAddr_ << " loading sequence of length "
+  LOG(plog::debug) << ipAddr_ << " loading sequence of length "
                       << data.size();
 
   // pack into uint32_t vector
@@ -2018,7 +2025,7 @@ void APS2::write_sequence(const vector<uint64_t> &data) {
   // SDRAM writes must be multiples of 16 bytes
   int pad_words = (4 - (packed_instructions.size() % 4)) % 4;
   if (pad_words) {
-    FILE_LOG(logDEBUG1) << ipAddr_ << " padding instruction write with "
+    LOG(plog::debug) << ipAddr_ << " padding instruction write with "
                         << std::dec << pad_words << " words";
     packed_instructions.resize(packed_instructions.size() + pad_words,
                                0xffffffff);
@@ -2031,7 +2038,7 @@ void APS2::write_sequence(const vector<uint64_t> &data) {
 
   int addr = 0;
   for ( auto d : packed_instructions) {
-    FILE_LOG(logDEBUG) << "W Sequence[" << addr++ <<"] = 0x" << std::hex << d;
+    LOG(plog::debug) << "W Sequence[" << addr++ <<"] = 0x" << std::hex << d;
   }
 
   write_memory(MEMORY_ADDR + SEQ_OFFSET, packed_instructions);
@@ -2048,7 +2055,7 @@ void APS2::read_sequence(const uint32_t addr, uint32_t num_words) {
   auto data = read_memory(addr, num_words);
   int laddr = 0;
   for ( auto d : data) {
-    FILE_LOG(logDEBUG) << "R Sequence[" << laddr++ <<"] = 0x" << std::hex << d;
+    LOG(plog::debug) << "R Sequence[" << laddr++ <<"] = 0x" << std::hex << d;
   }
 }
 
@@ -2056,7 +2063,7 @@ int APS2::write_memory_map(const uint32_t &wfA, const uint32_t &wfB,
                            const uint32_t &seq) { /* see header for defaults */
   /* Writes the partitioning of external memory to registers. Takes 3 offsets
    * (in bytes) for wfA/B and seq data */
-  FILE_LOG(logDEBUG2) << ipAddr_
+  LOG(plog::debug) << ipAddr_
                       << " writing memory map with offsets wfA: " << wfA
                       << ", wfB: " << wfB << ", seq: " << seq;
 
@@ -2075,7 +2082,7 @@ int APS2::save_state_file(string & stateFile){
                 stateFile += "cache_" + ipAddr_ + ".h5";
         }
 
-        FILE_LOG(logDEBUG) << "Writing State For Device: " << ipAddr_ << " to
+        LOG(plog::debug) << "Writing State For Device: " << ipAddr_ << " to
 hdf5 file: " << stateFile;
         H5::H5File H5StateFile(stateFile, H5F_ACC_TRUNC);
         string rootStr = "";
@@ -2091,7 +2098,7 @@ int APS2::read_state_file(string & stateFile){
                 stateFile += "cache_" + ipAddr_ + ".h5";
         }
 
-        FILE_LOG(logDEBUG) << "Reading State For Device: " << ipAddr_ << " from
+        LOG(plog::debug) << "Reading State For Device: " << ipAddr_ << " from
 hdf5 file: " << stateFile;
         H5::H5File H5StateFile(stateFile, H5F_ACC_RDONLY);
         string rootStr = "";
@@ -2107,9 +2114,9 @@ int APS2::write_state_to_hdf5(H5::H5File & H5StateFile, const string & rootStr){
         for(int chanct=0; chanct<4; chanct++){
                 tmpStream.str("");
                 tmpStream << rootStr << "/chan_" << chanct+1;
-                FILE_LOG(logDEBUG) << "Writing State For Channel " << chanct + 1
+                LOG(plog::debug) << "Writing State For Channel " << chanct + 1
 << " to hdf5 file";
-                FILE_LOG(logDEBUG) << "Creating Group: " << tmpStream.str();
+                LOG(plog::debug) << "Creating Group: " << tmpStream.str();
                 H5::Group tmpGroup = H5StateFile.createGroup(tmpStream.str());
                 tmpGroup.close();
                 channels_[chanct].write_state_to_hdf5(H5StateFile,tmpStream.str());
@@ -2124,7 +2131,7 @@ rootStr){
         for(int chanct=0; chanct<4; chanct++){
                 tmpStream.str("");
                 tmpStream << rootStr << "/chan_" << chanct+1;
-                FILE_LOG(logDEBUG) << "Reading State For Channel " << chanct +
+                LOG(plog::debug) << "Reading State For Channel " << chanct +
 1<< " from hdf5 file";
                 channels_[chanct].read_state_from_hdf5(H5StateFile,tmpStream.str());
         }

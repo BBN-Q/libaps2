@@ -13,14 +13,6 @@ RUN yum install -y git cmake wget tar bzip2
 # default to the devtools toolchain
 RUN echo "source /opt/rh/devtoolset-3/enable" >> /root/.bashrc
 
-# install hdf5
-RUN source /opt/rh/devtoolset-3/enable && mkdir hdf5 && cd /hdf5 && \
-  wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.17.tar.bz2 && \
-  tar xf hdf5-1.8.17.tar.bz2 && \
-  cd hdf5-1.8.17 && \
-  ./configure --prefix=/usr/local/hdf5 --enable-cxx && \
-  make install
-
 # install a newer cmake
 RUN source /opt/rh/devtoolset-3/enable && mkdir cmake && cd /cmake && \
   wget https://cmake.org/files/v3.6/cmake-3.6.3.tar.gz && \
@@ -29,7 +21,5 @@ RUN source /opt/rh/devtoolset-3/enable && mkdir cmake && cd /cmake && \
   cmake . && \
   make && \
   make install
-
-ENV HDF5_ROOT /usr/local/hdf5
 
 ENTRYPOINT ["/bin/bash"]

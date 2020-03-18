@@ -4,6 +4,7 @@
 using std::string;
 #include <random>
 #include <thread>
+#include <plog/Log.h>
 
 #include "constants.h"
 #include "libaps2.h"
@@ -15,7 +16,8 @@ extern string ip_addr; // ip address from run_tests
 
 TEST_CASE("cache initial state", "[cache]") {
 
-  set_logging_level(logDEBUG3);
+  set_file_logging_level(plog::verbose);
+  set_console_logging_level(plog::verbose);
   APS2Connector connection(ip_addr);
 
   SECTION("initial state") {

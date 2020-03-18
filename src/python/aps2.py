@@ -6,7 +6,28 @@ import numpy.ctypeslib as npct
 from ctypes import c_int, c_uint, c_ulong, c_ulonglong, c_float, c_double, c_char, \
                    c_char_p, addressof, create_string_buffer, byref, POINTER, CDLL
 from ctypes.util import find_library
+from enum import IntEnum
 import sys
+
+#ctypes compatible Enum class to set logger severity according to plog values
+#https://www.chriskrycho.com/2015/ctypes-structures-and-dll-exports.html
+
+class PlogSeverity(IntEnum):
+    none = 0
+    fatal = 1
+    error = 2
+    warning = 3
+    info = 4
+    debug = 5
+    verbose = 6
+
+    def __init__(self, value):
+        self._as_parameter = int(value)
+
+    @classmethod
+    def from_param(cls, obj):
+        return int(obj)
+
 
 np_double_1D = npct.ndpointer(dtype=np.double, ndim=1, flags='CONTIGUOUS')
 np_float_1D  = npct.ndpointer(dtype=np.float32, ndim=1, flags='CONTIGUOUS')
@@ -17,29 +38,51 @@ np_uint32_1D = npct.ndpointer(dtype=np.uint32, ndim=1, flags='CONTIGUOUS')
 np_uint16_1D = npct.ndpointer(dtype=np.uint16, ndim=1, flags='CONTIGUOUS')
 np_uint8_1D  = npct.ndpointer(dtype=np.uint8, ndim=1, flags='CONTIGUOUS')
 
+# load the library
 libaps2 = None
+try:
+    # first, try the obvious place
 
-# determine OS
-if os.name == 'nt': # windows
-    suffix = '\\Library\\bin'
-elif os.name == 'posix':
-    libaps2 = CDLL(find_library("aps2"))
-else:
-    suffix = ''
+    # determine OS
+    if sys.platform == 'windows':
+        suffix = '\\Library\\bin'
+        libpath = sys.prefix + suffix
+        libaps2 = CDLL(libpath)
+    elif sys.platform == 'linux':
+        libpath = '../../build/libaps2.so'
+        libaps2 = CDLL(libpath)
+        suffix = ''
+    elif sys.platform == 'darwin':
+        libpath = '../../build/libaps2.dylib'
+        libaps2 = CDLL(libpath)
+        suffix = ''
+    else:
+        suffix = ''
 
-# load the shared library
-# try with and without "lib" prefix
-libpath = find_library("aps2")
-if libpath is None:
-    libpath = find_library("libaps2")
-    libaps2 = CDLL(libpath)
-# if we still can't find it, then look in python prefix (where conda stores binaries)
-if libpath is None:
-    libpath = sys.prefix + suffix
-    libaps2 = npct.load_library("libaps2", libpath)
-elif libaps2 is None:
-    libpath = sys.prefix + suffix
-    libaps2 = CDLL(libpath)
+except:
+    print("Could not find the library in the obvious place.")
+    print("Looking in other places.")
+
+    # load the shared library
+    # try with and without "lib" prefix
+    libpath = find_library("aps2")
+    if libpath is None:
+        libpath = find_library("libaps2")
+        libaps2 = CDLL(libpath)
+    # if we still can't find it, then look in python prefix (where conda stores binaries)
+    if libpath is None:
+        libpath = sys.prefix + suffix
+        try:
+            libaps2 = npct.load_library("libaps2", libpath)
+        except:
+            raise Exception("Could not find libaps2 shared library!")
+
+    elif libaps2 is None:
+        libpath = sys.prefix + suffix
+        try:
+            libaps2 = CDLL(libpath)
+        except:
+            raise Exception("Could not find libaps2 shared library!")
 
 libaps2.get_device_IPs.argtypes              = [POINTER(c_char_p)]
 libaps2.get_device_IPs.restype               = c_int
@@ -58,8 +101,10 @@ libaps2.load_sequence_file.argtypes          = [c_char_p, c_char_p]
 libaps2.load_sequence_file.restype           = c_int
 libaps2.set_log.argtypes                     = [c_char_p]
 libaps2.set_log.restype                      = c_int
-libaps2.set_logging_level.argtypes           = [c_int]
-libaps2.set_logging_level.restype            = c_int
+libaps2.set_file_logging_level.argtypes      = [PlogSeverity]
+libaps2.set_file_logging_level.restype       = c_int
+libaps2.set_console_logging_level.argtypes   = [PlogSeverity]
+libaps2.set_console_logging_level.restype    = c_int
 libaps2.get_ip_addr.argtypes                 = [c_char_p, POINTER(c_char)]
 libaps2.get_ip_addr.restype                  = c_int
 libaps2.set_ip_addr.argtypes                 = [c_char_p, c_char_p]
@@ -192,9 +237,11 @@ def set_log(filename):
     check(libaps2.set_log(filename.encode('utf-8')))
 
 
-def set_logging_level(level):
-    check(libaps2.set_logging_level(level))
+def set_file_logging_level(level):
+    check(libaps2.set_file_logging_level(level))
 
+def set_console_logging_level(level):
+    check(libaps2.set_console_logging_level(level))
 
 class APS2_Getter():
     def __init__(self, arg_type, return_type=None):

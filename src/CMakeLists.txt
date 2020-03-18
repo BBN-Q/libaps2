@@ -7,7 +7,6 @@
 #
 # On Mac/Linux you can skip the '-G "MSYS Makefiles" option'
 #
-# If your HDF5 install is in a non-standard location set the HDF5_ROOT environment variable
 
 cmake_minimum_required(VERSION 3.1)
 
@@ -33,24 +32,6 @@ set(APS2_VERSION_MINOR ${CMAKE_MATCH_2})
 set(APS2_VERSION_PATCH 0)
 set(APS2_VERSION_STRING ${APS2_VERSION_MAJOR}.${APS2_VERSION_MINOR}.${APS2_VERSION_PATCH})
 
-if(MSVC)
-    # look for HDF5 using the HDF5 provided hdf5-config.cmake
-    # only works on Windows for now because there both Anaconda and HDF5 provide hdf5-config.cmake
-    find_package (HDF5 COMPONENTS C CXX NO_MODULE REQUIRED static)
-    include_directories (${HDF5_INCLUDE_DIR})
-    set (HDF5_LINK_LIBS ${HDF5_CXX_STATIC_LIBRARY})
-else()
-    # otherwise fall back to CMake's built-in FindHDF5.cmake logic
-    find_package(HDF5 REQUIRED COMPONENTS C CXX)
-    include_directories( ${HDF5_INCLUDE_DIRS} )
-    set (HDF5_LINK_LIBS ${HDF5_CXX_LIBRARIES})
-    set (HDF5_INCLUDE_DIR ${HDF5_INCLUDE_DIRS})
-endif()
-
-if(HDF5_FOUND)
-    message("Found HDF5 version ${HDF5_VERSION} and libraries ${HDF5_LINK_LIBS} with headers in ${HDF5_INCLUDE_DIR}")
-endif()
-
 # look for threading library
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -64,6 +45,9 @@ add_definitions(-DASIO_STANDALONE)
 
 # Catch unit-testing
 include_directories("../deps/Catch/include")
+
+#Plog logger
+include_directories("../deps/plog/include")
 
 # mingw64 defaults to WindowsXP SP03 which doesn't support the network calls we want
 # https://github.com/Alexpux/mingw-w64/blob/e960f8fffb399036079cef960a44e86a9abebc71/mingw-w64-headers/include/sdkddkver.h#L145
@@ -152,9 +136,9 @@ foreach(target ${BIN_TARGETS})
 endforeach()
 
 if(WIN32)
-    target_link_libraries(aps2 ${HDF5_LINK_LIBS} ws2_32 iphlpapi Threads::Threads)
+    target_link_libraries(aps2 ws2_32 iphlpapi Threads::Threads)
 else()
-    target_link_libraries(aps2 ${HDF5_LINK_LIBS} Threads::Threads)
+    target_link_libraries(aps2 Threads::Threads)
 endif()
 
 # installation section
@@ -175,15 +159,9 @@ if(UNIX AND NOT APPLE)
     file(GLOB LIBGCC_ALL ${LIBGCC_DIR}/libgcc*.so.1)
     find_library(STDCPP NAMES libstdc++.so.6 HINTS ${GCC_PATH}/../lib64)
     file(GLOB STDCPP_ALL ${STDCPP}*)
-    file(GLOB HDF5LIB_ALL ${HDF5_C_LIBRARIES}*)
-    # the CPP lib seems to be the first library listed in HDF5_CXX_LIBRARIES
-    list(GET HDF5_CXX_LIBRARIES 0 HDF5CPPLIB)
-    file(GLOB HDF5CPPLIB_ALL ${HDF5CPPLIB}*)
     set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS
     ${LIBGCC_ALL}
-    ${STDCPP_ALL}
-    ${HDF5LIB_ALL}
-    ${HDF5CPPLIB_ALL})
+    ${STDCPP_ALL})
 endif()
 
 # We need to ship libraries on windows, too, with slightly tweaked file names
@@ -191,16 +169,12 @@ if(WIN32 AND NOT MSVC)
     GET_FILENAME_COMPONENT(GCC_PATH ${CMAKE_CXX_COMPILER} DIRECTORY)
     FIND_LIBRARY(LIBGCC NAMES libgcc_s_seh-1.dll HINTS ${GCC_PATH})
     FIND_LIBRARY(STDCPP NAMES libstdc++-6.dll HINTS ${GCC_PATH})
-    FIND_LIBRARY(HDF5LIB NAMES libhdf5-0.dll HINTS ${GCC_PATH})
-    FIND_LIBRARY(HDF5CPPLIB NAMES libhdf5_cpp-0.dll HINTS ${GCC_PATH})
     FIND_LIBRARY(LIBSZIP NAMES libszip-0.dll HINTS ${GCC_PATH})
     FIND_LIBRARY(ZLIB NAMES zlib1.dll HINTS ${GCC_PATH})
     FIND_LIBRARY(LIPWINPTHREAD NAMES libwinpthread-1.dll HINTS ${GCC_PATH})
     SET(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS
     ${LIBGCC}
     ${STDCPP}
-    ${HDF5LIB}
-    ${HDF5CPPLIB}
     ${LIBSZIP}
     ${ZLIB}
     ${LIPWINPTHREAD}

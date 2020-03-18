@@ -3,6 +3,8 @@
 #include <vector>
 using std::vector;
 
+#include <plog/Log.h>
+
 #include "libaps2.h"
 
 #include "APS2Connector.h"
@@ -15,7 +17,8 @@ TEST_CASE("DAC BIST", "[DAC BIST]") {
 	APS2Connector connection(ip_addr);
 	init_APS(ip_addr.c_str(), 0);
 
-	set_logging_level(logDEBUG1);
+	set_file_logging_level(plog::debug);
+  	set_console_logging_level(plog::debug);
 
 	for (size_t dac = 0; dac < 2; dac++) {
 		auto test_wf = RandomHelpers::random_waveform( 1 << 17 ); // 128 ksamples
