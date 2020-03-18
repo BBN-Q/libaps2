@@ -51,7 +51,6 @@ matrix:
         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
         
     # OSX
-  include:
     - os: osx
       osx_image: xcode10.1
       compiler: clang
