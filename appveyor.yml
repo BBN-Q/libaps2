@@ -50,7 +50,7 @@ build_script:
   # create build directory and call cmake
   - md build
   - cd build
-  - cmake -H. -Bbuild -G"%generator%" -DCMAKE_BUILD_TYPE=%configuration%
+  - cmake -H. -Bbuild -G"%generator%" -DCMAKE_BUILD_TYPE=%configuration% ../src/
   - cmake --build . --config %configuration%
 
 
