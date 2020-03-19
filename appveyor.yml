@@ -53,7 +53,8 @@ build_script:
   - md build
   - cd build
   - cmake -H. -G"%generator%" -DCMAKE_BUILD_TYPE=%configuration% ../src/
-  - make
+  - if "%generator:~0,5%"=="MinGW" set CMAKE_BUILD_FLAGS=-- -j
+  - cmake --build . %CMAKE_BUILD_FLAGS%
 
 
 # artifacts configuration
