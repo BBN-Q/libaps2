@@ -379,7 +379,7 @@ void APS2::load_sequence_file(const string &seqFile) {
     uint16_t num_chans;
 
     std::fstream file(seqFile, std::ios::binary | std::ios::in);
-    if( !file ) throw APS2_SEQFILE_FAIL; 
+    if( !file ) throw APS2_SEQFILE_FAIL;
 
     file.read(junk, 12); // Don't need this info
     file.read(reinterpret_cast<char *> (&num_chans), sizeof(uint16_t));
@@ -1033,7 +1033,7 @@ void APS2::erase_flash(uint32_t start_addr, uint32_t num_bytes) {
     throw APS2_UNALIGNED_MEMORY_ACCESS;
   }
 
-  LOG(plog::debug) << ipAddr_ << " erasing " << num_bytes / (1 < 10)
+  LOG(plog::debug) << ipAddr_ << " erasing " << num_bytes / (1 << 10)
                      << " kbytes starting at EPROM address "
                      << hexn<8> << start_addr;
 
