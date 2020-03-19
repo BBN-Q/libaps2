@@ -16,8 +16,7 @@ This code is licensed under the Apache v2 license.  See the LICENSE file for mor
 Building
 ------------
 Only necessary for those wishing to develop or build the driver from source.
-Prebuilt binaries for Windows are available on the releases tab or for Python
-from the [conda package manager](https://anaconda.org/BBN-Q/libaps2).
+Prebuilt binaries for Windows are available on the releases tab.
 
 ### Clone repository
 We get the [asio](http://think-async.com/Asio) dependency via a submodule we need the --recursive switch
