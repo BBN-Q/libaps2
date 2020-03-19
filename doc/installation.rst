@@ -62,25 +62,6 @@ Using git has the advantage that users may easily upgrade to future libaps2
 releases with ``git pull``. Description of the source repository files is
 available in the :ref:`file-list` section.
 
-Installation via conda
-~~~~~~~~~~~~~~~~~~~~~~
-
-Users of the Anaconda python distribution can install libaps2 via
-``conda``::
-
-	conda install -c bbn-q libaps2
-
-This command will install the libaps2 shared library and libaps2 python wrapper
-into your Anaconda path (``~/anaconda3/lib`` on posix-systems, or
-``C:\Users\%USERNAME%\Anaconda3\Library`` on windows) such that it can be easily
-loaded by other programs. To verify that it worked, launch an ipython REPL and
-try::
-
-	In [1]: import aps2
-
-If that command runs without errors, the install completed successfully. If you
-encounter errors, verify that the Anaconda library folder is on your PATH.
-
 Installation from source
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -108,7 +89,31 @@ corresponding to your operating system and extract the files. On posix-systems,
 copy the contents of the archive to corresponding locations in ``/usr/local``
 (i.e. copy files from ``lib/`` to ``/usr/local/lib`` and ``include/`` to
 ``/usr/local/include``). On windows, add the ``bin`` folder to the PATH
-variable, or copy ``libaps2.dll`` to ``C:\windows\system32``.
+variable, or copy ``libaps2.dll`` to ``C:\windows\system32``.  Build artifacts
+from Appveyor are also available for download (https://ci.appveyor.com/api/projects/matthewware/libaps2/artifacts/build/Release.zip).  These are built
+from the latest master branch code.
+
+Installation via conda
+~~~~~~~~~~~~~~~~~~~~~~
+.. danger::
+		**DEPRECATION WARNING**: this install process is no longer supported.
+		Please build the library from source or download the preexisting binaries.
+
+Users of the Anaconda python distribution can install libaps2 via
+``conda``::
+
+	conda install -c bbn-q libaps2
+
+This command will install the libaps2 shared library and libaps2 python wrapper
+into your Anaconda path (``~/anaconda3/lib`` on posix-systems, or
+``C:\Users\%USERNAME%\Anaconda3\Library`` on windows) such that it can be easily
+loaded by other programs. To verify that it worked, launch an ipython REPL and
+try::
+
+	In [1]: import aps2
+
+If that command runs without errors, the install completed successfully. If you
+encounter errors, verify that the Anaconda library folder is on your PATH.
 
 .. _file-list:
 
@@ -222,8 +227,8 @@ interfaces using the `ip` command::
 A more permanent solution would involve editing the network interfaces file,
 e.g. ``/etc/network/interfaces``.
 
-In centOS this location is ``/etc/sysconfig/network-scripts`` with files named 
-ifcfg-<interface name>.  For example, a file might be called ifcfg-enp8s0 and 
+In centOS this location is ``/etc/sysconfig/network-scripts`` with files named
+ifcfg-<interface name>.  For example, a file might be called ifcfg-enp8s0 and
 have something like::
 
 	TYPE=Ethernet
@@ -242,8 +247,8 @@ have something like::
 	DEVICE=enp8s0
 	ONBOOT=yes
 	HWADDR=FF:FF:FF:FF:FF:FF
-	
-To add an additional interfaces on CentOS just create new files called 
+
+To add an additional interfaces on CentOS just create new files called
 ifcfg-enp8s0:0 with a minimum of::
 
 	NAME="dot 4 subnet"
@@ -251,7 +256,7 @@ ifcfg-enp8s0:0 with a minimum of::
 	ONBOOT=yes
 	IPADDR=192.168.4.125
 	NETMASK=255.255.255.0
-	
+
 and so on with enp8s0:1::
 
 	NAME="dot 5 subnet"

@@ -1,7 +1,7 @@
 C/C++ Driver for the BBN APSv2
 ===============================
 [![Build Status](https://travis-ci.com/BBN-Q/libaps2.svg?branch=master)](https://travis-ci.com/BBN-Q/libaps2)
-[![Build status](https://ci.appveyor.com/api/projects/status/96bjuekewvan9xry?svg=true)](https://ci.appveyor.com/project/caryan/libaps2)
+[![Build status](https://ci.appveyor.com/api/projects/status/lac52m1815be9a19?svg=true)](https://ci.appveyor.com/project/matthewware/libaps2)
 
 This repository provides the C++ (with a C calling API) driver for controlling the second generation [BBN Arbitrary Pulse Sequencer](https://www.raytheon.com/sites/default/files/capabilities/rtnwcm/groups/public/documents/content/aps-datasheet.pdf).  In addition to the C driver we provide thin wrappers for Matlab and Julia.  
 
@@ -35,18 +35,7 @@ We get the [asio](http://think-async.com/Asio) dependency via a submodule we nee
 
 #### Visual Studio
 
-We have built libaps2 with Visual Studio 2015 using the
-"CMake VS 2015 C, C++, IVF 16" version. In PowerShell with git available create
-the `version.hpp` file: ``cat .\src\lib\version_template.hpp | % {$_ -replace
-"<TOKEN>", "$(git describe --dirty)"} | Set-Content .\src\lib\version.hpp``.
-Then in the "VS2015 x64 Native Tools" command prompt
-
-```cmd
-md build
-cd build
-cmake -G "Visual Studio 14 2015 Win64" ..\src
-cmake --build . --config Release
-```
+We currently only support Windows builds in MinGW.  It is possible to build the library and utilities in Visual Studio though this process tends to be brittle.
 
 #### MSYS2 and MinGW-w64
 
@@ -75,6 +64,9 @@ The most painless way to use gcc on Windows has been using
 Tested on:
 * Windows 10 Professional with gcc 6.1.0
 
+For the adventurous, the Appveyor build artifacts are available for download
+ [here](https://ci.appveyor.com/api/projects/matthewware/libaps2/artifacts/build/Release.zip).  These are binaries build from the master branch.
+
 ### Linux
 Use your distribution's package manager to install the dependencies and it should work out of the box.
 
@@ -83,7 +75,7 @@ Tested on:
 
 ### OS X
 1. Install the command-line developer tools.
-2. Use [Homebrew](http://brew.sh/) to install cmake. 
+2. Use [Homebrew](http://brew.sh/) to install cmake.
 3. Then a standard ``cmake ../src`` and ``make`` should build.
 
 Tested on:
