@@ -57,11 +57,11 @@ build_script:
 artifacts:
 
   # pushing entire folder as a zip archive
-  - path: '*.dll'
+  - path: 'build\*.dll'
     name: build\Release.zip
     type: Auto
 
-  - path: '*.exe'
+  - path: 'build\*.exe'
     name: build\Release.zip
     type: Auto
 #
