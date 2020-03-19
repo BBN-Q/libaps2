@@ -42,8 +42,8 @@ before_package:
 
 # scripts to run after build
 after_build:
-  - 7z a Release.zip build\libaps2.dll
-  - 7z a Release.zip build\*.exe
+  - 7z a Release.zip c:\projects\libaps2\build\libaps2.dll
+  - 7z a Release.zip c:\projects\libaps2\build\*.exe
 
 # to run your custom scripts instead of automatic MSBuild
 build_script:
