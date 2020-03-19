@@ -5,11 +5,8 @@ skip_tags: true
 skip_non_tags: false
 
 # Build worker image (VM template)
-image: Visual Studio 2015
 environment:
   matrix:
-    - generator: "MinGW Makefiles"
-      dialect: mingw
     - generator: "MinGW Makefiles"
       dialect: mingw-w64
 
@@ -38,7 +35,6 @@ build: off
 before_build:
   # Workaround for CMake not wanting sh.exe on PATH for MinGW
   - set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
-  - if "%dialect%"=="mingw" set PATH=c:\MinGW\bin;%PATH%
   - if "%dialect%"=="mingw-w64" set PATH=c:\msys64\mingw64\bin;%PATH%
 
 # scripts to run *after* solution is built and *before* automatic packaging occurs (web apps, NuGet packages, Azure Cloud Services)
