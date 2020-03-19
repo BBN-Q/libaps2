@@ -42,6 +42,8 @@ before_package:
 
 # scripts to run after build
 after_build:
+  7z a Release.zip build\libaps2.dll
+  7z a Release.zip build\*.exe
 
 # to run your custom scripts instead of automatic MSBuild
 build_script:
@@ -57,13 +59,16 @@ build_script:
 artifacts:
 
   # pushing entire folder as a zip archive
-  - path: 'build\*.dll'
-    name: build\Release.zip
-    type: Auto
+  # - path: 'build\*.dll'
+  #   name: build\Libray.zip
+  #   type: Auto
+  #
+  # - path: 'build\*.exe'
+  #   name: build\Utils.zip
+  #   type: Auto
 
-  - path: 'build\*.exe'
-    name: build\Release.zip
-    type: Auto
+  - path: build\Release.zip
+    name: Release
 #
 #     # Deploy to GitHub Releases
 #   - provider: GitHub
