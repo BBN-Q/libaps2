@@ -78,5 +78,6 @@ deploy:
     - "build/libaps2.*"
     - "build/aps2_*"
   skip_cleanup: true
-  on:
-    tags: true
+  draft: true
+  # on:
+  #   tags: true
