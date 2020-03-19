@@ -25,7 +25,7 @@ matrix:
 platform:
   - x64
 configuration:
-  - Release
+  - Debug
 
 # scripts that run after cloning repository
 install:
@@ -52,8 +52,8 @@ build_script:
   # create build directory and call cmake
   - md build
   - cd build
-  - cmake -H. -Bbuild -G"%generator%" -DCMAKE_BUILD_TYPE=%configuration% ../src/
-  - cmake --build . --config %configuration%
+  - cmake -H. -G"%generator%" -DCMAKE_BUILD_TYPE=%configuration% ../src/
+  - make
 
 
 # artifacts configuration
