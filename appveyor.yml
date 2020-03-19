@@ -6,6 +6,12 @@ skip_non_tags: false
 
 # Build worker image (VM template)
 image: Visual Studio 2015
+environment:
+  matrix:
+    - generator: "MinGW Makefiles"
+      dialect: mingw
+    - generator: "MinGW Makefiles"
+      dialect: mingw-w64
 
 # scripts that are called at very beginning, before repo cloning
 init:
@@ -30,6 +36,8 @@ build: off
 
 # scripts to run before build
 before_build:
+  - if "%dialect%"=="mingw" set PATH=c:\MinGW\bin;%PATH%
+  - if "%dialect%"=="mingw-w64" set PATH=c:\msys64\mingw64\bin;%PATH%
 
 # scripts to run *after* solution is built and *before* automatic packaging occurs (web apps, NuGet packages, Azure Cloud Services)
 before_package:
@@ -42,7 +50,7 @@ build_script:
   # create build directory and call cmake
   - md build
   - cd build
-  - cmake -G "Visual Studio 14 2015 Win64" ..\src
+  - cmake -H. -Bbuild -G"%generator%" -DCMAKE_BUILD_TYPE=%configuration%
   - cmake --build . --config %configuration%
 
 
