@@ -57,7 +57,8 @@ build_script:
 artifacts:
 
   # pushing entire folder as a zip archive
-  - path: build\Release
+  - path: build\Release.zip
+    type: Auto
 
 #
 #     # Deploy to GitHub Releases
