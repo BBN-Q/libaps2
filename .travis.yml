@@ -57,12 +57,12 @@ script:
 - git submodule update --init --recursive
 - mkdir build;cd build;cmake ../src
 - make
-deploy:
-  provider: releases
-  api_key:
-    secure: nXUSUJMaYpJZvF5dUdO7KOKNEfPcT70xcuMDqYDXkLX6E6SY6BDQIdK+C5JSuBgYQQLpy67nvcpA8aNn4/7yB7HABqKOw15pt14HzpRqNwweK3acjIPfGkpCa7ge0iS4cSfqX6zdWiVuOMiUB3Z2yObkfFoYXv+L/EvY8Gt1yg0=
-  file:
-  - build/libaps2.*
-  - build/aps2_*
-  skip_cleanup: true
-  draft: true
+# deploy:
+#   provider: releases
+#   api_key:
+#     secure: nXUSUJMaYpJZvF5dUdO7KOKNEfPcT70xcuMDqYDXkLX6E6SY6BDQIdK+C5JSuBgYQQLpy67nvcpA8aNn4/7yB7HABqKOw15pt14HzpRqNwweK3acjIPfGkpCa7ge0iS4cSfqX6zdWiVuOMiUB3Z2yObkfFoYXv+L/EvY8Gt1yg0=
+#   file:
+#   - build/libaps2.*
+#   - build/aps2_*
+#   skip_cleanup: true
+#   draft: true
