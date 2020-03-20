@@ -19,7 +19,8 @@ Only necessary for those wishing to develop or build the driver from source.
 Prebuilt binaries for Windows are available on the releases tab.
 
 ### Clone repository
-We get the [asio](http://think-async.com/Asio) dependency via a submodule we need the --recursive switch
+We get the [asio](http://think-async.com/Asio), [Catch](https://github.com/catchorg/Catch2), and 
+[plog](https://github.com/SergiusTheBest/plog) dependencies via submodules with the --recursive switch
 
   ```bash
   git clone --recursive git@github.com:BBN-Q/libaps2.git
