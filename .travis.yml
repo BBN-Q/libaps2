@@ -1,83 +1,68 @@
 language: cpp
-
 matrix:
   include:
-    # works on Precise and Trusty
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.9
-            - cmake
-      env:
-         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
-
-    # works on Precise and Trusty
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
-            - cmake
-      env:
-         - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
-
-    # works on Precise and Trusty
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-6
-            - cmake
-      env:
-        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
-
-    # works on Precise and Trusty
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
-            - cmake
-      env:
-        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
-
-    # OSX
-    - os: osx
-      osx_image: xcode10.1
-      compiler: clang
-      env:
-        - MATRIX_EVAL="CXX=clang++"
-
-    - os: osx
-      osx_image: xcode9.4
-      compiler: clang
-      env:
-        - MATRIX_EVAL="CXX=clang++"
-
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-4.9
+        - cmake
+    env:
+    - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-5
+        - cmake
+    env:
+    - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-6
+        - cmake
+    env:
+    - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-7
+        - cmake
+    env:
+    - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+  - os: osx
+    osx_image: xcode10.1
+    compiler: clang
+    env:
+    - MATRIX_EVAL="CXX=clang++"
+  - os: osx
+    osx_image: xcode9.4
+    compiler: clang
+    env:
+    - MATRIX_EVAL="CXX=clang++"
 before_install:
-    - eval "${MATRIX_EVAL}"
-
+- eval "${MATRIX_EVAL}"
 script:
-  - git submodule update --init --recursive
-  - mkdir build;cd build;cmake ../src
-  - make
-
+- git submodule update --init --recursive
+- mkdir build;cd build;cmake ../src
+- make
 deploy:
   provider: releases
-  api_key: "GITHUB OAUTH TOKEN"
+  api_key:
+    secure: nXUSUJMaYpJZvF5dUdO7KOKNEfPcT70xcuMDqYDXkLX6E6SY6BDQIdK+C5JSuBgYQQLpy67nvcpA8aNn4/7yB7HABqKOw15pt14HzpRqNwweK3acjIPfGkpCa7ge0iS4cSfqX6zdWiVuOMiUB3Z2yObkfFoYXv+L/EvY8Gt1yg0=
   file:
-    - "build/libaps2.*"
-    - "build/aps2_*"
+  - build/libaps2.*
+  - build/aps2_*
   skip_cleanup: true
   draft: true
-  # on:
-  #   tags: true
