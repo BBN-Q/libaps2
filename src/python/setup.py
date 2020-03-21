@@ -58,5 +58,8 @@ setup(
         "Topic :: Scientific/Engineering",
     ],
     python_requires='>=3.6',
+    install_requires=[
+        'numpy>=1.18'
+    ],
     keywords="quantum qubit arbitrary waveform instrument hardware"
 )
