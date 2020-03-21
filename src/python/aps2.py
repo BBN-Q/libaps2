@@ -40,6 +40,7 @@ np_uint8_1D  = npct.ndpointer(dtype=np.uint8, ndim=1, flags='CONTIGUOUS')
 
 # load the library
 libaps2 = None
+install_path = os.path.dirname(os.path.realpath(__file__))
 try:
     # first, try the obvious place
 
@@ -49,13 +50,13 @@ try:
         libpath = sys.prefix + suffix
         libaps2 = CDLL(libpath)
     elif sys.platform == 'linux':
-        libpath = '../../build/libaps2.so'
+        suffix = 'lib/'
+        libpath = install_path + '/../../build/libaps2.so'
         libaps2 = CDLL(libpath)
-        suffix = ''
     elif sys.platform == 'darwin':
-        libpath = '../../build/libaps2.dylib'
+        suffix = 'lib/'
+        libpath = install_path + '/../../build/libaps2.dylib'
         libaps2 = CDLL(libpath)
-        suffix = ''
     else:
         suffix = ''
 
