@@ -31,6 +31,44 @@ We get the [asio](http://think-async.com/Asio), [Catch](https://github.com/catch
 * C++ compiler with good C++11 support. See below for OS specific compilers tested.
 * [cmake](http://www.cmake.org/): Cmake build tool version 2.8 or higher (http://www.cmake.org/)
 
+### Linux
+Use your distribution's package manager to install the dependencies and it should work out of the box.  Here is how to build the library and utilities using a Debian-base package manager:
+
+  ```bash
+  sudo apt update
+  sudo apt install git
+  sudo apt install build-essential
+  sudo apt install cmake
+  
+  git clone https://github.com/BBN-Q/libaps2.git
+  git submodule update --init --recursive
+  
+  mkdir build
+  cd build
+  cmake ../src
+  make
+  ```
+Then install the python driver if you'd like:
+
+  ```bash
+  cd src/python
+  pip install .
+  ```
+  
+Tested on:
+* Linux Mint 18.1 with 5.4.0
+* CentOS 7
+* Ubuntu 16.04 - 18.04
+
+### OS X
+1. Install the command-line developer tools.
+2. Use [Homebrew](http://brew.sh/) to install cmake.
+3. Then a standard ``cmake ../src`` and ``make`` should build.
+
+Tested on:
+* OS X 10.10 Yosemite with Apple clang 6.0
+* Xcode 9.4 & 10.1 with clang++
+
 ### Windows
 
 #### Visual Studio
@@ -66,20 +104,6 @@ Tested on:
 
 For the adventurous, the Appveyor build artifacts are available for download
  [here](https://ci.appveyor.com/api/projects/matthewware/libaps2/artifacts/build/Release.zip).  These are binaries build from the master branch.
-
-### Linux
-Use your distribution's package manager to install the dependencies and it should work out of the box.
-
-Tested on:
-* Linux Mint 18.1 with 5.4.0
-
-### OS X
-1. Install the command-line developer tools.
-2. Use [Homebrew](http://brew.sh/) to install cmake.
-3. Then a standard ``cmake ../src`` and ``make`` should build.
-
-Tested on:
-* OS X 10.10 Yosemite with Apple clang 6.0
 
 ## Funding
 
