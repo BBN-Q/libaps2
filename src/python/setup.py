@@ -2,6 +2,9 @@ from setuptools import setup, find_packages, Extension
 import sys
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
+import os
+import glob
+
 class bdist_wheel(_bdist_wheel):
 
     def finalize_options(self):
@@ -15,16 +18,18 @@ class bdist_wheel(_bdist_wheel):
         python, abi = 'py3', 'none'
         return python, abi, plat
 
+lib_path = '../../build/'
+
 from sys import platform
 if "linux" in platform:
     # linux
-    lib = 'libaps2.so'
+    lib = lib_path + 'libaps2.so'
 elif platform == "darwin":
     # OS X
-    lib = 'libaps2.dylib'
+    lib = lib_path + 'libaps2.dylib'
 elif platform == "win32":
     # Windows...
-    lib = 'libaps2.dll'
+    lib = lib_path + 'libaps2.dll'
 
 setup(
     name='libaps2',
@@ -38,7 +43,8 @@ setup(
     long_description=open('../../README.md').read(),
     long_description_content_type='text/markdown',
     py_modules=["aps2"],
-    data_files=[('lib', [lib])],
+    data_files=[('lib', [lib]),
+    ('utils', glob.glob(os.path.join('.', lib_path, 'aps2_*')))],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",

@@ -21,9 +21,9 @@ python setup.py bdist_wheel
 
 echo "** Uploading to test pypi **"
 if [[ $1 == "production" ]]; then
-    twine upload dist/*
+    python -m twine upload dist/*
 else
-    twine upload --repository-url https://test.pypi.org/legacy/ dist/*.whl
+    python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*.whl
 fi
 
 # Test with: pip install --extra-index-url https://test.pypi.org/simple/ bbndb
