@@ -18,7 +18,8 @@ class bdist_wheel(_bdist_wheel):
         python, abi = 'py3', 'none'
         return python, abi, plat
 
-lib_path = '../../build/'
+install_path = os.path.dirname(os.path.realpath(__file__))
+lib_path = install_path + '/../../build/'
 
 from sys import platform
 if "linux" in platform:
@@ -40,7 +41,7 @@ setup(
     download_url='https://github.com/BBN-Q/auspex',
     license="Apache 2.0 License",
     description='BBN APS2 instrument control library.',
-    long_description=open('../../README.md').read(),
+    long_description=open(install_path + '/../../README.md').read(),
     long_description_content_type='text/markdown',
     py_modules=["aps2"],
     data_files=[('lib', [lib]),
