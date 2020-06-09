@@ -43,7 +43,7 @@ aps.stop()
 aps.set_run_mode(aps2.RUN_SEQUENCE)
 def demo_sequence(display_text, sequence_file):
     print(display_text)
-    aps.load_sequence_file(os.path.join(examples_path, sequence_file+".h5"))
+    aps.load_sequence_file(os.path.join(examples_path, sequence_file+".aps2"))
     aps.run()
     input("Press Enter to continue...")
     aps.stop()
