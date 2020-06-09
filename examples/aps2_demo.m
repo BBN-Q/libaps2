@@ -44,7 +44,7 @@ aps.set_run_mode('RUN_SEQUENCE')
 
 function demo_sequence(display_text, sequence_file)
     fprintf(display_text);
-    load_sequence(aps, fullfile(example_path, [sequence_file, '.h5']));
+    load_sequence(aps, fullfile(example_path, [sequence_file, '.aps2']));
     run(aps);
     input('\nPress ANY key to continue: ')
     stop(aps);
