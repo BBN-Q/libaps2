@@ -649,11 +649,25 @@ APS2_STATUS toggle_DAC_clock(const char *deviceSerial, const int dac) {
 }
 
 APS2_STATUS enable_DAC_output(const char *deviceSerial) {
-  return aps2_call(deviceSerial, &APS2::set_DAC_output_state, true);
+  auto DAC0_STATUS = aps2_call(deviceSerial, &APS2::set_DAC_output_state, 0, true);
+  auto DAC1_STATUS = aps2_call(deviceSerial, &APS2::set_DAC_output_state, 1, true);
+
+  if ((DAC0_STATUS == APS2_OK) && (DAC1_STATUS == APS2_OK)) {
+    return APS2_OK;
+  } else {
+    return APS2_UNKNOWN_ERROR;
+  }
 }
 
 APS2_STATUS disable_DAC_output(const char *deviceSerial) {
-  return aps2_call(deviceSerial, &APS2::set_DAC_output_state, false);
+  auto DAC0_STATUS = aps2_call(deviceSerial, &APS2::set_DAC_output_state, 0, true);
+  auto DAC1_STATUS = aps2_call(deviceSerial, &APS2::set_DAC_output_state, 1, true);
+
+  if ((DAC0_STATUS == APS2_OK) && (DAC1_STATUS == APS2_OK)) {
+    return APS2_OK;
+  } else {
+    return APS2_UNKNOWN_ERROR;
+  }
 }
 
 #ifdef __cplusplus
