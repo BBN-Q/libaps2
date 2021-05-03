@@ -648,6 +648,14 @@ APS2_STATUS toggle_DAC_clock(const char *deviceSerial, const int dac) {
   return aps2_call(deviceSerial, &APS2::toggle_DAC_clock, dac);
 }
 
+APS2_STATUS enable_DAC_output(const char *deviceSerial) {
+  return aps2_call(deviceSerial, &APS2::set_DAC_output_state, true);
+}
+
+APS2_STATUS disable_DAC_output(const char *deviceSerial) {
+  return aps2_call(deviceSerial, &APS2::set_DAC_output_state, false);
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -314,6 +314,8 @@ const uint8_t DAC_CONTROLLER_ADDR =
 const uint8_t DAC_FIFOSTAT_ADDR =
     0x7; // FIFOSTAT[7] FIFOPHASE[6:4] VALID[3] CHANGE[2] OFFSET[1:0]
 const uint8_t DAC_CONTROLLERCLOCK_ADDR = 0x16;
+const uint8_t DAC_FSC_1_ADDR = 0x02;
+const uint8_t DAC_FSC_2_ADDR = 0x03;
 
 // EPROM MEMORY MAP
 const uint32_t EPROM_SPI_CONFIG_ADDR = 0x0;

@@ -136,6 +136,29 @@ void APS2::setup_DACs() {
   align_DAC_LVDS_capture(1);
 }
 
+void APS2::set_DAC_output_state(bool output_state)
+{
+  check_channel_num(dac);
+
+  const vector<CHIPCONFIG_IO_TARGET> targets = {CHIPCONFIG_TARGET_DAC_0,
+                                                CHIPCONFIG_TARGET_DAC_1};
+  //For now, assume FSC register is set to 0x200 (e.g bit 1 of FSC_1 = 0b1)
+  if (output_state){
+    msg = build_DAC_SPI_msg(targets[0], {{DAC_FSC_1_ADDR, 0x2}});
+    write_SPI(msg);
+    msg = build_DAC_SPI_msg(targets[1], {{DAC_FSC_1_ADDR, 0x2}});
+    write_SPI(msg);
+    PLOG(plot::warning) << "DAC ENABLED VIA SPI INTERFACE!";
+
+  } else {
+    msg = build_DAC_SPI_msg(targets[0], {{DAC_FSC_1_ADDR, 0x82}});
+    write_SPI(msg);
+    msg = build_DAC_SPI_msg(targets[1], {{DAC_FSC_1_ADDR, 0x82}});
+    write_SPI(msg);
+    PLOG(plot::warning) << "DAC DISABLED VIA SPI INTERFACE!";
+  }
+}
+
 APSStatusBank_t APS2::read_status_registers() {
   LOG(plog::debug) << ipAddr_ << " APS2::read_status_registers";
   // Query with the status request command

@@ -37,6 +37,8 @@ public:
   void setup_DACs();
   void run_chip_config(uint32_t addr = 0x0);
 
+  void set_DAC_output_state(bool);
+
   APSStatusBank_t read_status_registers();
   uint32_t read_status_register(const STATUS_REGISTERS &);
 

@@ -134,6 +134,9 @@ EXPORT int run_DAC_BIST(const char *, const int, int16_t *, unsigned int,
 EXPORT APS2_STATUS set_DAC_SD(const char *, const int, const uint8_t);
 EXPORT APS2_STATUS toggle_DAC_clock(const char *, const int);
 
+EXPORT APS2_STATUS enable_DAC_output(const char *);
+EXPORT APS2_STATUS disable_DAC_output(const char *);
+
 #ifdef __cplusplus
 }
 #endif

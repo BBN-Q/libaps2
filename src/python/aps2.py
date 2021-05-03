@@ -367,6 +367,9 @@ class APS2(metaclass=Parser):
     trigger = APS2_Call()
     clear_channel_data = APS2_Call()
 
+    enable_DAC_output  = APS2_Call()
+    disable_DAC_output = APS2_Call()
+
     # Getters and Setters
     get_uptime = APS2_Getter(c_double)
     get_fpga_temperature = APS2_Getter(c_float)
