@@ -1,6 +1,6 @@
 C/C++ Driver for the BBN APSv2
 ===============================
-![Linux build](https://github.com/BBN-Q/libaps2/workflows/CMake/badge.svg)
+[![Linux build](https://github.com/BBN-Q/libaps2/workflows/CMake/badge.svg)](https://github.com/BBN-Q/libaps2/actions)
 
 [![Build status](https://ci.appveyor.com/api/projects/status/lac52m1815be9a19?svg=true)](https://ci.appveyor.com/project/matthewware/libaps2)
 
