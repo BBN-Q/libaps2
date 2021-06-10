@@ -22,7 +22,7 @@ execute_process(
   OUTPUT_VARIABLE GIT_DESCRIBE
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-string( REGEX MATCH "^v([0-9]+)\.([0-9]+)" VERSION_STRING ${GIT_DESCRIBE} )
+string( REGEX MATCH "^v([0-9]+)\.([0-9]+)" VERSION_STRING "${GIT_DESCRIBE}" )
 
 if (NOT VERSION_STRING)
   message(WARNING "Failed to extract version string from 'git describe'")
