@@ -1,6 +1,7 @@
 C/C++ Driver for the BBN APSv2
 ===============================
-[![Build Status](https://travis-ci.com/BBN-Q/libaps2.svg?branch=master)](https://travis-ci.com/BBN-Q/libaps2)
+![Linux build](https://github.com/BBN-Q/libaps2/workflows/CMake/badge.svg)
+
 [![Build status](https://ci.appveyor.com/api/projects/status/lac52m1815be9a19?svg=true)](https://ci.appveyor.com/project/matthewware/libaps2)
 
 This repository provides the C++ (with a C calling API) driver for controlling the second generation [BBN Arbitrary Pulse Sequencer](https://www.raytheon.com/sites/default/files/capabilities/rtnwcm/groups/public/documents/content/aps-datasheet.pdf).  In addition to the C driver we provide thin wrappers for Matlab and Julia.  
