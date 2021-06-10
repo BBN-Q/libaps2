@@ -22,7 +22,7 @@ execute_process(
   OUTPUT_VARIABLE GIT_DESCRIBE
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-string( REGEX MATCH "^v([0-9]+)\.([0-9]+)" VERSION_STRING ${GIT_DESCRIBE} )
+string( REGEX MATCH "^v([0-9]+)\.([0-9]+)" VERSION_STRING "${GIT_DESCRIBE}" )
 
 if (NOT VERSION_STRING)
   message(WARNING "Failed to extract version string from 'git describe'")
@@ -100,8 +100,8 @@ add_library( aps2 SHARED ${DLL_SRC} )
 add_dependencies( aps2 update_version )
 
 set_target_properties(aps2 PROPERTIES
-    VERSION ${APS2_VERSION_STRING}
-    SOVERSION ${APS2_VERSION_MAJOR}
+    VERSION "${APS2_VERSION_STRING}"
+    SOVERSION "${APS2_VERSION_MAJOR}"
     PREFIX "lib" # force lib prefix even on Windows
     MACOSX_RPATH 1
 )
