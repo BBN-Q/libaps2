@@ -100,8 +100,8 @@ add_library( aps2 SHARED ${DLL_SRC} )
 add_dependencies( aps2 update_version )
 
 set_target_properties(aps2 PROPERTIES
-    VERSION ${APS2_VERSION_STRING}
-    SOVERSION ${APS2_VERSION_MAJOR}
+    VERSION "${APS2_VERSION_STRING}"
+    SOVERSION "${APS2_VERSION_MAJOR}"
     PREFIX "lib" # force lib prefix even on Windows
     MACOSX_RPATH 1
 )
